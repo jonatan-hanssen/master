@@ -1,8 +1,14 @@
 import torch, os
+import numpy as np
 from torchvision import transforms
 from tqdm import tqdm
 import argparse
+import matplotlib
+matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+import torchvision
 
 from torchvision.models import resnet18
 
@@ -11,6 +17,7 @@ from PIL import Image
 from torch.nn import Linear, Sequential, Sigmoid
 
 dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+house_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "house_data")
 model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model.pt")
 
 class CatDogaset(Dataset):
@@ -60,14 +67,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--test", action="store_true", help="Test"
     )
+    parser.add_argument(
+        "-o", "--house", action="store_true", help="House dataset"
+    )
 
     args = parser.parse_args()
-    print(args)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    dataset = CatDogaset(dataset_path)
-    dataloader = DataLoader(dataset, batch_size=10, shuffle=False)
+    pathypath = house_dataset_path if args.house else dataset_path
+
+    dataset = CatDogaset(pathypath)
+    dataloader = DataLoader(dataset, batch_size=10, shuffle=True)
 
     if not args.test:
         model = resnet18(weights="IMAGENET1K_V1")
@@ -118,6 +129,11 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(model_path))
         model.to(device)
 
+        target_layers = [model.layer4[-1]]
+
+        cam = GradCAM(model=model, target_layers=target_layers)
+
+
         for i, data in enumerate(dataloader):
             batch, labels = data
 
@@ -126,12 +142,26 @@ if __name__ == "__main__":
             labels = labels.float()
 
 
+            grayscale_cam = cam(input_tensor=batch, aug_smooth=True, eigen_smooth=True)
             preds = model(batch)
             preds = preds.squeeze()
 
-            for image, pred in zip(batch, preds):
-                image = image.to("cpu")
-                plt.imshow(torch.einsum('chw->whc', image))
+            for image, pred, cam_img in zip(batch, preds, grayscale_cam):
+                # image = image.to("cpu")
+
+
+                visualization = show_cam_on_image(np.float32(torchvision.transforms.ToPILImage()(image)) / 255, cam_img, use_rgb=True)
+
+                unnormalize = transforms.Compose([
+                    transforms.Normalize(mean=[0., 0., 0.], std=[1/0.229, 1/0.224, 1/0.225]),
+                    transforms.Normalize(mean = [-0.485, -0.456, -0.406], std=[1, 1, 1])
+                ])
+                image = unnormalize(image)
+
+                plt.subplot(211)
+                plt.imshow(torch.einsum('chw->hwc', image.to("cpu")))
+                plt.subplot(212)
+                plt.imshow(visualization)
                 plt.title(pred)
                 plt.show()
 
