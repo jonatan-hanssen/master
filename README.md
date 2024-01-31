@@ -29,6 +29,10 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 - Covariate shift, ikke semantic shift. Ingen nye klasser.
 - State of the art: VOS, ViM
 
+## Ideer
+
+- Bare kjøre outlier detection på resultatet av Grad-CAM?
+
 ## Lesestoff
 
 ### Lest
