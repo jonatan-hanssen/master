@@ -48,7 +48,8 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 ### Ikke lest
 
 - Wickstrøm et Al. [*Uncertainty and interpretability in convolutional neural networks for semantic segmentation of colorectal polyps*](https://www.sciencedirect.com/science/article/pii/S1361841519301574). (2019).
-- Itoh et Al. [*Visualising decision-reasoning regions in computer-aided pathological pattern diagnosis of endoscytoscopic images based on CNN weights analysis*](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/11314/2549532/Visualising-decision-reasoning-regions-in-computer-aided-pathological-pattern-diagnosis/10.1117/12.2549532.short?SSO=1#_=_). (2020).
 - Wang et Al. [*ViM: Out-Of-Distribution with Virtual-logit Matching*](https://arxiv.org/pdf/2203.10807.pdf). (2022).
 - Du et Al. [*VOS: Learning What You Don’t Know By Virtual Outlier synthesis*](https://arxiv.org/pdf/2202.01197.pdf). (2020).
-
+- Nazir et Al. [*Survey of explainable artificial intelligence techniques for biomedical imaging with deep neural networks*](https://www.sciencedirect.com/science/article/pii/S0010482523001336?ref=cra_js_challenge&fr=RR-1). (2023).
+- Liu et Al. [*Energy-based Out-of-distribution Detection*](https://arxiv.org/pdf/2010.03759.pdf). (2021).
+- Cui et Al. [*Out-of-Distribution (OOD) Detection Based on Deep Learning: A Review](https://www.mdpi.com/2079-9292/11/21/3500). (2022).
