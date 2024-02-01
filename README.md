@@ -16,8 +16,12 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 
 ## XAI
 
-- Grad-CAM
+- Gradient Class Activation Mapping (Grad-CAM)
     - Brukes ofte i medisin
+    - Lav oppløsning, bruker som oftest siste konvolusjonelle lag av CNN som probably har mange filtere men hver av dem lav oppløsning
+        - Men man kan bruke hvilket som helst lag så man kan bruke et tidligere lag med høyere oppløsning
+- Layer Wise Relevance Propagation
+    - Pixel wise saliency maps, så mer presis enn CAM
 - Meaningful perturbation
 - Hausdorff distance
 
@@ -28,7 +32,7 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 
 ## Ideer
 
-- Bare kjøre outlier detection på resultatet av Grad-CAM?
+- Bare kjøre outlier detection på resultatet av Grad-CAM, LRP eller noe 
 
 ## Lesestoff
 
@@ -43,6 +47,7 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 - Hägele et Al. [*Resolving challenges in deep learning-based analyses of histopathological images using explanation methods*](https://www.nature.com/articles/s41598-020-62724-2.pdf). (2020).
 - Nazir et Al. [*Survey of explainable artificial intelligence techniques for biomedical imaging with deep neural networks*](https://www.sciencedirect.com/science/article/pii/S0010482523001336?ref=cra_js_challenge&fr=RR-1). (2023).
 - Cui et Al. [*Out-of-Distribution (OOD) Detection Based on Deep Learning: A Review](https://www.mdpi.com/2079-9292/11/21/3500). (2022).
+- Bach et Al. [*On pixel-wise explanations for non-linear classifier decisions by layer-wise relevance propagation*](https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0130140&type=printable). (2015).
 
 ### Ikke lest
 
