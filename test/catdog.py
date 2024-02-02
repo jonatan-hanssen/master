@@ -14,7 +14,7 @@ from torchvision.models import resnet18
 
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
-from torch.nn import Linear, Sequential, Sigmoid
+from torch.nn import Linear, Sequential, Sigmoid, Softmax
 
 dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 house_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "house_data")
@@ -60,7 +60,9 @@ class CatDogaset(Dataset):
 
         image_tensor = preprocess(image)
 
-        return image_tensor, is_cat
+        truth_tensor = torch.tensor([1, 0]) if is_cat else torch.tensor([0, 1])
+
+        return image_tensor, truth_tensor
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -83,13 +85,13 @@ if __name__ == "__main__":
     if not args.test:
         model = resnet18(weights="IMAGENET1K_V1")
         model.fc = Sequential(
-            Linear(in_features = 512, out_features=1, bias=True),
-            Sigmoid()
+            Linear(in_features = 512, out_features=2, bias=True),
+            Softmax(dim=1)
         )
 
         model.to(device)
 
-        loss_fn = torch.nn.BCELoss()
+        loss_fn = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
         progress_bar = tqdm(dataloader)
@@ -122,8 +124,8 @@ if __name__ == "__main__":
     else:
         model = resnet18()
         model.fc = Sequential(
-            Linear(in_features = 512, out_features=1, bias=True),
-            Sigmoid()
+            Linear(in_features = 512, out_features=2, bias=True),
+            Softmax(dim=1)
         )
 
         model.load_state_dict(torch.load(model_path))
@@ -162,7 +164,7 @@ if __name__ == "__main__":
                 plt.imshow(torch.einsum('chw->hwc', image.to("cpu")))
                 plt.subplot(212)
                 plt.imshow(visualization)
-                plt.title(pred)
+                plt.title(f"cat: {pred[0]:.2f}, dog: {pred[1]:.2f}")
                 plt.show()
 
 
