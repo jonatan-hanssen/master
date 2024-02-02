@@ -4,7 +4,8 @@ from torchvision import transforms
 from tqdm import tqdm
 import argparse
 import matplotlib
-matplotlib.use('tkagg')
+
+matplotlib.use("tkagg")
 import matplotlib.pyplot as plt
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
@@ -17,11 +18,13 @@ from PIL import Image
 from torch.nn import Linear, Sequential, Sigmoid, Softmax
 
 dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-house_dataset_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "house_data")
+house_dataset_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "house_data"
+)
 model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model.pt")
 
-class CatDogaset(Dataset):
 
+class CatDogaset(Dataset):
     def __init__(self, path):
         self.path = path
         cats = os.listdir(os.path.join(self.path, "cat"))
@@ -48,15 +51,19 @@ class CatDogaset(Dataset):
 
         image = Image.open(img_path)
 
-        if image.mode != 'RGB':
+        if image.mode != "RGB":
             image = image.convert("RGB")
 
-        preprocess = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        preprocess = transforms.Compose(
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
         image_tensor = preprocess(image)
 
@@ -64,14 +71,11 @@ class CatDogaset(Dataset):
 
         return image_tensor, truth_tensor
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-t", "--test", action="store_true", help="Test"
-    )
-    parser.add_argument(
-        "-o", "--house", action="store_true", help="House dataset"
-    )
+    parser.add_argument("-t", "--test", action="store_true", help="Test")
+    parser.add_argument("-o", "--house", action="store_true", help="House dataset")
 
     args = parser.parse_args()
 
@@ -104,13 +108,11 @@ if __name__ == "__main__":
             labels = labels.to(device)
             labels = labels.float()
 
-
             pred = model(batch)
             pred = pred.squeeze()
             loss = loss_fn(pred, labels)
 
             progress_bar.set_description(f"Loss: {loss:.5f}")
-
 
             loss.backward()
 
@@ -135,14 +137,12 @@ if __name__ == "__main__":
 
         cam = GradCAM(model=model, target_layers=target_layers)
 
-
         for i, data in enumerate(dataloader):
             batch, labels = data
 
             batch = batch.to(device)
             labels = labels.to(device)
             labels = labels.float()
-
 
             grayscale_cam = cam(input_tensor=batch, aug_smooth=True, eigen_smooth=True)
             preds = model(batch)
@@ -151,22 +151,29 @@ if __name__ == "__main__":
             for image, pred, cam_img in zip(batch, preds, grayscale_cam):
                 # image = image.to("cpu")
 
+                visualization = show_cam_on_image(
+                    np.float32(torchvision.transforms.ToPILImage()(image)) / 255,
+                    cam_img,
+                    use_rgb=True,
+                )
 
-                visualization = show_cam_on_image(np.float32(torchvision.transforms.ToPILImage()(image)) / 255, cam_img, use_rgb=True)
-
-                unnormalize = transforms.Compose([
-                    transforms.Normalize(mean=[0., 0., 0.], std=[1/0.229, 1/0.224, 1/0.225]),
-                    transforms.Normalize(mean = [-0.485, -0.456, -0.406], std=[1, 1, 1])
-                ])
+                unnormalize = transforms.Compose(
+                    [
+                        transforms.Normalize(
+                            mean=[0.0, 0.0, 0.0], std=[1 / 0.229, 1 / 0.224, 1 / 0.225]
+                        ),
+                        transforms.Normalize(
+                            mean=[-0.485, -0.456, -0.406], std=[1, 1, 1]
+                        ),
+                    ]
+                )
                 image = unnormalize(image)
 
                 plt.subplot(211)
-                plt.imshow(torch.einsum('chw->hwc', image.to("cpu")))
+                plt.imshow(torch.einsum("chw->hwc", image.to("cpu")))
                 plt.subplot(212)
                 plt.imshow(visualization)
                 plt.title(f"cat: {pred[0]:.2f}, dog: {pred[1]:.2f}")
                 plt.show()
 
-
             break
-
