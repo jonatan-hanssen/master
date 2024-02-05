@@ -1,8 +1,8 @@
 # Explainable AI for Data Outlier Detection
 
-## Overordnet
+## Overordnet mål
 
-Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og state of the art OOD detectors og se om man får bedre resultater.
+Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et datasett med kjente out of distribution punkter, kjør XAI OOD detector og state of the art OOD detectors og se om man får bedre resultater.
 
 ## Lesestoff
 
@@ -52,12 +52,12 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 
 ### Out of distribution detection
 
-- Covariate shift, ikke semantic shift. Ingen nye klasser.
+- Vårt tilfelle: Covariate shift, ikke semantic shift. Altså: ingen nye klasser, men heller datapunkter som er litt annerledes fordi de f.eks er fra en kvinne når datasettet har hovedsaklig menn
 - Ulike metoder: VOS, ViM, SMOOD, ODIN, OODL, LC
 
 ## Ideer
 
-- Bare kjøre outlier detection på resultatet av Grad-CAM, LRP eller noe 
+- Kjøre vanlige outlier detection algoritmer på resultatet av Grad-CAM, LRP eller andre saliency maps
 
 ## Tester
 
@@ -69,4 +69,4 @@ Ha et datasett med kjente out of distribution punkter, kjør XAI OOD detector og
 
 ![ID Grad-CAM](images/ood.png)
 
-Dette ser ut til å være for lav oppløsning til å gi så veldig mye informasjon
+Dette ser ut til å være for lav oppløsning til å gi så veldig mye informasjon.
