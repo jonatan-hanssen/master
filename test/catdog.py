@@ -7,7 +7,7 @@ import matplotlib
 
 matplotlib.use("tkagg")
 import matplotlib.pyplot as plt
-from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam import GradCAM, GradCAMPlusPlus
 from pytorch_grad_cam.utils.image import show_cam_on_image
 import torchvision
 
@@ -24,13 +24,43 @@ house_dataset_path = os.path.join(
 model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model.pt")
 
 
-class CatDogaset(Dataset):
-    def __init__(self, path):
+class CatDogDataset(Dataset):
+    def __init__(self, path, use_outliers=False):
         self.path = path
-        cats = os.listdir(os.path.join(self.path, "cat"))
-        dogs = os.listdir(os.path.join(self.path, "dog"))
 
-        cats = [(cat, 1) for cat in cats]
+        if use_outliers:
+            outlier_dirs = os.listdir(os.path.join(self.path, "outliers"))
+
+            outliers = list()
+
+            for outlier_dir in outlier_dirs:
+                files = os.listdir(os.path.join(self.path, "outliers", outlier_dir))
+
+                files = [os.path.join(self.path, "outliers", outlier_dir, file) for file in files]
+
+
+                outliers += files
+
+            outliers = [(outlier, 0) for outlier in outliers]
+            self.data = outliers
+            return
+
+
+
+        cats = os.listdir(os.path.join(self.path, "cat"))
+        cats = [(os.path.join(self.path, "cat", cat), 1) for cat in cats]
+
+        dog_breed_dirs = os.listdir(os.path.join(self.path, "dog"))
+
+        dogs = list()
+
+        for dog_breed_dir in dog_breed_dirs:
+            files = os.listdir(os.path.join(self.path, "dog", dog_breed_dir))
+
+            files = [os.path.join(self.path, "dog", dog_breed_dir, file) for file in files]
+            dogs += files
+
+
         dogs = [(dog, 0) for dog in dogs]
 
         self.data = cats + dogs
@@ -42,12 +72,7 @@ class CatDogaset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_name, is_cat = self.data[idx]
-
-        if is_cat:
-            img_path = os.path.join(self.path, "cat", img_name)
-        else:
-            img_path = os.path.join(self.path, "dog", img_name)
+        img_path, is_cat = self.data[idx]
 
         image = Image.open(img_path)
 
@@ -75,15 +100,15 @@ class CatDogaset(Dataset):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--test", action="store_true", help="Test")
-    parser.add_argument("-o", "--house", action="store_true", help="House dataset")
+    parser.add_argument("-o", "--outliers", action="store_true", help="Use outliers dataset")
 
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    pathypath = house_dataset_path if args.house else dataset_path
 
-    dataset = CatDogaset(pathypath)
+    dataset = CatDogDataset(dataset_path, use_outliers=args.outliers)
+
     dataloader = DataLoader(dataset, batch_size=10, shuffle=True)
 
     if not args.test:
@@ -133,9 +158,11 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(model_path))
         model.to(device)
 
+        # print(model)
+
         target_layers = [model.layer4[-1]]
 
-        cam = GradCAM(model=model, target_layers=target_layers)
+        cam = GradCAMPlusPlus(model=model, target_layers=target_layers)
 
         for i, data in enumerate(dataloader):
             batch, labels = data
@@ -148,14 +175,11 @@ if __name__ == "__main__":
             preds = model(batch)
             preds = preds.squeeze()
 
+            i = 0
             for image, pred, cam_img in zip(batch, preds, grayscale_cam):
+                i += 1
                 # image = image.to("cpu")
 
-                visualization = show_cam_on_image(
-                    np.float32(torchvision.transforms.ToPILImage()(image)) / 255,
-                    cam_img,
-                    use_rgb=True,
-                )
 
                 unnormalize = transforms.Compose(
                     [
@@ -169,11 +193,20 @@ if __name__ == "__main__":
                 )
                 image = unnormalize(image)
 
-                plt.subplot(211)
+                visualization = show_cam_on_image(
+                    np.float32(torchvision.transforms.ToPILImage()(image)) / 255,
+                    cam_img,
+                    use_rgb=True,
+                    image_weight=0.6,
+                )
+
+                plt.subplot(130 + i)
                 plt.imshow(torch.einsum("chw->hwc", image.to("cpu")))
-                plt.subplot(212)
+                # plt.subplot(212)
                 plt.imshow(visualization)
                 plt.title(f"cat: {pred[0]:.2f}, dog: {pred[1]:.2f}")
-                plt.show()
+                if i == 3:
+                    plt.show()
+                    i = 0
 
             break
