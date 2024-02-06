@@ -45,7 +45,7 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
     - Brukes ofte i medisin
     - Lav oppløsning, bruker som oftest siste konvolusjonelle lag av CNN som probably har mange filtere men hver av dem lav oppløsning
         - Men man kan bruke hvilket som helst lag så man kan bruke et tidligere lag med høyere oppløsning
-- Layer Wise Relevance Propagation
+- Layer Wise Relevance Propagation (LRP)
     - Pixel wise saliency maps, så mer presis enn CAM
 - Meaningful perturbation
 - Hausdorff distance
@@ -63,10 +63,20 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 
 ### In distribution Grad-CAM++
 
-![ID Grad-CAM](images/id.png)
+![ID Grad-CAM](images/id_cam.png)
 
 ### Out of distribution Grad-CAM++
 
-![ID Grad-CAM](images/ood.png)
+![OOD Grad-CAM](images/ood_cam.png)
 
 Dette ser ut til å være for lav oppløsning til å gi så veldig mye informasjon.
+
+### In distribution LRP
+
+![ID LRP](images/id_lrp.png)
+
+### Out of distribution LRP
+
+![OOD LRP](images/ood_lrp.png)
+
+Kanskje mer informasjon å hente her.
