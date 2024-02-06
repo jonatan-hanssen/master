@@ -5,13 +5,15 @@ from tqdm import tqdm
 import argparse
 import matplotlib
 
+from src.lrp import LRPModel
+
 matplotlib.use("tkagg")
 import matplotlib.pyplot as plt
 from pytorch_grad_cam import GradCAM, GradCAMPlusPlus
 from pytorch_grad_cam.utils.image import show_cam_on_image
 import torchvision
 
-from torchvision.models import resnet18
+from torchvision.models import resnet18, vgg16
 
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
@@ -112,11 +114,14 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=10, shuffle=True)
 
     if not args.test:
-        model = resnet18(weights="IMAGENET1K_V1")
-        model.fc = Sequential(
-            Linear(in_features = 512, out_features=2, bias=True),
-            Softmax(dim=1)
-        )
+        # model = resnet18(weights="IMAGENET1K_V1")
+        # model.fc = Sequential(
+        #     Linear(in_features = 512, out_features=2, bias=True),
+        #     Softmax(dim=1)
+        # )
+
+        model = vgg16(weights="IMAGENET1K_V1")
+        model.classifier[-1] = Linear(in_features = 4096, out_features=2, bias=True)
 
         model.to(device)
 
@@ -149,20 +154,17 @@ if __name__ == "__main__":
                 torch.save(model.state_dict(), model_path)
 
     else:
-        model = resnet18()
-        model.fc = Sequential(
-            Linear(in_features = 512, out_features=2, bias=True),
-            Softmax(dim=1)
-        )
+        model = vgg16()
+        model.classifier[-1] = Linear(in_features = 4096, out_features=2, bias=True)
+        # print(model)
 
         model.load_state_dict(torch.load(model_path))
         model.to(device)
 
-        # print(model)
-
-        target_layers = [model.layer4[-1]]
+        target_layers = [model.features[-1]]
 
         cam = GradCAMPlusPlus(model=model, target_layers=target_layers)
+        lrp_model = LRPModel(model)
 
         for i, data in enumerate(dataloader):
             batch, labels = data
@@ -172,14 +174,16 @@ if __name__ == "__main__":
             labels = labels.float()
 
             grayscale_cam = cam(input_tensor=batch, aug_smooth=True, eigen_smooth=True)
+            relevances = lrp_model.forward(batch)
+
+
             preds = model(batch)
             preds = preds.squeeze()
 
             i = 0
-            for image, pred, cam_img in zip(batch, preds, grayscale_cam):
+            for image, pred, cam_img, relevance in zip(batch, preds, grayscale_cam, relevances):
                 i += 1
                 # image = image.to("cpu")
-
 
                 unnormalize = transforms.Compose(
                     [
@@ -200,10 +204,14 @@ if __name__ == "__main__":
                     image_weight=0.6,
                 )
 
-                plt.subplot(130 + i)
-                plt.imshow(torch.einsum("chw->hwc", image.to("cpu")))
+                plt.subplot(230 + i)
+                # plt.imshow(torch.einsum("chw->hwc", image.to("cpu")))
                 # plt.subplot(212)
                 plt.imshow(visualization)
+
+                plt.subplot(233 + i)
+                plt.imshow(relevance, vmax=torch.max(relevance) / 3)
+                pred = torch.nn.functional.softmax(pred, dim=0)
                 plt.title(f"cat: {pred[0]:.2f}, dog: {pred[1]:.2f}")
                 if i == 3:
                     plt.show()
