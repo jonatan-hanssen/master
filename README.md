@@ -39,6 +39,10 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
     - Uklart om man kan skille endoskopene, sannsynligvis ikke
 - Mulighet: ta annet datasett som da kan være OOD
 
+#### Andre datasett
+
+- ViM-paperet lagde et datsett OpenImage-O, som ser relevant ut
+
 ### XAI
 
 - Gradient Class Activation Mapping (Grad-CAM)
@@ -54,10 +58,12 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 
 - Vårt tilfelle: Covariate shift, ikke semantic shift. Altså: ingen nye klasser, men heller datapunkter som er litt annerledes fordi de f.eks er fra en kvinne når datasettet har hovedsaklig menn
 - Ulike metoder: VOS, ViM, SMOOD, ODIN, OODL, LC
+- Virtual Logit Matching (ViM), bruker features og ikke bare logitsene, og kan dermed være noe man kan bygge videre på, om man bruker f.eks Grad-CAM verdier istedenfor features
 
 ## Ideer
 
 - Kjøre vanlige outlier detection algoritmer på resultatet av Grad-CAM, LRP eller andre saliency maps
+- Modifiser ViM til å bruke saliency maps
 
 ## Tester
 
