@@ -1,108 +1,91 @@
-@book{brunton,
-    title={Data-Driven Science and Engineering},
-    author={Steven L. Brunton and J. Nathan Kutz},
-    publisher={Cambridge Univeristy Press},
-    address={Cambridge, UK},
-    year={2022},
-}
+@article{gradcam,
+   title={Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization},
+   volume={128},
+   ISSN={1573-1405},
+   url={http://dx.doi.org/10.1007/s11263-019-01228-7},
+   DOI={10.1007/s11263-019-01228-7},
+   number={2},
+   journal={International Journal of Computer Vision},
+   publisher={Springer Science and Business Media LLC},
+   author={Selvaraju, Ramprasaath R. and Cogswell, Michael and Das, Abhishek and Vedantam, Ramakrishna and Parikh, Devi and Batra, Dhruv},
+   year={2019},
+   month=oct, pages={336–359} }
 
-@misc{ellm,
-      title={Guiding Pretraining in Reinforcement Learning with Large Language Models}, 
-      author={Yuqing Du and Olivia Watkins and Zihan Wang and Cédric Colas and Trevor Darrell and Pieter Abbeel and Abhishek Gupta and Jacob Andreas},
-      year={2023},
-      eprint={2302.06692},
+@misc{cam,
+      title={Learning Deep Features for Discriminative Localization}, 
+      author={Bolei Zhou and Aditya Khosla and Agata Lapedriza and Aude Oliva and Antonio Torralba},
+      year={2015},
+      eprint={1512.04150},
       archivePrefix={arXiv},
-      primaryClass={cs.LG}
+      primaryClass={cs.CV}
 }
 
-@misc{omni,
-      title={OMNI: Open-endedness via Models of human Notions of Interestingness}, 
-      author={Jenny Zhang and Joel Lehman and Kenneth Stanley and Jeff Clune},
-      year={2023},
-      eprint={2306.01711},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI}
+@article{lrp,
+    doi = {10.1371/journal.pone.0130140},
+    author = {Bach, Sebastian AND Binder, Alexander AND Montavon, Grégoire AND Klauschen, Frederick AND Müller, Klaus-Robert AND Samek, Wojciech},
+    journal = {PLOS ONE},
+    publisher = {Public Library of Science},
+    title = {On Pixel-Wise Explanations for Non-Linear Classifier Decisions by Layer-Wise Relevance Propagation},
+    year = {2015},
+    month = {07},
+    volume = {10},
+    url = {https://doi.org/10.1371/journal.pone.0130140},
+    pages = {1-46},
+    abstract = {Understanding and interpreting classification decisions of automated image classification systems is of high value in many applications, as it allows to verify the reasoning of the system and provides additional information to the human expert. Although machine learning methods are solving very successfully a plethora of tasks, they have in most cases the disadvantage of acting as a black box, not providing any information about what made them arrive at a particular decision. This work proposes a general solution to the problem of understanding classification decisions by pixel-wise decomposition of nonlinear classifiers. We introduce a methodology that allows to visualize the contributions of single pixels to predictions for kernel-based classifiers over Bag of Words features and for multilayered neural networks. These pixel contributions can be visualized as heatmaps and are provided to a human expert who can intuitively not only verify the validity of the classification decision, but also focus further analysis on regions of potential interest. We evaluate our method for classifiers trained on PASCAL VOC 2009 images, synthetic image data containing geometric shapes, the MNIST handwritten digits data set and for the pre-trained ImageNet model available as part of the Caffe open source package.},
+    number = {7},
 }
 
-@inproceedings{idm,
- author = {Li, Shuang and Puig, Xavier and Paxton, Chris and Du, Yilun and Wang, Clinton and Fan, Linxi and Chen, Tao and Huang, De-An and Aky\"{u}rek, Ekin and Anandkumar, Anima and Andreas, Jacob and Mordatch, Igor and Torralba, Antonio and Zhu, Yuke},
- booktitle = {Advances in Neural Information Processing Systems},
- editor = {S. Koyejo and S. Mohamed and A. Agarwal and D. Belgrave and K. Cho and A. Oh},
- pages = {31199--31212},
- publisher = {Curran Associates, Inc.},
- title = {Pre-Trained Language Models for Interactive Decision-Making},
- url = {https://proceedings.neurips.cc/paper_files/paper/2022/file/ca3b1f24fc0238edf5ed1ad226b9d655-Paper-Conference.pdf},
- volume = {35},
- year = {2022}
+@article{xaioverview,
+title = {Explainable artificial intelligence (XAI) in deep learning-based medical image analysis},
+journal = {Medical Image Analysis},
+volume = {79},
+pages = {102470},
+year = {2022},
+issn = {1361-8415},
+doi = {https://doi.org/10.1016/j.media.2022.102470},
+url = {https://www.sciencedirect.com/science/article/pii/S1361841522001177},
+author = {Bas H.M. {van der Velden} and Hugo J. Kuijf and Kenneth G.A. Gilhuijs and Max A. Viergever},
+keywords = {Explainable artificial intelligence, Interpretable deep learning, Medical image analysis, Deep learning, Survey},
+abstract = {With an increase in deep learning-based methods, the call for explainability of such methods grows, especially in high-stakes decision making areas such as medical image analysis. This survey presents an overview of explainable artificial intelligence (XAI) used in deep learning-based medical image analysis. A framework of XAI criteria is introduced to classify deep learning-based medical image analysis methods. Papers on XAI techniques in medical image analysis are then surveyed and categorized according to the framework and according to anatomical location. The paper concludes with an outlook of future opportunities for XAI in medical image analysis.}
 }
 
-@misc{survey,
-      title={A Survey of Reinforcement Learning Informed by Natural Language}, 
-      author={Jelena Luketina and Nantas Nardelli and Gregory Farquhar and Jakob Foerster and Jacob Andreas and Edward Grefenstette and Shimon Whiteson and Tim Rocktäschel},
-      year={2019},
-      eprint={1906.03926},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+
+@Article{oodoverview,
+AUTHOR = {Cui, Peng and Wang, Jinjia},
+TITLE = {Out-of-Distribution (OOD) Detection Based on Deep Learning: A Review},
+JOURNAL = {Electronics},
+VOLUME = {11},
+YEAR = {2022},
+NUMBER = {21},
+ARTICLE-NUMBER = {3500},
+URL = {https://www.mdpi.com/2079-9292/11/21/3500},
+ISSN = {2079-9292},
+ABSTRACT = {Out-of-Distribution (OOD) detection separates ID (In-Distribution) data and OOD data from input data through a model. This problem has attracted increasing attention in the area of machine learning. OOD detection has achieved good intrusion detection, fraud detection, system health monitoring, sensor network event detection, and ecosystem interference detection. The method based on deep learning is the most studied in OOD detection. In this paper, related basic information on OOD detection based on deep learning is described, and we categorize methods according to the training data. OOD detection is divided into supervised, semisupervised, and unsupervised. Where supervised data are used, the methods are categorized according to technical means: model-based, distance-based, and density-based. Each classification is introduced with background, examples, and applications. In addition, we present the latest applications of OOD detection based on deep learning and the problems and expectations in this field.},
+DOI = {10.3390/electronics11213500}
 }
 
-@article{minigrid,
-  author       = {Maxime Chevalier-Boisvert and Bolun Dai and Mark Towers and Rodrigo de Lazcano and Lucas Willems and Salem Lahlou and Suman Pal and Pablo Samuel Castro and Jordan Terry},
-  title        = {Minigrid \& Miniworld: Modular \& Customizable Reinforcement Learning Environments for Goal-Oriented Tasks},
-  journal      = {CoRR},
-  volume       = {abs/2306.13831},
-  year         = {2023},
-}
-
-@misc{sparks,
-      title={Sparks of Artificial General Intelligence: Early experiments with GPT-4}, 
-      author={Sébastien Bubeck and Varun Chandrasekaran and Ronen Eldan and Johannes Gehrke and Eric Horvitz and Ece Kamar and Peter Lee and Yin Tat Lee and Yuanzhi Li and Scott Lundberg and Harsha Nori and Hamid Palangi and Marco Tulio Ribeiro and Yi Zhang},
-      year={2023},
-      eprint={2303.12712},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
-}
-
-@misc{llama,
-      title={Llama 2: Open Foundation and Fine-Tuned Chat Models}, 
-      author={Hugo Touvron and Louis Martin and Kevin Stone and Peter Albert and Amjad Almahairi and Yasmine Babaei and Nikolay Bashlykov and Soumya Batra and Prajjwal Bhargava and Shruti Bhosale and Dan Bikel and Lukas Blecher and Cristian Canton Ferrer and Moya Chen and Guillem Cucurull and David Esiobu and Jude Fernandes and Jeremy Fu and Wenyin Fu and Brian Fuller and Cynthia Gao and Vedanuj Goswami and Naman Goyal and Anthony Hartshorn and Saghar Hosseini and Rui Hou and Hakan Inan and Marcin Kardas and Viktor Kerkez and Madian Khabsa and Isabel Kloumann and Artem Korenev and Punit Singh Koura and Marie-Anne Lachaux and Thibaut Lavril and Jenya Lee and Diana Liskovich and Yinghai Lu and Yuning Mao and Xavier Martinet and Todor Mihaylov and Pushkar Mishra and Igor Molybog and Yixin Nie and Andrew Poulton and Jeremy Reizenstein and Rashi Rungta and Kalyan Saladi and Alan Schelten and Ruan Silva and Eric Michael Smith and Ranjan Subramanian and Xiaoqing Ellen Tan and Binh Tang and Ross Taylor and Adina Williams and Jian Xiang Kuan and Puxin Xu and Zheng Yan and Iliyan Zarov and Yuchen Zhang and Angela Fan and Melanie Kambadur and Sharan Narang and Aurelien Rodriguez and Robert Stojnic and Sergey Edunov and Thomas Scialom},
-      year={2023},
-      eprint={2307.09288},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
-}
-
-@online{ethics,
-  author = {Cherie Poland and Jiahao Chen and Lester Mackey and Sasha Luccioni and William Isaac and Deborah Raji and Samy Bengio and Kate Crawford and Jeanne Fromer and Iason Gabriel and Amanda Levendowski and and Marc'Aurelio Ranzato},
-  title = {NeurIPS 2023 Ethics Guidelines for Reviewers},
-  year = 2023,
-  url = {https://nips.cc/Conferences/2023/EthicsGuidelinesForReviewers}
-}
-
-@misc{ppo,
-      title={Proximal Policy Optimization Algorithms},
-      author={John Schulman and Filip Wolski and Prafulla Dhariwal and Alec Radford and Oleg Klimov},
+@misc{doshivelez,
+      title={Towards A Rigorous Science of Interpretable Machine Learning}, 
+      author={Finale Doshi-Velez and Been Kim},
       year={2017},
-      eprint={1707.06347},
+      eprint={1702.08608},
       archivePrefix={arXiv},
-      primaryClass={cs.LG}
+      primaryClass={stat.ML}
 }
 
-@misc{grounding,
-      title={Grounding Large Language Models in Interactive Environments with Online Reinforcement Learning}, 
-      author={Thomas Carta and Clément Romac and Thomas Wolf and Sylvain Lamprier and Olivier Sigaud and Pierre-Yves Oudeyer},
-      year={2023},
-      eprint={2302.02662},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@book{molnar,
+  title      = {Interpretable Machine Learning},
+  author     = {Christoph Molnar},
+  year       = {2022},
+  subtitle   = {A Guide for Making Black Box Models Explainable},
+  edition    = {2},
+  url        = {https://christophm.github.io/interpretable-ml-book}
 }
 
-@inproceedings{bert,
-  title = "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks",
-  author = "Reimers, Nils and Gurevych, Iryna",
-  booktitle = "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing",
-  month = "11",
-  year = "2019",
-  publisher = "Association for Computational Linguistics",
-  url = "https://arxiv.org/abs/1908.10084",
+@online{gdpr,
+  title = {Article 71: European Data Protection Board},
+  author = {{European Union}},
+  year = {2016},
+  url = {https://www.privacy-regulation.eu/en/r71.htm},
+  note = {Accessed: February 13, 2024}
 }
-
