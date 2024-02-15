@@ -26,6 +26,7 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 - Wickstrøm et Al. [*Uncertainty and interpretability in convolutional neural networks for semantic segmentation of colorectal polyps*](https://www.sciencedirect.com/science/article/pii/S1361841519301574). (2019).
 - Du et Al. [*VOS: Learning What You Don’t Know By Virtual Outlier synthesis*](https://arxiv.org/pdf/2202.01197.pdf). (2020).
 - Liu et Al. [*Energy-based Out-of-distribution Detection*](https://arxiv.org/pdf/2010.03759.pdf). (2021).
+- G. Schwalbe & B. Finzel. [*A comprehensive taxonomy for explainable artificial intelligence: a systematic survey of surveys on methods and concepts*](https://link.springer.com/article/10.1007/s10618-022-00867-8). (2023)
 
 
 ## Konsepter
