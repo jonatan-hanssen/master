@@ -1,5 +1,7 @@
 # Explainable AI for Data Outlier Detection
 
+Essay ligger [her](./essay/essay.pdf).
+
 ## Overordnet mål
 
 Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et datasett med kjente out of distribution punkter, kjør XAI OOD detector og state of the art OOD detectors og se om man får bedre resultater.
@@ -27,6 +29,8 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 - Du et Al. [*VOS: Learning What You Don’t Know By Virtual Outlier synthesis*](https://arxiv.org/pdf/2202.01197.pdf). (2020).
 - Liu et Al. [*Energy-based Out-of-distribution Detection*](https://arxiv.org/pdf/2010.03759.pdf). (2021).
 - G. Schwalbe & B. Finzel. [*A comprehensive taxonomy for explainable artificial intelligence: a systematic survey of surveys on methods and concepts*](https://link.springer.com/article/10.1007/s10618-022-00867-8). (2023)
+- D. Hendrycks and K. Gimpel. [*A baseline for detecting misclassified and out-of-distribution examples in neural networks*](https://arxiv.org/pdf/1610.02136.pdf). (2017)
+- Liang et Al. [*Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks*](https://arxiv.org/pdf/1706.02690.pdf). (2018)
 
 
 ## Konsepter
