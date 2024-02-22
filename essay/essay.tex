@@ -5,6 +5,7 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
+\usepackage{bm}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{tabularx}
@@ -31,17 +32,18 @@ jonatahh@ifi.uio.no}
 
 
 % list of acronyms
-
-
-\begin{abstract}
-
 % \acro{CNN}{Convolutional Neural Network}
 % \acro{XAI}{Explainable Artificial Intelligence}
 % \acro{ML}{Machine Learning}
 % \acro{DL}{Deep Learning}
 % \acro{DL}{Deep Learning}
 
-This essay covers a wide range of contemporary methods within the fields of Explainable Artificial Intelligence (XAI) and Out-of-Distribution (OOD) detection.
+
+\begin{abstract}
+
+
+Machine Learning in general and Deep Learning specifically has seen an impressive rise in performance in the last decade, leading to widespread adoption for a variety of different tasks and fields. However, the use of DL methods is not without problems, especially when used in safety-critical applications. Two of these problems are the inherent inexplainability of DL models, and their inability to detect when a data point is too different from their training data and thus unlikely to be predicted correctly by the model. These shortcomings give rise to the fields of Explainable Artificial Intelligence (XAI) and Out-of-Distribution (OOD) Detection. In this essay, we shall give a short introduction to these fields and look in detail at a selection of methods from both fields.
+
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -173,8 +175,7 @@ The first distinction to make in OOD detection tasks is whether an OOD sample is
 \subsection{Methods}
 
 This section will follow the same outline as section \ref{xai_intro}; firstly, the overarching categories of methods will be discussed, followed by a more detailed look at a selection of specific methods within the field.
-
-\subsection{Overview of Methods}
+\\
 
 The field of OOD is separated into four categories of methods \cite{oodoverview}:
 
@@ -185,9 +186,84 @@ The field of OOD is separated into four categories of methods \cite{oodoverview}
   \item Reconstruction-based methods
 \end{itemize}
 
+Below follows a short explanation of each of the methods.
+
 \subsubsection{Classification-based methods}
 
-Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor 
+Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. There are several other state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, we shall devote the majority of section \ref{ood_specific} to classification-based methods.
+
+\subsubsection{Density-based methods}
+
+Density-based methods explicitly try to model the in-distribution \cite{oodoverview}, which is then used to detect outliers in low likelihood regions. Although the idea is intuitive, learning the distribution of the data set can often be prohibitively expensive, and thus these methods often lag behind classification-based methods \cite{oodoverview}.
+
+\subsubsection{Distance-based methods}
+
+Distance-based methods attempt to detect OOD samples by calculating their distance to ID samples. Many different distance measures are used, such as Mahalanobis distance to estimated Gaussian distributions, cosine distance to the first singular vector of the data set or Euclidean distance in an embedding space.
+
+\subsubsection{Reconstruction-based methods}
+
+Reconstruction-based methods are based on encoder-decoder frameworks, where the core idea is that the model will be much worse at reconstructing OOD data than ID. By measuring the reconstruction loss, we can detect OOD samples.
+
+\subsection{Specific methods} \label{ood_specific}
+
+Below follows a more detailed look a selection of specific OOD detection methods.
+
+\subsubsection{Baseline model} \label{ood_baseline}
+
+The baseline model created by \cite{oodbaseline} is extremely simple, yet effective. It simply compares the softmax score the predicted class to a threshold, and labels it as OOD if it falls below this threshold. This works reasonably well, because the softmax scores for ID data generally is higher than for OOD data. However, such as simple method has its shortcomings, and there are many ways to improve the method, as will be shown in the sections that follow.
+
+\subsubsection{Out-of-Distribution Detector for Neural Networks (ODIN)} \label{ood_odin}
+
+\cite{odin} improves on the work of \cite{oodbaseline} by introducing two simple modifications to the method which amplify the difference between the softmax score of ID and OOD samples. Firstly, they alter the input image slightly by adding small perturbations based on the gradients of the cross-entropy loss, as shown in equation \ref{perturb}
+
+\begin{equation}
+\tilde{\bm{x}} = \bm{x} - \epsilon \, \text{sign}(-\nabla_{\bm{x}} \text{log}_{\hat{y}}(\bm{x};T))
+\label{perturb}
+\end{equation}
+
+Secondly, they add temperature scaling to the softmax calculation, as shown in equation \ref{softmaxtemp}:
+
+\begin{equation}
+S_i(\tilde{\bm{x}} ; T) = \frac{\text{exp} \, (f_i(\tilde{\bm{x}})/T)}{\sum^N_{j=1} \text{exp} \, (f_j(\tilde{\bm{x}})/T)}
+\label{softmaxtemp}
+\end{equation}
+
+Thus, the OOD detector has the following form, given a threshold $\delta$:
+
+\begin{equation}
+g(\bm{x};\delta,T,\varepsilon)=\left\{\begin{matrix}1&\text{if} \max_{i}S(\tilde{\bm{x}};T)\le\delta,\\ 0&\text{if} \max_{i}S(\tilde{\bm{x}};T)>\delta. \end{matrix}\right.
+\label{fullodin}
+\end{equation}
+
+With these modifications, they report large improvements over the baseline \cite[4]{odin}. To explain this increase, we should look at the mathematical justification for these modifications.
+
+The idea behind perturbing the input image based on the gradient of the cross entropy loss is that ID data points have a higher gradient than OOD data in general. By moving our data point slightly in the direction of the negative gradient, we should expect to see a higher softmax score than if we did not move, regardless of whether the data point is ID or OOD. However, because the gradients are larger for ID data, we expect that the difference between the new softmax scores will be larger than they were before the perturbations, because the ID data point has moved further towards higher softmax values, as shown in \ref{softmaxmove}, taken from \cite[8]{odin}. Here we see two data points, one ID (red) and one OD (blue), which are both perturbed. As we can see, the resulting softmax scores after the perturbations differ more than before the perturbation.
+
+\begin{figure}[h]
+\includegraphics[width=3.25in]{figure/gradient.pdf}
+\caption{Figure taken from \cite{odin}, showing the difference in gradients between ID and OOD data points}
+\label{softmaxmove}
+\end{figure}
+
+The interpretation of the temperature scaling is slightly more complex. By performing a Taylor expansion and omitting third and higher orders, we can rewrite the softmax function as ${S\propto {(U_{1}-U_{2}/2T)/T}}$, with $U_1$ and $U_2$ defined as follows \cite[4]{odin}:
+
+
+\begin{equation}\label{eq::u1u2}
+U_{1}(\bm{x})=\frac{1}{N-1}\sum_{i\neq\hat{y}}[f_{\hat{y}}(\bm{x})-f_{i}(\bm{x})]
+\end{equation}
+
+\begin{equation}\label{eq::u1u2}
+U_{2}(\bm{x})=\frac{1}{N-1}\sum_{i\neq\hat{y}}[f_{\hat{y}}(\bm{x})-f_{i}(\bm{x})]^{2}
+\end{equation}
+
+
+
+
+
+\subsubsection{Virtual Logit Matching (ViM)}
+
+\subsubsection{Virtual Outlier Synthesis (VOS)}
+
 
 
 
