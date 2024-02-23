@@ -37,17 +37,7 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 
 ### Datasett
 
-- Det trengs både in distribution (ID) og out-of-distribution (OOD) data
-- Ideelt sett hadde man f.eks hatt ett datasett fra ett sykehus og ett fra ett annet
-    - Eller et datasett hvor man kunne tatt ut deler av det for å lage noe som er OOD, f.eks tatt ut alle av en viss alder
-- HyperKvasir er anonymisert data fra to sykehus, med bruk av to ulike endoskop
-    - Man kan definitivt ikke hente ut grupper av personer, da alt er anonymisert
-    - Uklart om man kan skille endoskopene, sannsynligvis ikke
-- Mulighet: ta annet datasett som da kan være OOD
-
-#### Andre datasett
-
-- ViM-paperet lagde et datsett OpenImage-O, som ser relevant ut
+- Semantic shift, så vi bruker bare noen klasser fra HyperKvasir som ID og andre som OOD.
 
 ### XAI
 
@@ -62,7 +52,6 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 
 ### Out of distribution detection
 
-- Vårt tilfelle: Covariate shift, ikke semantic shift. Altså: ingen nye klasser, men heller datapunkter som er litt annerledes fordi de f.eks er fra en kvinne når datasettet har hovedsaklig menn
 - Ulike metoder: VOS, ViM, SMOOD, ODIN, OODL, LC
 - Virtual Logit Matching (ViM), bruker features og ikke bare logitsene, og kan dermed være noe man kan bygge videre på, om man bruker f.eks Grad-CAM verdier istedenfor features
 
