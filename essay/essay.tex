@@ -288,7 +288,7 @@ By using the {\it Helmholtz free energy} measurement, we can get an energy score
   E(\*x;f)=- T\cdot \text{log}\sum_i^K e^{f_i(\*x)/T}.
 \end{align}
 
-The authors show that when training with negative loss likelihood loss, the optimization will reduce the free energy of ID data points, and that the difference  between ID and OOD energy scores is higher than the difference in softmax scores \cite{energy}. Thus, thresholding the free energy function is an effective way to separate ID and OOD data points. Furthermore, they also present a method for fine tuning a pre trained model using a loss function that is based on the energy score. By doing this, the gap between ID and OOD energy scores can be increased even further.
+The authors show that when training with negative log likelihood loss, the optimization will reduce the free energy of ID data points, and that the difference  between ID and OOD energy scores is higher than the difference in softmax scores \cite{energy}. Thus, thresholding the free energy function is an effective way to separate ID and OOD data points. Furthermore, they also present a method for fine tuning a pre trained model using a loss function that is based on the energy score. By doing this, the gap between ID and OOD energy scores can be increased even further.
 
 \subsubsection{Virtual Outlier Synthesis (VOS)}
 
@@ -299,6 +299,10 @@ In this lower dimension space, previously intractable methods are now less compu
 Using these outliers, they present a "unknown-aware training objective", which can be used during training to maximize the separability between ID and OOD data during inference.
 
 \subsubsection{Virtual Logit Matching (ViM)}
+
+\cite{vim} attempts to improve OOD detection by calculating a score based on the feature, the logit and the softmax probability, as opposed to just one of them. By looking at all three elements in conjunction they see an increase in performance over models which only rely on a single input source (such as the previously mentioned ODIN).
+
+To do this, they propose the Virtual Logit
 
 
 
