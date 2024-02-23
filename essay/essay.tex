@@ -42,7 +42,7 @@ jonatahh@ifi.uio.no}
 \begin{abstract}
 
 
-Machine Learning in general and Deep Learning specifically has seen an impressive rise in performance in the last decade, leading to widespread adoption for a variety of different tasks and fields. However, the use of DL methods is not without problems, especially when used in safety-critical applications. Two of these problems are the inherent inexplainability of DL models, and their inability to detect when a data point is too different from their training data and thus unlikely to be predicted correctly by the model. These shortcomings give rise to the fields of Explainable Artificial Intelligence (XAI) and Out-of-Distribution (OOD) Detection. In this essay, we shall give a short introduction to these fields and look in detail at a selection of methods from both fields.
+Machine Learning in general and Deep Learning specifically has seen an impressive rise in performance in the last decade, leading to widespread adoption for a variety of different tasks and fields. However, the use of DL methods is not without problems, especially when used in safety-critical applications. Two of these problems are the inherent inexplainability of DL models, and their inability to detect when a data point is too different from their training data and thus unlikely to be predicted correctly by the model. These shortcomings give rise to the fields of Explainable Artificial Intelligence (XAI) and Out-of-Distribution (OOD) Detection. In this essay, I will give a short introduction to these fields and look in detail at a selection of methods from both fields.
 
 \end{abstract}
 
@@ -58,15 +58,15 @@ Machine Learning generally, and Deep Learning specifically, have seen a tremendo
 
 However, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made. Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models.
 
-These two problems lead to the two fields of machine learning which we shall discuss in this essay. These are Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection.
+These two problems lead to the two fields of machine learning which I shall discuss in this essay. These are Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection.
 
 \subsection{Terminology}
 
 Before proceeding, this small section will go through the choice of terminology used in this paper.
 
-{\it Explainability} and {\it interpretability} are sometimes used to mean slightly different things, and some may place a distinction between {\it interpretable} or {\it explainable} machine learning. In this paper, we shall use the term {\it Explainable AI} broadly, and will not make this distinction.
+{\it Explainability} and {\it interpretability} are sometimes used to mean slightly different things, and some may place a distinction between {\it interpretable} or {\it explainable} machine learning. In this paper, I shall use the term {\it Explainable AI} broadly, and will not make this distinction.
 
-We assume the reader is familiar with both machine learning in general and deep learning specifically. Whenever we use the term {\it model}, we typically mean a neural network, or other ML models such as Decision Trees or Support Vector Machines. When we use the term {\it network}, we exclusively mean a neural network, and not any other ML model.
+I assume the reader is familiar with both machine learning in general and deep learning specifically. Whenever I use the term {\it model}, I typically mean a neural network, or other ML models such as Decision Trees or Support Vector Machines. When I use the term {\it network}, I exclusively mean a neural network, and not any other ML model.
 
 \section{Explainable AI} \label{xai_intro}
 
@@ -190,7 +190,7 @@ Below follows a short explanation of each of the methods.
 
 \subsubsection{Classification-based methods}
 
-Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. There are several other state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, we shall devote the majority of section \ref{ood_specific} to classification-based methods.
+Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. There are several other state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
 
 \subsubsection{Density-based methods}
 
@@ -238,6 +238,7 @@ g(\bm{x};\delta,T,\varepsilon)=\left\{\begin{matrix}1&\text{if} \max_{i}S(\tilde
 With these modifications, they report large improvements over the baseline \cite[4]{odin}. To explain this increase, we should look at the mathematical justification for these modifications.
 
 The idea behind perturbing the input image based on the gradient of the cross entropy loss is that ID data points have a higher gradient than OOD data in general. By moving our data point slightly in the direction of the negative gradient, we should expect to see a higher softmax score than if we did not move, regardless of whether the data point is ID or OOD. However, because the gradients are larger for ID data, we expect that the difference between the new softmax scores will be larger than they were before the perturbations, because the ID data point has moved further towards higher softmax values, as shown in \ref{softmaxmove}, taken from \cite[8]{odin}. Here we see two data points, one ID (red) and one OD (blue), which are both perturbed. As we can see, the resulting softmax scores after the perturbations differ more than before the perturbation.
+\\
 
 \begin{figure}[h]
 \includegraphics[width=3.25in]{figure/gradient.pdf}
@@ -245,7 +246,7 @@ The idea behind perturbing the input image based on the gradient of the cross en
 \label{softmaxmove}
 \end{figure}
 
-The interpretation of the temperature scaling is slightly more complex. By performing a Taylor expansion and omitting third and higher orders, we can rewrite the softmax function as ${S\propto {(U_{1}-U_{2}/2T)/T}}$, with $U_1$ and $U_2$ defined as follows \cite[4]{odin}:
+The interpretation of the temperature scaling is slightly more complex. By performing a Taylor expansion and omitting third and higher orders, we can rewrite the softmax score (i.e the value of the predicted class, the highest value) as ${S\propto {(U_{1}-U_{2}/2T)/T}}$, with $U_1$ and $U_2$ defined as follows \cite[4]{odin}:
 
 
 \begin{equation}\label{eq::u1u2}
@@ -256,15 +257,48 @@ U_{1}(\bm{x})=\frac{1}{N-1}\sum_{i\neq\hat{y}}[f_{\hat{y}}(\bm{x})-f_{i}(\bm{x})
 U_{2}(\bm{x})=\frac{1}{N-1}\sum_{i\neq\hat{y}}[f_{\hat{y}}(\bm{x})-f_{i}(\bm{x})]^{2}
 \end{equation}
 
+$\hat{y}$ is the predicted class, and is thus also the index for the highest value in $f(\bm{x})$. Thus, $U_1$ represents "the extent to which the largest unnormalized output deviates from the remaining outputs", while $U_2$ measures how the remaining outputs deviate from each other \cite[6]{odin}.
 
+\cite{odin} makes the two following observations with regards to these two values: Firstly, they find that the largest unnormalized output tends to deviate more for ID samples, making $U_1$ larger than for OOD samples, because the model is more confident in its prediction. Secondly, they find that $E[U_2|U_1]$ is larger for ID data samples than for OOD samples, which shows that ID samples have more separation in the remaining unnormalized inputs than OOD samples. 
 
+Returning to the Taylor approximated softmax score ${S\propto {(U_{1}-U_{2}/2T)/T}}$, we see that $U_1$ contributes to making the softmax score higher, while $U_2$ reduces the softmax score. Given that both these values are higher for ID data, we will want to reduce the impact of $U_2$ and increase the impact of $U_1$. As $U_1$ is divided by $T$, while $U_2$ is divided by $2T^2$, increasing the temperature achieves this, as $U_2$ will decrease much faster than $U_1$. Thus, we can see how an increased temperature increases the softmax scores for ID data, and thus increases the gap between softmax scores for ID and OOD samples, making them easier to differentiate.
 
+With these two modifications to the simple baseline proposed by \cite{oodbaseline}, \cite{odin} manages to increase the gap between the softmax scores of ID and OOD data and thus facilitates much more effective OOD detection.
 
-\subsubsection{Virtual Logit Matching (ViM)}
+\subsubsection{Energy Based OOD Detection}
+
+\cite{energy} proposes using an {\it energy score} as opposed to the softmax score. They show mathematically that "the softmax confidence score is a biased scoring function that is not aligned with the density of the inputs" \cite{energy}, and thus seek to use a different measurement which is better aligned with the probability density.
+
+An energy function is a function $E(\bm{x}) : \mathbb{R}^D \rightarrow \mathbb{R}$ which maps any data point into a non-probabilistic scalar called energy. Energy values can be converted to probabilities using the Gibbs distribution defined below (equation \ref{energy}):
+
+\begin{equation} \label{energy}
+    p(y \mid \*x) = \frac{e^{-E(\*x,y)/T}}{\int_{y'} e^{-E(\*x, y')/T}}
+    = \frac{e^{-E(\*x,y)/T}}{e^{-E(\*x)/T}},
+\end{equation}
+
+This equation is quite similar to the softmax function, and we can see that by defining $E(\bm{x}, y) = -f_y(x)$. We can write the Gibbs distribution as the normal softmax output of a neural network:
+
+\begin{equation}\label{eq:softmax}
+    p(y \mid \*x) = \frac{e^{f_y(\*x)/T}}{\sum_{i}^K e^{f_{i}(\*x)/T}},
+\end{equation}
+
+By using the {\it Helmholtz free energy} measurement, we can get an energy score for each data point given to the model, which can be used to detect OOD data points. Given that we define $E(\bm{x}, y) = -f_y(x)$, we can write the Helmholtz free energy $E(\bm{x})$ as:
+
+\begin{align}\label{eq:energy_softmax}
+  E(\*x;f)=- T\cdot \text{log}\sum_i^K e^{f_i(\*x)/T}.
+\end{align}
+
+The authors show that when training with negative loss likelihood loss, the optimization will reduce the free energy of ID data points, and that the difference  between ID and OOD energy scores is higher than the difference in softmax scores \cite{energy}. Thus, thresholding the free energy function is an effective way to separate ID and OOD data points. Furthermore, they also present a method for fine tuning a pre trained model using a loss function that is based on the energy score. By doing this, the gap between ID and OOD energy scores can be increased even further.
 
 \subsubsection{Virtual Outlier Synthesis (VOS)}
 
+Generating outliers to expose to the model during training is another way to reduce the model's confidence on OOD data. However, creating realistic OOD data points can be difficult, especially if the input space is of a high dimension, such as in image classification. \cite{vos} presents a more tractable method, which synthesizes outliers not in the input space, but in the feature space, which can be of a much lower dimensionality.
 
+In this lower dimension space, previously intractable methods are now less computationally expensive. To synthesize outliers, \cite{vos} simply estimate class conditional Gaussian distributions by computing empirical class means and covariances, and sample outliers from the class boundaries between these Gaussians.
+
+Using these outliers, they present a "unknown-aware training objective", which can be used during training to maximize the separability between ID and OOD data during inference.
+
+\subsubsection{Virtual Logit Matching (ViM)}
 
 
 
