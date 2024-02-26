@@ -59,6 +59,7 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 
 - Kjøre vanlige outlier detection algoritmer på resultatet av Grad-CAM, LRP eller andre saliency maps
 - Modifiser ViM til å bruke saliency maps
+    - Bytt ut feature delen av ViM med saliency maps istedenfor input image
 
 ## Tester
 
