@@ -59,9 +59,9 @@ These two problems lead to the two fields of machine learning which I shall disc
 
 Before proceeding, this small section will go through the choice of terminology used in this paper.
 
-{\it Explainability} and {\it interpretability} are sometimes used to mean slightly different things, and some may place a distinction between {\it interpretable} or {\it explainable} machine learning. In this paper, I shall use the term {\it Explainable AI} broadly, and will not make this distinction.
+{\it Explainability} and {\it interpretability} are sometimes used to mean slightly different things, and some may place a distinction between {\it interpretable} and {\it explainable} machine learning. In this paper, I shall use the term {\it Explainable AI} broadly, and will not make this distinction.
 
-I assume the reader is familiar with both machine learning in general and deep learning specifically. Whenever I use the term {\it model}, I typically mean a neural network, or other ML models such as Decision Trees or Support Vector Machines. When I use the term {\it network}, I exclusively mean a neural network, and not any other ML model.
+I assume the reader is familiar with both machine learning in general and deep learning specifically. Whenever I use the term {\it model}, I typically mean a neural network, or other ML models such as Decision Trees or Support Vector Machines. When I use the term {\it network}, I exclusively mean a neural network, and not any other ML model. This essay will primarily deal with methods applied to neural networks.
 
 \section{Explainable AI} \label{xai_intro}
 
@@ -79,7 +79,7 @@ This sections goes through three axes which define an XAI method:
 
 \begin{itemize}
   \item Intrinsically explainable models versus post hoc methods
-  \item Model dependence versus model agnostic methods
+  \item Model dependent versus model agnostic methods
   \item Global versus local explanations
 \end{itemize}
 
@@ -114,7 +114,7 @@ CAM is a relatively simple method to understand. It exploits the fact that vario
 Figure \ref{camimg} shows the process visually. From this we can see that the resulting Class Activation Map (bottom right) gives an intuitive explanation for why the image in the top left gives a high score for the presence of the class "Australian Terrier".
 
 \begin{figure}[h]
-\centerline{\includegraphics[width=3.25in]{figure/cam.png}}
+\centerline{\includegraphics[width=3.25in]{figure/cam.pdf}}
 \caption{Figure taken from \cite{cam}, showing the steps required to create a Class Activation Map}
 \label{camimg}
 \end{figure}
@@ -165,7 +165,7 @@ Intuitively, one might assume that distinguishing ID and OOD samples from each o
 
 \subsection{Semantic versus covariate shift}
 
-The first distinction to make in OOD detection tasks is whether an OOD sample is OOD because of {\it semantic} or {\it covariate} shift. Semantic shift refers to samples with different classes than the ones the model is trained on. A picture of a giraffe would represent a semantic shift for a model trained to differentiate between cats and dogs, as a giraffe does not belong to either the "dog" or "cat" class. Covariate shift refers to samples which come from a different distribution while still belonging to one of the classes of the original data set. A picture of a chihuahua could represent a covariate shift for the same cat-versus-dog model if the training data contained only other races of dogs. The detection of semantic shift, as opposed to covariate shift, is the main focus of most OOD detection tasks \cite[5]{oodoverview}. In many applications, it is expected that the model should be able to generalize its prediction to covariate-shifted data, and therefore the focus is on detecting semantic shift \cite[5]{oodoverview}. However, the field of medical image classification is one where detecting covariate shift is also important, as the model should only make predictions on data points which are very similar to its training data \cite[5]{oodoverview}.
+The first distinction to make in OOD detection tasks is whether an OOD sample is OOD because of {\it semantic} or {\it covariate} shift. Semantic shift refers to samples with different classes than the ones the model is trained on. A picture of a giraffe would represent a semantic shift for a model trained to differentiate between cats and dogs, as a giraffe does not belong to either the "dog" or "cat" class. Covariate shift refers to samples which come from a different distribution while still belonging to one of the classes of the original data set. A picture of a chihuahua could represent a covariate shift for the same cat-versus-dog model if the training data contained only other races of dogs. The detection of semantic shift, as opposed to covariate shift, is the main focus of most OOD detection tasks \cite{oodoverview}. In many applications, it is expected that the model should be able to generalize its prediction to covariate-shifted data, and therefore the focus is on detecting semantic shift. However, the field of medical image classification is one where detecting covariate shift is also important, as the model should only make predictions on data points which are very similar to its training data \cite{oodoverview}.
 
 % TODO: less citations to same paragraph? ^
 
@@ -240,7 +240,7 @@ g(\bm{x};\delta,T,\varepsilon)=\left\{\begin{matrix}1&\text{if} \max_{i}S(\tilde
 
 With these modifications, they report large improvements over the baseline \cite[4]{odin}. To explain this increase, we should look at the mathematical justification for these modifications.
 
-The idea behind perturbing the input image based on the gradient of the cross entropy loss, is that ID data points have a higher gradient than OOD data in general. By moving our data point slightly in the direction of the negative gradient, we should expect to see a higher softmax score than if we did not move, regardless of whether the data point is ID or OOD. However, because the gradients are larger for ID data, we expect that the difference between the new softmax scores will be larger than they were before the perturbations, because the ID data point has moved further towards higher softmax values, as shown in figure \ref{softmaxmove}, taken from \cite[8]{odin}. Here we see two data points, one ID (red) and one ODD (blue), which are both perturbed. As we can see, the resulting softmax scores after the perturbations differ more than before the perturbation.
+The idea behind perturbing the input image based on the gradient of the cross entropy loss is that ID data points have a higher gradient than OOD data in general. By moving our data point slightly in the direction of the negative gradient, we should expect to see a higher softmax score than if we did not move, regardless of whether the data point is ID or OOD. However, because the gradients are larger for ID data, we expect that the difference between the new softmax scores will be larger than they were before the perturbations, because the ID data point has moved further towards higher softmax values, as shown in figure \ref{softmaxmove}, taken from \cite[8]{odin}. Here we see two data points, one ID (red) and one ODD (blue), which are both perturbed. As we can see, the resulting softmax scores after the perturbations differ more than before the perturbation.
 
 \begin{figure}[h]
 \includegraphics[width=3.25in]{figure/gradient.pdf}
