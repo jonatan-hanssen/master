@@ -141,6 +141,49 @@ abstract = {With an increase in deep learning-based methods, the call for explai
   publisher  = {Independently published}
 }
 
+@misc{gradnorm,
+      title={On the Importance of Gradients for Detecting Distributional Shifts in the Wild}, 
+      author={Rui Huang and Andrew Geng and Yixuan Li},
+      year={2021},
+      eprint={2110.00218},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+
+
+@Article{diagnostic,
+AUTHOR = {Thunold, Håvard Horgen and Riegler, Michael A. and Yazidi, Anis and Hammer, Hugo L.},
+TITLE = {A Deep Diagnostic Framework Using Explainable Artificial Intelligence and Clustering},
+JOURNAL = {Diagnostics},
+VOLUME = {13},
+YEAR = {2023},
+NUMBER = {22},
+ARTICLE-NUMBER = {3413},
+URL = {https://www.mdpi.com/2075-4418/13/22/3413},
+PubMedID = {37998548},
+ISSN = {2075-4418},
+ABSTRACT = {An important part of diagnostics is to gain insight into properties that characterize a disease. Machine learning has been used for this purpose, for instance, to identify biomarkers in genomics. However, when patient data are presented as images, identifying properties that characterize a disease becomes far more challenging. A common strategy involves extracting features from the images and analyzing their occurrence in healthy versus pathological images. A limitation of this approach is that the ability to gain new insights into the disease from the data is constrained by the information in the extracted features. Typically, these features are manually extracted by humans, which further limits the potential for new insights. To overcome these limitations, in this paper, we propose a novel framework that provides insights into diseases without relying on handcrafted features or human intervention. Our framework is based on deep learning (DL), explainable artificial intelligence (XAI), and clustering. DL is employed to learn deep patterns, enabling efficient differentiation between healthy and pathological images. Explainable artificial intelligence (XAI) visualizes these patterns, and a novel “explanation-weighted” clustering technique is introduced to gain an overview of these patterns across multiple patients. We applied the method to images from the gastrointestinal tract. In addition to real healthy images and real images of polyps, some of the images had synthetic shapes added to represent other types of pathologies than polyps. The results show that our proposed method was capable of organizing the images based on the reasons they were diagnosed as pathological, achieving high cluster quality and a rand index close to or equal to one.},
+DOI = {10.3390/diagnostics13223413}
+}
+
+
+@InProceedings{occlusion,
+author="Zeiler, Matthew D.
+and Fergus, Rob",
+editor="Fleet, David
+and Pajdla, Tomas
+and Schiele, Bernt
+and Tuytelaars, Tinne",
+title="Visualizing and Understanding Convolutional Networks",
+booktitle="Computer Vision -- ECCV 2014",
+year="2014",
+publisher="Springer International Publishing",
+address="Cham",
+pages="818--833",
+abstract="Large Convolutional Network models have recently demonstrated impressive classification performance on the ImageNet benchmark Krizhevsky et al. [18]. However there is no clear understanding of why they perform so well, or how they might be improved. In this paper we explore both issues. We introduce a novel visualization technique that gives insight into the function of intermediate feature layers and the operation of the classifier. Used in a diagnostic role, these visualizations allow us to find model architectures that outperform Krizhevsky et al on the ImageNet classification benchmark. We also perform an ablation study to discover the performance contribution from different model layers. We show our ImageNet model generalizes well to other datasets: when the softmax classifier is retrained, it convincingly beats the current state-of-the-art results on Caltech-101 and Caltech-256 datasets.",
+isbn="978-3-319-10590-1"
+}
+
 @misc{subspace,
       title={Out-Of-Distribution Detection With Subspace Techniques And Probabilistic Modeling Of Features}, 
       author={Ibrahima Ndiour and Nilesh Ahuja and Omesh Tickoo},
