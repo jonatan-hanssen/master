@@ -8,6 +8,11 @@ Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et dataset
 
 Metrikken er som oftest FPR95 med ImageNet som ID. FPR95 er false positive rate når true positive rate er 95%. OOD dataset er f.eks iNaturalist, SUN, Places og Textures. Fordi vi bruker ImageNet som ID kan man bare bruke pretrained ting fra pytorch. Trenger ikke trene.
 
+### Ønskede egenskaper ved metoden:
+
+- Post hoc
+- Uten bruk av OOD data
+
 ## Lesestoff
 
 ### Lest
