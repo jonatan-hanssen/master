@@ -166,7 +166,7 @@ def vim(model, feature_id_train, feature_id_val, feature_ood):
     score_ood = -vlogit_ood + energy_ood
     fpr_ood, _ = fpr_recall(score_id, score_ood, 0.95)
 
-    print(fpr_ood)
+    print(f"FPR95: {fpr_ood:.2%}")
 
 
 
