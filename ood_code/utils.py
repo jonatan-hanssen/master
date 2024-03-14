@@ -7,34 +7,82 @@ from torchvision.io import read_image
 from PIL import Image
 from tqdm import tqdm
 from sklearn.covariance import EmpiricalCovariance
+from pytorch_grad_cam import GradCAM
+from typing import Callable, List, Tuple, Optional
+
+
+import matplotlib
+
+matplotlib.use("tkagg")
+import matplotlib.pyplot as plt
 
 from scipy.special import logsumexp, softmax
 
 from numpy.linalg import norm, pinv
 
+def fpr_recall(ind_conf, ood_conf, tpr):
+    num_fp, thresh = num_fp_at_recall(ind_conf, ood_conf, tpr)
+    num_ood = len(ood_conf)
+    fpr = num_fp / max(1, num_ood)
+    return fpr, thresh
 
-def save_features(model, loader, save_path):
-    features = list()
+def num_fp_at_recall(ind_conf, ood_conf, tpr):
+    num_ind = len(ind_conf)
 
-    def hook(model, input, output):
-        output = output.squeeze(-1).squeeze(-1)
-        features.append(output.detach())
+    if num_ind == 0 and len(ood_conf) == 0:
+        return 0, 0.0
+    if num_ind == 0:
+        return 0, np.max(ood_conf) + 1
 
-    h1 = model.avgpool.register_forward_hook(hook)
+    recall_num = int(np.floor(tpr * num_ind))
+    thresh = np.sort(ind_conf)[-recall_num]
+    num_fp = np.sum(ood_conf >= thresh)
+    return num_fp, thresh
 
-    for i, data in enumerate(tqdm(loader)):
-        batch, = data["image"].to(device)
 
+class GradCAMNoRescale(GradCAM):
+    # Class that removes rescaling and just the dim of the conv layer
+    def __init__(self, model, target_layers, reshape_transform=None):
+        super(GradCAMNoRescale, self).__init__(
+            model,
+            target_layers,
+            reshape_transform
+        )
 
-        model.eval()
-        with torch.no_grad():
-            model(batch)
+    def compute_cam_per_layer(
+            self,
+            input_tensor: torch.Tensor,
+            targets: List[torch.nn.Module],
+            eigen_smooth: bool) -> np.ndarray:
+        activations_list = [a.cpu().data.numpy()
+                            for a in self.activations_and_grads.activations]
+        grads_list = [g.cpu().data.numpy()
+                      for g in self.activations_and_grads.gradients]
+        target_size = self.get_target_width_height(input_tensor)
 
-    h1.remove()
+        cam_per_target_layer = []
+        # Loop over the saliency image from every layer
+        for i in range(len(self.target_layers)):
+            target_layer = self.target_layers[i]
+            layer_activations = None
+            layer_grads = None
+            if i < len(activations_list):
+                layer_activations = activations_list[i]
+            if i < len(grads_list):
+                layer_grads = grads_list[i]
 
-    features = torch.cat(features)
+            cam = self.get_cam_image(input_tensor,
+                                     target_layer,
+                                     targets,
+                                     layer_activations,
+                                     layer_grads,
+                                     eigen_smooth)
+            cam = np.maximum(cam, 0)
+            # scaled = scale_cam_image(cam, target_size)
+            cam_per_target_layer.append(cam[:, None, :])
 
-    torch.save(features, save_path)
+        return cam_per_target_layer
+
 
 
 class CustomDataset(Dataset):
@@ -95,29 +143,29 @@ def save_features(model, loader, save_location, device="cuda"):
     hook.remove()
 
     features = torch.cat(features)
-    print(features.shape)
-    print(features.device)
 
     torch.save(features, save_location)
 
-def fpr_recall(ind_conf, ood_conf, tpr):
-    num_fp, thresh = num_fp_at_recall(ind_conf, ood_conf, tpr)
-    num_ood = len(ood_conf)
-    fpr = num_fp / max(1, num_ood)
-    return fpr, thresh
+def save_gradcams(model, loader, save_location, device="cuda"):
 
-def num_fp_at_recall(ind_conf, ood_conf, tpr):
-    num_ind = len(ind_conf)
+    cams = list()
 
-    if num_ind == 0 and len(ood_conf) == 0:
-        return 0, 0.0
-    if num_ind == 0:
-        return 0, np.max(ood_conf) + 1
+    target_layers = [model.layer4[-1]]
+    cam = GradCAMNoRescale(model=model, target_layers=target_layers)
 
-    recall_num = int(np.floor(tpr * num_ind))
-    thresh = np.sort(ind_conf)[-recall_num]
-    num_fp = np.sum(ood_conf >= thresh)
-    return num_fp, thresh
+    for i, data in enumerate(tqdm(loader)):
+        batch = data.to(device)
+
+        batch = batch.to(device)
+
+        grayscale_cam = cam(input_tensor=batch)
+        b, h, w = grayscale_cam.shape
+        cams.append(grayscale_cam.reshape((b, h * w)))
+
+
+    cams = torch.tensor(np.concatenate(cams))
+    torch.save(cams, save_location)
+
 
 
 def vim(model, feature_id_train, feature_id_val, feature_ood):
@@ -163,6 +211,50 @@ def vim(model, feature_id_train, feature_id_val, feature_ood):
 
     energy_ood = logsumexp(logit_ood, axis=-1)
     vlogit_ood = norm(np.matmul(feature_ood - u, null_space), axis=-1) * alpha
+    score_ood = -vlogit_ood + energy_ood
+    fpr_ood, _ = fpr_recall(score_id, score_ood, 0.95)
+
+    print(f"FPR95: {fpr_ood:.2%}")
+
+def neovim(model, feature_id_train, feature_id_val, feature_ood, gradcam_id_train, gradcam_id_val, gradcam_ood):
+    w = model.fc.weight.data.cpu().numpy()
+    b = model.fc.bias.data.cpu().numpy()
+
+    logit_id_train = feature_id_train @ w.T + b
+    logit_id_val = feature_id_val @ w.T + b
+    logit_ood = feature_ood @ w.T + b
+
+    logit_id_train = np.array(logit_id_train)
+    logit_id_val = np.array(logit_id_val)
+    logit_ood = np.array(logit_ood)
+
+    # print(logit_id_train)
+    # print(logit_id_val)
+    # print(logit_ood)
+
+
+    DIM = gradcam_id_train.shape[-1] // 2
+
+    print("computing principal space...")
+    ec = EmpiricalCovariance(assume_centered=False)
+    ec.fit(gradcam_id_train)
+    eig_vals, eigen_vectors = np.linalg.eig(ec.covariance_)
+
+    null_space = np.ascontiguousarray((eigen_vectors.T[np.argsort(eig_vals * -1)[DIM:]]).T)
+
+    print("computing alpha...")
+    vlogit_id_train = norm(np.matmul(gradcam_id_train, null_space), axis=-1)
+
+
+    alpha = logit_id_train.max(axis=-1).mean() / vlogit_id_train.mean()
+    print(f"{alpha=:.4f}")
+
+    vlogit_id_val = norm(np.matmul(gradcam_id_val, null_space), axis=-1) * alpha
+    energy_id_val = logsumexp(logit_id_val, axis=-1)
+    score_id = -vlogit_id_val + energy_id_val
+
+    energy_ood = logsumexp(logit_ood, axis=-1)
+    vlogit_ood = norm(np.matmul(gradcam_ood, null_space), axis=-1) * alpha
     score_ood = -vlogit_ood + energy_ood
     fpr_ood, _ = fpr_recall(score_id, score_ood, 0.95)
 
