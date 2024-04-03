@@ -40,27 +40,49 @@ I would like to thank my dog.
 
 \section{Motivation}
 
-Machine Learning generally, and Deep Learning specifically, have seen a tremendous increase in performance in recent years, performing comparable to humans in many tasks, for example image classification, speech recognition and many others \cite{performance}. In medicine, deep learning has the potential to provide faster and more accurate detection of diseases by being trained on thousands of previous patients \cite{xaisurvey}.
+Machine Learning generally, and Deep Learning specifically, have seen a tremendous increase in performance in recent years, performing comparable to humans in many tasks, for example image classification, speech recognition and many others \cite{performance}. In medicine, deep learning has the potential to provide faster and more accurate detection of diseases by being trained on cases from thousands of previous patients \cite{xaisurvey}.
 
 % TODO: make these citations more specific
 
 However, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made. Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models.
 
-These two problems lead to the two fields of machine learning which I shall discuss in this essay. These are Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection.
+These two problems lead to the fields of machine learning Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. Both fields have seen increased interest in recent years, as machine learning is being used more and more for tasks which can have a high impact on individuals (e.g. cancer detection or automated driving). This thesis will attempt to combine the two fields, by using methods inspired by XAI to improve OOD detection.
 
 \section{Problem Statement}
 
+As explained in the previous segment, OOD detection is a developing and complicated field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection.  Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The problem statement is thus as follows:
+
+\textbf{Can methods inspired by the field of Explainable Artificial Intelligence be used to improve Out-of-Distribution Detection?}
+
+To answer this question, I introduce 3 objectives:
+
+\begin{enumerate}
+  \item Give a thorough introduction to the fields of XAI and OOD detection
+  \item Develop an OOD detection method which is inspired by insights gained from the field of XAI
+  \item Perform experiments to measure the performance of this novel method in comparison current State-of-the-Art OOD detection methods
+\end{enumerate}
+
 \section{Scope}
+
+Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more.
 
 \section{Research Methods}
 
+Bruk ACM paradigme kanskje? Flere bruker det
+
 \section{Main Contributions}
+
+Masse bra forhåpentligvis
 
 \section{Outline}
 
 \chapter{Background}
 
+This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of XAI and OOD detection.
+
 \section{Machine Learning}
+
+Machine learning everyone
 
 \section{Neural Networks}
 
