@@ -59,24 +59,25 @@ To answer this question, I introduce 3 objectives:
 \begin{enumerate}
   \item Give a thorough introduction to the fields of XAI and OOD detection
   \item Develop an OOD detection method which is inspired by insights gained from the field of XAI
-  \item Perform experiments to measure the performance of this novel method in comparison current State-of-the-Art OOD detection methods
+  \item Perform experiments to measure the performance of this new method in comparison current State-of-the-Art OOD detection methods
 \end{enumerate}
 
 \section{Scope}
 
-Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more.
+Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more. Only use open-source programs. Python and Pytorch.
 
 \section{Research Methods}
 
-Bruk ACM paradigme kanskje? Flere bruker det
 
 \section{Main Contributions}
 
-Masse bra forhåpentligvis
+Objective 1 is accomplished in chapter \ref{chapter:background}. Objective 2 is achieved in chapter \ref{chapter:newmethod}. Objective 3 is accomplished in chapter \ref{chapter:experiments}.
 
 \section{Outline}
 
-\chapter{Background}
+Chapter \ref{chapter:background} gives a short introduction to machine learning, followed by a deeper look at the fields of XAI and OOD detection. The different datasets which will be used in chapter \ref{chapter:experiments} are also introduced, among them the HyperKvasir gastrointestinal dataset \cite{hyperkvasir}. Chapter \ref{chapter:newmethod} introduces NEW METHOD. Chapter \ref{chapter:experiments} tests NEW METHOD against State-of-the-Art methods within the field of OOD detection. The tests are first conducted on well known OOD datasets, and then in a more specialized medical setting using the HyperKvasir dataset. After the experiments follow a discussion and conclusion in chapters \ref{chapter:discussion} and \ref{chapter:conclusion}.
+
+\chapter{Background} \label{chapter:background}
 
 This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of XAI and OOD detection.
 
@@ -458,13 +459,13 @@ l_0 := \alpha || \bm{x}^{\text{Null}(P)}||
 
 This now takes part in the computation of the softmax values, and thus is affected by the size of the rest of the logits. They call the softmax value of the Virtual Logit the {\it ViM score}. In this way, the ViM score represents the size of the residual in comparison with the predictions of the model. If the model is very confident, then the norm of the residual will be small in comparison, and the ViM score will be low. If the residual is very large, the ViM score will be higher, and more indicative of an OOD sample. In this way, \cite{vim} have combined information from the feature, the logit and the softmax probability level to perform OOD detection.
 
-\chapter{Methodology}
+\chapter{New method} \label{chapter:newmethod}
 
-\chapter{Experiments and Results}
+\chapter{Experiments and Results} \label{chapter:experiments}
 
-\chapter{Discussion}
+\chapter{Discussion} \label{chapter:discussion}
 
-\chapter{Conclusion}
+\chapter{Conclusion} \label{chapter:conclusion}
 
 \section{Future work}
 
