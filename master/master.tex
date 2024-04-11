@@ -3,7 +3,7 @@
 \usepackage[T1]{url}\urlstyle{sf}
 \usepackage{babel, csquotes, graphicx, textcomp, uiomasterfp, varioref}
 \usepackage{amsmath, amssymb, amsfonts, bm}
-\usepackage[backend=biber,style=numeric-comp]{biblatex}
+\usepackage[backend=biber,style=numeric-comp, sorting=none]{biblatex}
 \usepackage[hidelinks, hypertexnames=false]{hyperref}
 
 \title{Explainable Artificial Intelligence for data outlier detection}
@@ -44,25 +44,26 @@ Machine Learning generally, and Deep Learning specifically, have seen a tremendo
 
 % TODO: make these citations more specific
 
-To explain this discrepancy, we should consider that, despite their impressive performance, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made \cite{tingsim}.
+To explain this discrepancy, we should consider that despite their impressive performance, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made \cite{tingsim}.
 
 Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models. More problematically, unlike humans, who recognize when they are faced with a novel situation where their expertise might be lacking, DL methods will predict equally confidently on any data point \cite{tingsim}.
 
-These two problems lead to the fields of machine learning Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. Both fields have seen increased interest in recent years, and are vital parts of any integration of DL in medical settings. This thesis will focus on OOD detection, but will attempt to use methods inspired by XAI to improve performance. The overarching intuition is that by inspecting the explanations of a model on a data point, we may be able to uncover flaws or irregularities which could help us determine whether this data point is OOD.
+These two problems lead to the fields of machine learning Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. Both fields have seen increased interest in recent years, and are vital parts of any integration of DL in medical settings. This thesis will focus on OOD detection, but will attempt to use methods inspired by XAI to improve detection performance. The overarching intuition is that by inspecting the explanation of a model on a specific data point, we may be able to uncover flaws or irregularities in the explanation which could help us determine whether this data point is OOD.
 
 % This thesis will attempt to combine the two fields, by using methods inspired by XAI to improve OOD detection.
 
 \section{Problem Statement}
 
-As explained in the previous segment, OOD detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection.  Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The problem statement is thus as follows:
+As explained in the previous segment, OOD detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection. Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The problem statement is thus as follows:
 
 \textbf{Can methods inspired by the field of Explainable Artificial Intelligence be used to improve Out-of-Distribution Detection?}
+\\
 
 To answer this question, I introduce 3 objectives:
 
 \begin{enumerate}
   \item Give a thorough introduction to the fields of XAI and OOD detection
-  \item Develop an OOD detection method which is inspired by insights gained from the field of XAI
+  \item Develop an effective and theoretically sound OOD detection method which is inspired by insights gained from the field of XAI
   \item Perform experiments to measure the performance of this new method in comparison current State-of-the-Art OOD detection methods
 \end{enumerate}
 
@@ -72,10 +73,12 @@ Use only post-hoc methods, pretrained resnet models. Use well established OOD da
 
 \section{Research Methods}
 
+Use ACM
+
 
 \section{Main Contributions}
 
-Objective 1 is accomplished in chapter \ref{chapter:background}. Objective 2 is achieved in chapter \ref{chapter:newmethod}. Objective 3 is accomplished in chapter \ref{chapter:experiments}.
+Objective 1 is accomplished in chapter \ref{chapter:background}. Here, the fields of XAI and OOD detection are introduced, their respective taxonomies are explained and a selection of specific methods are explained in more detail. This chapter provides a good entry for machine learning researchers who wish a decent introduction to the two fields. Objective 2 is achieved in chapter \ref{chapter:newmethod}. Here, I introduce the groundbreaking NEW METHOD, which achieves a FPR95 of 1\%, blowing all previous methods out of the water. Objective 3 is accomplished in chapter \ref{chapter:experiments}, where we confirm that NEW METHOD is insanely good.
 
 \section{Outline}
 
