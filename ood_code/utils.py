@@ -9,6 +9,7 @@ from tqdm import tqdm
 from sklearn.covariance import EmpiricalCovariance
 from pytorch_grad_cam import GradCAM
 from typing import Callable, List, Tuple, Optional
+from src.lrp import LRPModel
 
 
 import matplotlib
@@ -166,6 +167,23 @@ def save_gradcams(model, loader, save_location, device="cuda"):
     cams = torch.tensor(np.concatenate(cams))
     torch.save(cams, save_location)
 
+def save_lrps(model, loader, save_location):
+    cams = list()
+
+    # target_layers = [model.layer4[-1]]
+    lrp_model = LRPModel(model)
+
+    for i, data in enumerate(tqdm(loader)):
+        batch = data.to(device)
+
+        batch = batch.to(device)
+
+        relevances = lrp_model.forward(batch)
+
+        break
+
+
+
 
 
 def vim(model, feature_id_train, feature_id_val, feature_ood):
@@ -214,6 +232,10 @@ def vim(model, feature_id_train, feature_id_val, feature_ood):
     score_ood = -vlogit_ood + energy_ood
     fpr_ood, _ = fpr_recall(score_id, score_ood, 0.95)
 
+    # plt.hist(vlogit_id_val, bins=100, density=True, histtype='step')
+    # plt.hist(vlogit_ood, bins=100, density=True, alpha=0.5, histtype='step')
+    # plt.show()
+
     print(f"FPR95: {fpr_ood:.2%}")
 
 def neovim(model, feature_id_train, feature_id_val, feature_ood, gradcam_id_train, gradcam_id_val, gradcam_ood):
@@ -228,35 +250,49 @@ def neovim(model, feature_id_train, feature_id_val, feature_ood, gradcam_id_trai
     logit_id_val = np.array(logit_id_val)
     logit_ood = np.array(logit_ood)
 
-    # print(logit_id_train)
-    # print(logit_id_val)
-    # print(logit_ood)
+    stacked_id_train = np.hstack([logit_id_train, gradcam_id_train.numpy()])
+    stacked_id_val = np.hstack([logit_id_val, gradcam_id_val.numpy()])
+    stacked_ood = np.hstack([logit_ood, gradcam_ood.numpy()])
 
 
-    DIM = gradcam_id_train.shape[-1] // 2
+    DIM = (stacked_id_train.shape[-1] - 49) // 2
 
     print("computing principal space...")
     ec = EmpiricalCovariance(assume_centered=False)
-    ec.fit(gradcam_id_train)
+    ec.fit(stacked_id_train)
     eig_vals, eigen_vectors = np.linalg.eig(ec.covariance_)
 
     null_space = np.ascontiguousarray((eigen_vectors.T[np.argsort(eig_vals * -1)[DIM:]]).T)
 
     print("computing alpha...")
-    vlogit_id_train = norm(np.matmul(gradcam_id_train, null_space), axis=-1)
+    vlogit_id_train = norm(np.matmul(stacked_id_train, null_space), axis=-1)
 
 
     alpha = logit_id_train.max(axis=-1).mean() / vlogit_id_train.mean()
     print(f"{alpha=:.4f}")
 
-    vlogit_id_val = norm(np.matmul(gradcam_id_val, null_space), axis=-1) * alpha
+    vlogit_id_val = norm(np.matmul(stacked_id_val, null_space), axis=-1) * alpha
     energy_id_val = logsumexp(logit_id_val, axis=-1)
     score_id = -vlogit_id_val + energy_id_val
+    print(vlogit_id_val.mean())
+
+
 
     energy_ood = logsumexp(logit_ood, axis=-1)
-    vlogit_ood = norm(np.matmul(gradcam_ood, null_space), axis=-1) * alpha
+    vlogit_ood = norm(np.matmul(stacked_ood, null_space), axis=-1) * alpha
+    print(vlogit_ood.mean())
     score_ood = -vlogit_ood + energy_ood
     fpr_ood, _ = fpr_recall(score_id, score_ood, 0.95)
+
+    # plt.title("logits neovim")
+    # plt.hist(vlogit_id_val, bins=100, density=True, histtype='step')
+    # plt.hist(vlogit_ood, bins=100, density=True, alpha=0.5, histtype='step')
+    # plt.show()
+
+    # plt.title("gradcams")
+    # plt.hist(gradcam_id_train.mean(dim=1), bins=100, density=True, histtype='step')
+    # plt.hist(gradcam_ood.mean(dim=1), bins=100, density=True, histtype='step')
+    # plt.show()
 
     print(f"FPR95: {fpr_ood:.2%}")
 
