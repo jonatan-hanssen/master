@@ -6,8 +6,8 @@
 \usepackage[backend=biber,style=numeric-comp, sorting=none]{biblatex}
 \usepackage[hidelinks, hypertexnames=false]{hyperref}
 
-\title{Explainable Artificial Intelligence for data outlier detection}
-\subtitle{Using Grad-Cam to detect outliers in a gastrointestinal dataset}
+\title{Explainable Artificial Intelligence for Out-of-Distribution detection}
+\subtitle{Using irregularities in machine learning explanations to detect when a model is faced with unusual data}
 \author{Jonatan Hoffmann Hanssen}
 
 \addbibresource{bibliography.bib}
@@ -46,15 +46,17 @@ Machine Learning generally, and Deep Learning specifically, have seen a tremendo
 
 To explain this discrepancy, we should consider that despite their impressive performance, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made \cite{tingsim}.
 
-Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models. More problematically, unlike humans, who recognize when they are faced with a novel situation where their expertise might be lacking, DL methods will predict equally confidently on any data point \cite{tingsim}.
+Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models. More problematically, unlike humans, who recognize when they are faced with a novel situation where their expertise might be lacking, DL methods will predict equally confidently on data points which are far outside the data they have been trained on \cite{tingsim}.
 
-These two problems lead to the fields of machine learning Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. Both fields have seen increased interest in recent years, and are vital parts of any integration of DL in medical settings. This thesis will focus on OOD detection, but will attempt to use methods inspired by XAI to improve detection performance. The overarching intuition is that by inspecting the explanation of a model on a specific data point, we may be able to uncover flaws or irregularities in the explanation which could help us determine whether this data point is OOD.
+These two problems lead to the fields of machine learning Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. XAI attempts to explain the reasons why a model came to a decision, which helps to remedy the black-box nature of complicated DL models. In a healthcare setting, such explanations can be inspected by medical practitioners to confirm the diagnosis, and can be used to give patients information about why decisions regarding their health were made. OOD detection attempts to uncover when a data point is too different from the training data to be classified reliably. These methods could alert medical practitioners when such data points occur, thus avoiding potentially fatal misclassifications.
+
+Both of these fields have seen increased interest in recent years, and are vital parts of any integration of DL in medical settings. This thesis will focus on OOD detection, but will attempt to use methods inspired by XAI to improve detection performance. The overarching intuition is that by inspecting the explanation of a model on a specific data point, we may be able to uncover flaws or irregularities in the explanation which could help us determine whether the data point is OOD.
 
 % This thesis will attempt to combine the two fields, by using methods inspired by XAI to improve OOD detection.
 
 \section{Problem Statement}
 
-As explained in the previous segment, OOD detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection. Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The problem statement is thus as follows:
+As explained in the previous segment, OOD detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection. Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The field of XAI is concerned with understanding the inner workings of a model, and could thus offer insights which could help us detect unusual behaviour in the model as a result of OOD data points. The problem statement is thus as follows:
 
 \textbf{Can methods inspired by the field of Explainable Artificial Intelligence be used to improve Out-of-Distribution Detection?}
 \\
@@ -69,7 +71,7 @@ To answer this question, I introduce 3 objectives:
 
 \section{Scope}
 
-Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more. Only use open-source programs. Python and Pytorch.
+Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more. Only use open-source programs. Python and Pytorch. Mainly focus on images.
 
 \section{Research Methods}
 
@@ -86,7 +88,7 @@ Chapter \ref{chapter:background} gives a short introduction to machine learning,
 
 \chapter{Background} \label{chapter:background}
 
-This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of XAI and OOD detection.
+This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of OOD detection and XAI. Finally, the datasets used in chapter \ref{chapter:experiments} are covered.
 
 \section{Machine Learning}
 
