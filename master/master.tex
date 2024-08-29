@@ -138,7 +138,9 @@ Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix 
 
 \subsection{Convolutional Neural Networks}
 
-FFNNs have some problems which make them unsuitable for working with high dimensional, spatially connected data such as the pixels which make up an image. Firstly, each input of a FFNN is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately.
+FFNNs have some inherent flaws which make them unsuitable for working with high dimensional, spatially connected data, such as the pixels which make up an image. Firstly, each input of a FFNN is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately. Consider a network attempting to detect the presence of a cat in an image. We would want the network to detect the cat regardless of whether it is in the middle, the right corner, or any other position in the image. In an FFNN, the weights connected to any of these positions in the image would then have to encode a cat detector separately from all the others.
+
+Convolutional Neural Networks solve both these issues by using small kernels of weights which are applied
 
 \section{Explainable AI} \label{xai_intro}
 
@@ -258,7 +260,7 @@ The first distinction to make in OOD detection tasks is whether an OOD sample is
 
 The performance of an XAI is hard to quantify, because the quality of an explanation is not easily reduced to a number. For OOD detection, performance is much easier to measure, as the problem can be described as a binary classification problem, with OOD and ID samples as the positive and negative class. Thus, we can calculate many different metrics and compare methods against each other. For OOD methods, the two most common metrics to report is the False Positive Rate at 95\% recall (FPR95) and the Area Under Receiver Operating Curve (AUROC). It is common to use ImageNet or CIFAR as the ID dataset, and calculate FPR95 and AUROC on other datasets which contain no overlapping class labels. When selecting OOD datasets, it is common to differentiate between \textbf{near-OOD} and \textbf{far-OOD}. Far-OOD samples are samples which are drastically different from the ID samples, while near-OOD samples only differ slightly. For our cat-versus-dog classifier, a tiger and a wolf would represent near-OOD semantic shift, while a plane and a car would represent far-OOD semantic shift. As one might expect, detecting near-OOD samples is much harder.
 
-In 2023, \cite{openood} introduced a generalized OOD detection framework, under which they performed comprehensive benchmarking of all relevant OOD methods, which allows for accurate comparison of the methods within the field.
+In 2021, \cite{oodoverview} defined a generalized OOD detection framework, and in 2023 \cite{openood} introduced a comprehensive benchmark of all relevant OOD methods under this framework, which allows for accurate comparisons of methods within the field. This benchmark is discussed in detail in chapter \ref{chapter:openood}.
 
 \subsection{Methods}
 
@@ -274,22 +276,27 @@ The field of OOD is separated into four categories of methods \cite{oodoverview}
   \item Reconstruction-based methods
 \end{itemize}
 
+All methods can also be categorized by whether they are post-hoc or training based. Post-hoc methods take an already trained network and attempt to extract information which separates ID and OOD samples out of the network during inference. These methods have the obvious advantage that they can work out of the box with large pre-trained network without requiring expensive training from scratch. Training based methods train the network in ways which maximize the difference between ID and OOD samples. These methods do not necessarily require OOD samples, but can train using auxiliary loss functions which amplify the differences in network behaviour when faced with OOD data as opposed to ID. Regardless, these methods come with a much higher computational requirement than post-hoc methods, as they require training from scratch or at least retraining using the new loss criterion. 
 
-% \begin{figure}[h]
-% \centerline{\includegraphics[width=3.25in]{figure/ood_separation.png}}
-% \caption{Graph showing the distribution of hypothetical OOD and ID data for an unspecified metric. The shaded region shows the overlap between the two distributions.}
-% \label{ood_metric}
-% \end{figure}
+Given the fact that post-hoc methods can be applied to trained networks out of the box, it is quite common to combine both post-hoc and training strategies to achieve the best performance.
 
-Below follows a short explanation of each of the methods.
+
+Below follows a short explanation of each the four categories mentioned above.
 \\
 
 \subsubsection{Classification-based methods}
 
-Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. There are several state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
-\\
+Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. 
 
-% More generally, classification based methods attempt to find a metric which separates the distribution of ID samples from OOD samples. That is, we want a metric which outputs values in a certain range for ID samples and values in a different range for OOD samples, with as little overlap as possible. Figure \ref{ood_metric} shows the probability density for an unspecified metric for both OOD and ID samples. The goal of OOD detection is to find metrics or training methods which make these probability densities have as little overlap (the shaded region), such that they are easily separated by .
+More generally, classification-based methods do not need to use the softmax score, but may attempt to find any metric which separates the distribution of ID samples from OOD samples. Figure \ref{ood_metric} shows the probability density for an unspecified metric for both OOD and ID samples. The goal of classification-based OOD detection is to find metrics or training methods which make these probability densities have as little overlap as possible, such that they are easily separated by a threshold.
+
+There are several state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=3.25in]{figure/ood_sep.pdf}}
+\caption{Graph showing the distribution of hypothetical OOD and ID data for an unspecified metric. The shaded region shows the overlap between the two distributions.}
+\label{ood_metric}
+\end{figure}
 
 
 \subsubsection{Density-based methods}
@@ -519,6 +526,18 @@ l_0 := \alpha || \bm{x}^{\text{Null}(P)}||
 \end{equation}
 
 This now takes part in the computation of the softmax values, and thus is affected by the size of the rest of the logits. They call the softmax value of the Virtual Logit the {\it ViM score}. In this way, the ViM score represents the size of the residual in comparison with the predictions of the model. If the model is very confident, then the norm of the residual will be small in comparison, and the ViM score will be low. If the residual is very large, the ViM score will be higher, and more indicative of an OOD sample. In this way, \cite{vim} have combined information from the feature, the logit and the softmax probability level to perform OOD detection.
+
+\subsection{Datasets}
+
+With a thorough introduction to both XAI and OOD detection, I shall present the datasets that will be used to test the new method that I introduce in chapter \ref{chapter:newmethod}. The two datasets used are OpenOOD (\cite{openood}) and HyperKvasir (\cite{hyperkvasir}). OpenOOD is a comprehensive benchmark which will test the new method's performance in a wide range of OOD scenarios, while HyperKvasir is a medicinal dataset which will be used to test the method in the specific use case of medicinal OOD detection.
+
+\subsubsection{OpenOOD} \label{chapter:openood}
+
+As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an attempt to unify the performance metrics of the field, such that accurate comparisons of different methods could be made. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures and with other externalities which inhibited effective comparison between methods \cite{openood}.
+
+OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for OOD detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding OOD datasets, separated into near-OOD and far-OOD.
+
+\subsubsection{HyperKvasir} % \label{chapter:openood}
 
 \chapter{New method} \label{chapter:newmethod}
 
