@@ -21,6 +21,7 @@ setuptools.setup(
         'json5',
         'matplotlib',
         'scipy',
+        'numpy<2',
         'tqdm',
         'pyyaml>=5.4.1',
         'pre-commit',
