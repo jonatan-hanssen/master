@@ -1,4 +1,4 @@
-# Explainable AI for Data Outlier Detection
+# Explainable AI for Out Of Distribution Detection
 
 Essay ligger [her](./essay/essay.pdf).
 
