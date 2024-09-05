@@ -2,15 +2,19 @@
 \usepackage[utf8]{inputenc} %% ... or latin1
 \usepackage[T1]{url}\urlstyle{sf}
 \usepackage{babel, csquotes, graphicx, textcomp, uiomasterfp, varioref}
+\usepackage{amsthm}
 \usepackage{amsmath, amssymb, amsfonts, bm}
-\usepackage[backend=biber,style=numeric-comp]{biblatex}
+\usepackage[backend=biber,style=numeric-comp, sorting=none]{biblatex}
 \usepackage[hidelinks, hypertexnames=false]{hyperref}
 
-\title{Explainable Artificial Intelligence for data outlier detection}
-\subtitle{Using Grad-Cam to detect outliers in a gastrointestinal dataset}
+\title{Explainable Artificial Intelligence for Out-of-Distribution detection}
+\subtitle{Using irregularities in machine learning explanations to detect when a model is faced with unusual data}
 \author{Jonatan Hoffmann Hanssen}
 
 \addbibresource{bibliography.bib}
+
+\theoremstyle{definition}
+\newtheorem*{definition}{Definition}
 
 \begin{document}
 \uiomasterfp[dept={Department of Informatics},
@@ -40,38 +44,47 @@ I would like to thank my dog.
 
 \section{Motivation}
 
-Machine Learning generally, and Deep Learning specifically, have seen a tremendous increase in performance in recent years, performing comparable to humans in many tasks, for example image classification, speech recognition and many others \cite{performance}. In medicine, deep learning has the potential to provide faster and more accurate detection of diseases by being trained on cases from thousands of previous patients \cite{xaisurvey}.
+Machine Learning generally, and Deep Learning specifically, have seen a tremendous increase in performance in recent years, performing comparable to humans in tasks such as image classification, speech recognition and many others \cite{performance}. Consequently, DL methods have been deployed in a multitude of fields and have become a part of our daily lives through their role in web search, text translation, computer vision and in many other technologies which are taken for granted. In medicine, deep learning has the potential to provide faster and more accurate detection of diseases by being trained on cases from thousands of previous patients \cite{xaisurvey}. Despite this, "surprisingly little in health care is driven by machine learning" \cite{dlmed}.
 
 % TODO: make these citations more specific
 
-However, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made. Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models.
+To explain this discrepancy, we should consider that despite their impressive performance, deep learning methods are not without their flaws. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. State of the art models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made \cite{tingsim}.
 
-These two problems lead to the fields of machine learning Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. Both fields have seen increased interest in recent years, as machine learning is being used more and more for tasks which can have a high impact on individuals (e.g. cancer detection or automated driving). This thesis will attempt to combine the two fields, by using methods inspired by XAI to improve OOD detection.
+Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models. More problematically, unlike humans, who recognize when they are faced with a novel situation where their expertise might be lacking, DL methods will predict equally confidently on data points which are far outside the data they have been trained on \cite{tingsim}.
+
+These two problems lead to the fields of Explainable Artificial Intelligence (XAI), and Out-of-Distribution (OOD) detection. XAI attempts to explain the reasons why a model came to a decision, which helps to remedy the black-box nature of complicated DL models. In a healthcare setting, such explanations can be inspected by medical practitioners to confirm the diagnosis, and can be used to give patients information about why decisions regarding their health were made. OOD detection attempts to uncover when a data point is too different from the training data to be classified reliably. These methods could alert medical practitioners when such data points occur, thus avoiding potentially fatal misclassifications.
+
+Both of these fields have seen increased interest in recent years, and are vital parts of any integration of DL in medical settings. This thesis will focus on OOD detection, but will attempt to use methods inspired by XAI to improve detection performance. The overarching intuition is that by inspecting the explanation of a model on a specific data point, we may be able to uncover flaws or irregularities in the explanation which could help us determine whether the data point is OOD.
+
+% This thesis will attempt to combine the two fields, by using methods inspired by XAI to improve OOD detection.
 
 \section{Problem Statement}
 
-As explained in the previous segment, OOD detection is a developing and complicated field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection.  Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The problem statement is thus as follows:
+As explained in the previous segment, OOD detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection. Finding novel methods which improve a model's ability to detect when input is OOD is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The field of XAI is concerned with understanding the inner workings of a model, and could thus offer insights which could help us detect unusual behaviour in the model as a result of OOD data points. The problem statement is thus as follows:
 
 \textbf{Can methods inspired by the field of Explainable Artificial Intelligence be used to improve Out-of-Distribution Detection?}
+\\
 
 To answer this question, I introduce 3 objectives:
 
 \begin{enumerate}
   \item Give a thorough introduction to the fields of XAI and OOD detection
-  \item Develop an OOD detection method which is inspired by insights gained from the field of XAI
+  \item Develop an effective and theoretically sound OOD detection method which is inspired by insights gained from the field of XAI
   \item Perform experiments to measure the performance of this new method in comparison current State-of-the-Art OOD detection methods
 \end{enumerate}
 
 \section{Scope}
 
-Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more. Only use open-source programs. Python and Pytorch.
+Use only post-hoc methods, pretrained resnet models. Use well established OOD datasets first for comparisons. Then focus on medical datasets, hyperkvasir and maybe more. Only use open-source programs. Python and Pytorch. Mainly focus on images. Probably only CNN models, as a lot of XAI is based on that. Maybe also try methods that work on vision transformers as well, but then we are more restricted to post-hoc methods probably.
 
 \section{Research Methods}
+
+Use ACM
 
 
 \section{Main Contributions}
 
-Objective 1 is accomplished in chapter \ref{chapter:background}. Objective 2 is achieved in chapter \ref{chapter:newmethod}. Objective 3 is accomplished in chapter \ref{chapter:experiments}.
+Objective 1 is accomplished in chapter \ref{chapter:background}. Here, the fields of XAI and OOD detection are introduced, their respective taxonomies are explained and a selection of specific methods are explained in more detail. This chapter provides a good entry for machine learning researchers who wish a decent introduction to the two fields. Objective 2 is achieved in chapter \ref{chapter:newmethod}. Here, I introduce the groundbreaking NEW METHOD, which achieves a FPR95 of 1\%, blowing all previous methods out of the water. Objective 3 is accomplished in chapter \ref{chapter:experiments}, where we confirm that NEW METHOD is insanely good.
 
 \section{Outline}
 
@@ -79,21 +92,59 @@ Chapter \ref{chapter:background} gives a short introduction to machine learning,
 
 \chapter{Background} \label{chapter:background}
 
-This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of XAI and OOD detection.
+This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of OOD detection and XAI. Finally, the datasets used in chapter \ref{chapter:experiments} are covered.
 
 \section{Machine Learning}
 
-Machine learning everyone
+Machine Learning is the field of algorithms that are able to learn from data, as opposed to being explicitly programmed. Such algorithms use statistical methods to learn relationships in data, and use these relationships to generalize to unseen data. More formally, \cite{mitchell} gives the following definition of machine learning algorithms:
+
+\begin{definition}
+A computer program is said to learn from experience $E$ with respect to some class of tasks $T$ and performance measure $P$ if its performance at tasks in $T$, as measured by $P$, improves with experience $E$.
+\end{definition}
+
+Thus, machine learning is a different paradigm from traditional problem solving, where programs are made to solve problems by following explicit rules. For example, a traditional image classification system attempting to differentiate between malignant and benign tumors might use hand-crafted rules which consider the texture, color and size of a tumor. As one might imagine, such rules will quickly become very complicated when we consider all the possible factors which might influence the appearance of a tumor. Using a machine learning approach, we would instead feed an algorithm with thousands of images of both benign and malignant tumors, and the algorithm could then be automatically updated until it predicted the correct category with a high enough accuracy.
+
+Machine Learning is commonly divided into the three subcategories of supervised, unsupervised and reinforcement learning
+
+% A simple comparison is between the two chess engines Stockfish and AlphaZero. Stockfish plays chess by evaluating possible moves according to metrics created by humans\footnote{This is actually no longer the case, as the classical evaluation has been replaced by a neural network (a machine learning approach), however, I will pretend that it still is for the sake of argument}, such as valuing a Queen as equivalent to nine pawns and a 
+
+\subsection{Supervised Learning}
+
+Supervised Learning is a subcategory of machine learning where we have a dataset containing both inputs and desired outputs. In the example above, we could use supervised learning by creating a dataset of images of tumors (the input) and corresponding labels which indicate whether each tumor is malignant or benign (the desired output). The learning goal of the algorithm is then to associate images with the correct label. Because we know the correct answer, we are able to fine-tune the algorithm automatically whenever it makes a mistake. However, supervised learning requires labeled data, which can be very costly, especially in the medical domain, where deciding whether a tumor is malignant or benign requires expert knowledge.
+
+\subsection{Unsupervised Learning}
+
+In unsupervised learning, we do not have any labels. In these cases, we might not know whether data points belong to different classes or not. Instead, we can use machine learning to uncover patterns in the data, for example by attempting to cluster the data into different groups and seeing if these groups are sufficiently separated. An example use case could be for fraud detection in a bank. By feeding financial transaction from many different users into an unsupervised learning model and asking it to perform clustering of the data, it might be possible to find a group of users whose transactions differ substantially from the rest, which might indicate that their transactions are fraudulent.
+
+\subsection{Reinforcement Learning}
+
+Reinforcement Learning deals with problems where we do not know exactly what the correct solution is, but we are able to assess whether a given solution is good or not. For example, when controlling a robot arm, it is difficult to say exactly what angles each joint should be for every millisecond when picking up an object, but if the arm does not pick up the object, we know the algorithm has failed. In these problems, the algorithm is trained through reinforcement, where good attempts are rewarded and bad attempts punished.
 
 \section{Neural Networks}
 
+Neural Networks are a class of machine learning algorithms, which have become the clear state of the art in almost all fields where machine learning is applied. Notable examples are computer vision, image classification, speech recognition, text and image generation and machine translation. Neural networks are loosely inspired by our own brains, where neurons are connected together and send information between each other. By connecting thousands of neurons together, neural networks are able to learn complicated relationships between the input and output.
+
+\subsection{Feed Forward Neural Networks}
+
+The Feed Forward Neural Network (FFNN), also known as a Multilayer Perceptron, traces its roots to the very beginning of machine learning through the work of Frank Rosenblatt \cite{rosenblatt}. It forms the basic structure for neural networks which has been adapted and modified over the years to form more complex architectures such as convolutional, recurrent or residual neural networks. The basic structure of an FFNN is that the input values are passed through an affine transformation (a matrix multiplication followed by the addition of a bias), and then passed through an activation function, which produces outputs. These outputs can then go through the same process again, which constitutes a single "layer". By stacking several of these layers, with non-linear activation functions, an FFNN is able to learn arbitrarily complex mappings between inputs and outputs\footnote{In fact, by the Universal Approximation Theorem, only a single hidden layer between the input and output is necessary, although this theorem does not give a way to construct such a network for any given function}. Mathematically, a single layer can then be described as follows:
+
+\begin{equation}
+\bm{x_{i+1}} = \sigma_i (A_i \bm{x_i} + \bm{b_i})
+\label{ffnn}
+\end{equation}
+
+Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix $A_i$ from the input space to the output space, then each value of the new vector in the output space is adjusted by an addition of a bias term, and finally an activation function ($\sigma_i$) is applied to each value. 
 
 
 \subsection{Convolutional Neural Networks}
 
+FFNNs have some inherent flaws which make them unsuitable for working with high dimensional, spatially connected data, such as the pixels which make up an image. Firstly, each input of a FFNN is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately. Consider a network attempting to detect the presence of a cat in an image. We would want the network to detect the cat regardless of whether it is in the middle, the right corner, or any other position in the image. In an FFNN, the weights connected to any of these positions in the image would then have to encode a cat detector separately from all the others.
+
+Convolutional Neural Networks solve both these issues by using small kernels of weights which are applied
+
 \section{Explainable AI} \label{xai_intro}
 
-Below follows a thourough introduction to XAI, as well as detailed look at some important methods for explainability for neural networks applied to images.
+Below follows a thorough introduction to XAI, as well as detailed look at some important methods for explainability for neural networks applied to images.
 
 \subsection{The motivation for XAI}
 
@@ -116,7 +167,7 @@ This sections goes through three axes which define an XAI method:
 
 Intrinsically explainable models are models which have sufficiently low complexity, such that it is feasible for a human to understand them without further modifications. Examples of such methods are linear regression, logistic regression and decision trees \cite{molnar}. 
 
-Post hoc methods are methods which are applied to the model after training. These methods do not aim to constrain the model to be interpretable, but inspect the model after training.
+Post hoc methods are methods which are applied to the model after training. These methods do not aim to constrain the model to be interpretable, but inspect the model after training. For example, after using a convolutional neural network to classify a CT-scan of a tumour (which gave a prediction of malignant), we could run post hoc algorithms on the network which are able to extract which part of the image contributed the most to the prediction. Thus, post hoc methods remove the need for the model to be simple enough for a human to understand by extracting the relevant information for us.
 
 \subsubsection{Model dependent versus model agnostic methods}
 
@@ -195,19 +246,21 @@ This section discusses OOD detection, the field which attempts to tackle the sec
 
 \subsection{Motivation for OOD Detection}
 
-When training a model using supervised learning, we implicitly use the "closed world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without OOD detection, the model will behave in the exact same way when encountering OOD samples or in distribution (ID) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a model to claim high confidence when predicting if a woman has lung cancer, if the model has only been trained on men. Thus, OOD detection methods are necessary, so that OOD samples can be caught before the model makes a prediction and dealt with correctly.
+When training a model using supervised learning, we implicitly use the "closed-world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without OOD detection, the model will behave in the exact same way when encountering OOD samples or in distribution (ID) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a model to claim high confidence when predicting if a woman has lung cancer if the model has only been trained on men, nor do we want a model to attempt to classify a rare disease that was not part of the training data. Thus, OOD detection methods are necessary, so that OOD samples can be caught before the model makes a prediction and dealt with correctly.
 
 Intuitively, one might assume that distinguishing ID and OOD samples from each other can be solved by simple binary classification using a dataset of ID samples and one of OOD samples. Indeed, if one has sufficient amount of high quality OOD samples, this can be done. However, this can be difficult to obtain in practice \cite[15]{oodoverview}, thus requiring more sophisticated methods of OOD detection.
 
 \subsection{Semantic versus covariate shift}
 
-The first distinction to make in OOD detection tasks is whether an OOD sample is OOD because of {\it semantic} or {\it covariate} shift. Semantic shift refers to samples with different classes than the ones the model is trained on. A picture of a giraffe would represent a semantic shift for a model trained to differentiate between cats and dogs, as a giraffe does not belong to either the "dog" or "cat" class. Covariate shift refers to samples which come from a different distribution while still belonging to one of the classes of the original data set. A picture of a chihuahua could represent a covariate shift for the same cat-versus-dog model if the training data contained only other races of dogs. The detection of semantic shift, as opposed to covariate shift, is the main focus of most OOD detection tasks \cite{oodoverview}. In many applications, it is expected that the model should be able to generalize its prediction to covariate-shifted data, and therefore the focus is on detecting semantic shift. However, the field of medical image classification is one where detecting covariate shift is also important, as the model should only make predictions on data points which are very similar to its training data \cite{oodoverview}.
+The first distinction to make in OOD detection tasks is whether an OOD sample is OOD because of {\it semantic} or {\it covariate} shift. Semantic shift refers to samples with different classes than the ones the model is trained on. A picture of a giraffe would represent a semantic shift for a model trained to differentiate between cats and dogs, as a giraffe does not belong to either the "dog" or "cat" class. Covariate shift refers to samples which come from a different distribution while still belonging to one of the classes of the original data set. A picture of a chihuahua could represent a covariate shift for the same cat-versus-dog model if the training data contained only other races of dogs. Likewise, an image of a dog in a dark room could represent covariate shift, if all the ID images were of dogs outside, in well lit conditions. The detection of semantic shift, as opposed to covariate shift, is the main focus of most OOD detection tasks \cite{oodoverview}. In many applications, it is expected that the model should be able to generalize its prediction to covariate-shifted data, and therefore the focus is on detecting semantic shift. However, the field of medical image classification is one where detecting covariate shift is also important, as the model should only make predictions on data points which are very similar to its training data \cite{oodoverview}.
 
 % TODO: less citations to same paragraph? ^
 
 \subsection{Benchmarking}
 
-The performance of an XAI is hard to quantify, because the quality of an explanation is not easily reduced to a number. For OOD detection, performance is much easier to measure, as the problem can be described as a binary classification problem. Thus, we can calculate many different metrics and compare methods against each other. For OOD methods, the two most common metrics to report is the False Positive Rate at 95\% recall (FPR95) and the Area Under Receiver Operating Curve (AUROC). It is common to use ImageNet as the ID dataset, and calculate FPR95 and AUROC on other datasets which contain no overlapping class labels. Common OOD datasets are iNaturalist, Texture, SUN or Places.
+The performance of an XAI is hard to quantify, because the quality of an explanation is not easily reduced to a number. For OOD detection, performance is much easier to measure, as the problem can be described as a binary classification problem, with OOD and ID samples as the positive and negative class. Thus, we can calculate many different metrics and compare methods against each other. For OOD methods, the two most common metrics to report is the False Positive Rate at 95\% recall (FPR95) and the Area Under Receiver Operating Curve (AUROC). It is common to use ImageNet or CIFAR as the ID dataset, and calculate FPR95 and AUROC on other datasets which contain no overlapping class labels. When selecting OOD datasets, it is common to differentiate between \textbf{near-OOD} and \textbf{far-OOD}. Far-OOD samples are samples which are drastically different from the ID samples, while near-OOD samples only differ slightly. For our cat-versus-dog classifier, a tiger and a wolf would represent near-OOD semantic shift, while a plane and a car would represent far-OOD semantic shift. As one might expect, detecting near-OOD samples is much harder.
+
+In 2021, \cite{oodoverview} defined a generalized OOD detection framework, and in 2023 \cite{openood} introduced a comprehensive benchmark of all relevant OOD methods under this framework, which allows for accurate comparisons of methods within the field. This benchmark is discussed in detail in chapter \ref{chapter:openood}.
 
 \subsection{Methods}
 
@@ -223,13 +276,28 @@ The field of OOD is separated into four categories of methods \cite{oodoverview}
   \item Reconstruction-based methods
 \end{itemize}
 
-Below follows a short explanation of each of the methods.
+All methods can also be categorized by whether they are post-hoc or training based. Post-hoc methods take an already trained network and attempt to extract information which separates ID and OOD samples out of the network during inference. These methods have the obvious advantage that they can work out of the box with large pre-trained network without requiring expensive training from scratch. Training based methods train the network in ways which maximize the difference between ID and OOD samples. These methods do not necessarily require OOD samples, but can train using auxiliary loss functions which amplify the differences in network behaviour when faced with OOD data as opposed to ID. Regardless, these methods come with a much higher computational requirement than post-hoc methods, as they require training from scratch or at least retraining using the new loss criterion. 
+
+Given the fact that post-hoc methods can be applied to trained networks out of the box, it is quite common to combine both post-hoc and training strategies to achieve the best performance.
+
+
+Below follows a short explanation of each the four categories mentioned above.
 \\
 
 \subsubsection{Classification-based methods}
 
-Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. There are several other state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
-\\
+Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish OOD and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to OOD samples. By using this simple distinction, they created a baseline model which separated OOD and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and OOD data. 
+
+More generally, classification-based methods do not need to use the softmax score, but may attempt to find any metric which separates the distribution of ID samples from OOD samples. Figure \ref{ood_metric} shows the probability density for an unspecified metric for both OOD and ID samples. The goal of classification-based OOD detection is to find metrics or training methods which make these probability densities have as little overlap as possible, such that they are easily separated by a threshold.
+
+There are several state of the art methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for OOD detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=3.25in]{figure/ood_sep.pdf}}
+\caption{Graph showing the distribution of hypothetical OOD and ID data for an unspecified metric. The shaded region shows the overlap between the two distributions.}
+\label{ood_metric}
+\end{figure}
+
 
 \subsubsection{Density-based methods}
 
@@ -458,6 +526,18 @@ l_0 := \alpha || \bm{x}^{\text{Null}(P)}||
 \end{equation}
 
 This now takes part in the computation of the softmax values, and thus is affected by the size of the rest of the logits. They call the softmax value of the Virtual Logit the {\it ViM score}. In this way, the ViM score represents the size of the residual in comparison with the predictions of the model. If the model is very confident, then the norm of the residual will be small in comparison, and the ViM score will be low. If the residual is very large, the ViM score will be higher, and more indicative of an OOD sample. In this way, \cite{vim} have combined information from the feature, the logit and the softmax probability level to perform OOD detection.
+
+\subsection{Datasets}
+
+With a thorough introduction to both XAI and OOD detection, I shall present the datasets that will be used to test the new method that I introduce in chapter \ref{chapter:newmethod}. The two datasets used are OpenOOD (\cite{openood}) and HyperKvasir (\cite{hyperkvasir}). OpenOOD is a comprehensive benchmark which will test the new method's performance in a wide range of OOD scenarios, while HyperKvasir is a medicinal dataset which will be used to test the method in the specific use case of medicinal OOD detection.
+
+\subsubsection{OpenOOD} \label{chapter:openood}
+
+As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an attempt to unify the performance metrics of the field, such that accurate comparisons of different methods could be made. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures and with other externalities which inhibited effective comparison between methods \cite{openood}.
+
+OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for OOD detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding OOD datasets, separated into near-OOD and far-OOD.
+
+\subsubsection{HyperKvasir} % \label{chapter:openood}
 
 \chapter{New method} \label{chapter:newmethod}
 
