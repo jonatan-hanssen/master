@@ -1,6 +1,6 @@
 # Uke 36
 
-- [ ] Lage val og test set av OpenOOD
+- [x] Lage val og test set av OpenOOD
 
 # Uke 37
 
