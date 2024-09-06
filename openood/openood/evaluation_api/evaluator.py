@@ -32,6 +32,7 @@ class Evaluator:
         batch_size: int = 200,
         shuffle: bool = False,
         num_workers: int = 4,
+        data_split=None,
     ) -> None:
         """A unified, easy-to-use API for evaluating (most) discriminative OOD
         detection methods.
@@ -103,7 +104,7 @@ class Evaluator:
             "num_workers": num_workers,
         }
         dataloader_dict = get_id_ood_dataloader(
-            id_name, data_root, preprocessor, **loader_kwargs
+            id_name, data_root, preprocessor, data_split=data_split, **loader_kwargs
         )
 
         # wrap base model to work with certain postprocessors
