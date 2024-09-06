@@ -274,13 +274,11 @@ def neovim(model, feature_id_train, feature_id_val, feature_ood, gradcam_id_trai
     vlogit_id_val = norm(np.matmul(stacked_id_val, null_space), axis=-1) * alpha
     energy_id_val = logsumexp(logit_id_val, axis=-1)
     score_id = -vlogit_id_val + energy_id_val
-    print(vlogit_id_val.mean())
 
 
 
     energy_ood = logsumexp(logit_ood, axis=-1)
     vlogit_ood = norm(np.matmul(stacked_ood, null_space), axis=-1) * alpha
-    print(vlogit_ood.mean())
     score_ood = -vlogit_ood + energy_ood
     fpr_ood, _ = fpr_recall(score_id, score_ood, 0.95)
 
