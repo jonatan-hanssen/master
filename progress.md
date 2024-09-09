@@ -4,5 +4,5 @@
 
 # Uke 37
 
-- [ ] Implementere NeoViM som OpenOOD postprocessor
+- [x] Implementere NeoViM som OpenOOD postprocessor
 - [ ] Finne på nye metoder
