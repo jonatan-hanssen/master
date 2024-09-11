@@ -6,6 +6,7 @@
 
 - [x] Implementere NeoViM som OpenOOD postprocessor
 - [x] Eksperimentere videre med NeoViM for å se om man kan få bedre performance
+- [x] Finne ut om det finnes noen XAI assisterte OOD metoder, skriver related work
 - [ ] Finne på nye metoder
     - [ ] Finne på metoder som bygger på allerede eksisterende OOD
     - [ ] Finne på metoder som bare bygger på XAI
