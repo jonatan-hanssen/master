@@ -92,7 +92,7 @@ Chapter \ref{chapter:background} gives a short introduction to machine learning,
 
 \chapter{Background} \label{chapter:background}
 
-This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of OOD detection and XAI. Finally, the datasets used in chapter \ref{chapter:experiments} are covered.
+This chapter gives a short introduction to important concepts in the field of machine learning generally, followed by a more in depth look at the fields of OOD detection and XAI. Then, I give an overview of related works, papers which have attempted to use XAI for OOD Detection. Finally, the datasets used in chapter \ref{chapter:experiments} are covered. 
 
 \section{Machine Learning}
 
@@ -140,7 +140,7 @@ Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix 
 
 FFNNs have some inherent flaws which make them unsuitable for working with high dimensional, spatially connected data, such as the pixels which make up an image. Firstly, each input of a FFNN is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately. Consider a network attempting to detect the presence of a cat in an image. We would want the network to detect the cat regardless of whether it is in the middle, the right corner, or any other position in the image. In an FFNN, the weights connected to any of these positions in the image would then have to encode a cat detector separately from all the others.
 
-Convolutional Neural Networks solve both these issues by using small kernels of weights which are applied
+Convolutional Neural Networks solve both these issues by using small kernels of weights which are "slid" across the entire input. By using the same weights across all positions of the image, we do not need to train separate detectors for different positions, giving us translation invariance. By using several different kernels, we can detect many different patterns despite each kernel only detecting a single type. By using the outputs of all the kernels as inputs to a new set of kernels, we can use the same type layer structure as in an FFNN, allowing us to extract information in a hierarchical manner. It is common to see that trained CNNs have early layers that detect edges and texture, later layers that use these edge and pattern detections to detect larger shapes, while the final layers combine the shapes into entire objects.
 
 \section{Explainable AI} \label{xai_intro}
 
@@ -202,7 +202,7 @@ Figure \ref{camimg} shows the process visually. From this we can see that the re
 Although CAM is an intuitive and effective method of visualizing the inner workings of a CNN, it has some downsides. Firstly, it is highly model dependent, requiring that the model only have a single dense layer after the convolutions. Although there are some state of the art models which only use a single dense layer, this still places a limit on what models can be used, or requires the simplification of models that use more than a single dense layer. \cite[4]{cam} notes a 1-2\% drop in classification performance when performing this simplification. Secondly, the output of CAM is simply a weighted sum of all the feature maps after the final convolutional layer. As we move deeper in a CNN, we reduce the spatial resolution by downsampling, while increasing the number of channels (increasing the depth of the output while reducing the height and width). Because of this, the CAM will have a drastically lower resolution than the original image, often less than $10 \, x \, 10$, while the input image may be hundreds of pixels in both dimensions. Because of this, CAM can only show general areas, as opposed to pixel wise explanations.
 \\
 
-\subsubsection{Gradient Class Activation Mapping (Grad-CAM)}
+\subsubsection{Gradient Class Activation Mapping (Grad-CAM)} \label{chapter:gradcam}
 
 Grad-CAM \cite{gradcam} is an improvement on CAM, which generalizes the method to function with any CNN architecture, thus making the method much less model dependent and avoiding the performance drop incurred when simplifying the model with CAM. Instead of using the weights of a final layer to calculate a weighted sum of feature maps in the last convolutional layer, Grad-CAM uses gradients flowing from the relevant output node to the activation maps to calculate the weights for each feature map. Furthermore, the authors prove that this method is a strict generalization of CAM \cite[5]{gradcam}, so that no information is lost by using gradients instead of weights.
 
@@ -449,7 +449,7 @@ This simple methods performs well on many benchmarks, with the added benefit tha
 
 Generating outliers to expose to the model during training is another way to reduce the model's confidence on OOD data. However, creating realistic OOD data points can be difficult, especially if the input space is of a high dimension, such as in image classification. \cite{vos} presents a more tractable method, which synthesizes outliers not in the input space, but in the feature space, which can be of a much lower dimensionality.
 
-In this lower dimension space, previously intractable methods are now less computationally expensive. To synthesize outliers, \cite{vos} simply estimate class conditional Gaussian distributions by computing empirical class means and covariances, and sample outliers from the class boundaries between these Gaussians.
+In this lower dimension space, previously intractable methods are now less computationally expensive. To synthesize outliers, \cite{vos} simply estimates class conditional Gaussian distributions by computing empirical class means and covariances, and sample outliers from the class boundaries between these Gaussians.
 
 Using these outliers, they present a "unknown-aware training objective", which can be used during training to maximize the separability between ID and OOD data during inference.
 \\
@@ -527,17 +527,29 @@ l_0 := \alpha || \bm{x}^{\text{Null}(P)}||
 
 This now takes part in the computation of the softmax values, and thus is affected by the size of the rest of the logits. They call the softmax value of the Virtual Logit the {\it ViM score}. In this way, the ViM score represents the size of the residual in comparison with the predictions of the model. If the model is very confident, then the norm of the residual will be small in comparison, and the ViM score will be low. If the residual is very large, the ViM score will be higher, and more indicative of an OOD sample. In this way, \cite{vim} have combined information from the feature, the logit and the softmax probability level to perform OOD detection.
 
+\subsection{Related work}
+
+While the combination of XAI and OOD detection has been explored in many previous works, the majority of them focus on explaining why a data point was marked as OOD, as opposed to using XAI to aid the detection itself. Works like \cite{uncertainty}, \cite{generalxaiforood} and \cite{tallon2020explainable} are papers which combine XAI and OOD for this purpose. Within network security, XAI has been as part of anomaly detection systems to detect malicious or faulty network traffic. Here, it has been used to explain detections (\cite{idsxai}, \cite{mahbooba}), but also to aid in detection itself by inspecting the explanations of the detection system (\cite{tcydenova2021detection}, \cite{dnsxai}). These methods thus use XAI to aid OOD detection in a similar manner to my work, however they are strictly focused on sequential network traffic data as opposed to images, and are mostly concerned with detection "unnatural" data samples such as intentionally malicious traffic or that generated by faulty equipment, as opposed to natural OOD data caused by semantic or covariate shift occurring when a model is deployed.
+
+\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use XAI to improve OOD detection on images. They do this by looking at saliency maps produced by the model during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class (as explained in section \ref{chapter:gradcam}). By collecting all explanations for each image in the ID dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform OOD detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as OOD if it has a distance which is over a certain threshold. This method performs decently, but not competitively to State-of-the-Art OOD detection models, with the authors concluding that "OoD detection approaches that are specifically designed for the purpose achieve in general better detection scores at the cost of an additional computational burden in the model’s construction" \cite{martinez}.
+
+For more potential related work, we can look to OpenOOD (\cite{openood}), which aims to provide a comprehensive benchmark of all relevant methods in the field of OOD detection. Out of all 41 OOD detection methods included in this benchmark, there are no methods which use XAI.
+
+From the absence of any relevant method utilizing XAI in OpenOOD and from the relatively poor results of \cite{martinez}, we can see that the potential for a truly effective OOD detection system using XAI has not been fully realized in any previous work.
+
 \subsection{Datasets}
 
-With a thorough introduction to both XAI and OOD detection, I shall present the datasets that will be used to test the new method that I introduce in chapter \ref{chapter:newmethod}. The two datasets used are OpenOOD (\cite{openood}) and HyperKvasir (\cite{hyperkvasir}). OpenOOD is a comprehensive benchmark which will test the new method's performance in a wide range of OOD scenarios, while HyperKvasir is a medicinal dataset which will be used to test the method in the specific use case of medicinal OOD detection.
+With a thorough introduction to both XAI and OOD detection as well as methods which combine the two, I shall present the datasets that will be used to test the new method that I introduce in chapter \ref{chapter:newmethod}. The two datasets used are OpenOOD (\cite{openood}) and HyperKvasir (\cite{hyperkvasir}). OpenOOD is a comprehensive benchmark which can test the new method's performance in a wide range of OOD scenarios, while HyperKvasir is a medicinal dataset which can be used to test the method in the specific use case of gastrointestinal OOD detection.
 
 \subsubsection{OpenOOD} \label{chapter:openood}
 
-As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an attempt to unify the performance metrics of the field, such that accurate comparisons of different methods could be made. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures and with other externalities which inhibited effective comparison between methods \cite{openood}.
+As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an attempt to unify the performance metrics of the field, such that accurate comparisons of different methods could be made. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures, and with other externalities which inhibited effective comparison between methods \cite{openood}.
 
 OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for OOD detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding OOD datasets, separated into near-OOD and far-OOD.
 
-\subsubsection{HyperKvasir} % \label{chapter:openood}
+\subsubsection{HyperKvasir} \label{chapter:hyperkvasir}
+
+HyperKvasir is one of the largest gastrointestinal machine learning datasets, containing over X amount of hours of endoscopic video and over X labeled images. Something something.
 
 \chapter{New method} \label{chapter:newmethod}
 
