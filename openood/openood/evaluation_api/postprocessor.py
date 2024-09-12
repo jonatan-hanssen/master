@@ -47,6 +47,7 @@ from openood.postprocessors import (
     ReweightOODPostprocessor,
     fDBDPostprocessor,
     NeoVIMPostprocessor,
+    TestPostprocessor,
 )
 from openood.utils.config import Config, merge_configs
 
@@ -97,6 +98,7 @@ postprocessors = {
     't2fnorm': T2FNormPostprocessor,
     'reweightood': ReweightOODPostprocessor,
     'neovim': NeoVIMPostprocessor,
+    'test': TestPostprocessor,
 }
 
 link_prefix = (
