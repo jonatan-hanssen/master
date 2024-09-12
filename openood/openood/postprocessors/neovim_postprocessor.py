@@ -73,7 +73,7 @@ class NeoVIMPostprocessor(BasePostprocessor):
 
             cams = list()
 
-            target_layers = [net.layer4[-1]]
+            target_layers = [net.layer3[-1]]
             cam = GradCAMNoRescale(model=net, target_layers=target_layers)
 
             # with torch.no_grad():
@@ -140,7 +140,7 @@ class NeoVIMPostprocessor(BasePostprocessor):
             _, feature_ood = net.forward(data, return_feature=True)
         feature_ood = feature_ood.cpu()
 
-        target_layers = [net.layer4[-1]]
+        target_layers = [net.layer3[-1]]
         cam = GradCAMNoRescale(model=net, target_layers=target_layers)
         grayscale_cam = cam(input_tensor=data)
         b, h, w = grayscale_cam.shape
