@@ -34,7 +34,7 @@ net.eval()
 # net.cuda()
 # net.eval()
 
-postprocessor_name = 'vim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
+postprocessor_name = 'test'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
 # postprocessor =
 
 evaluator = Evaluator(
