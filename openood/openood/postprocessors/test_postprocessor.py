@@ -59,12 +59,9 @@ class GradCAMNoRescale(GradCAM):
         return cam_per_target_layer
 
 
-class NeoVIMPostprocessor(BasePostprocessor):
+class TestPostprocessor(BasePostprocessor):
     def __init__(self, config):
         super().__init__(config)
-        self.args = self.config.postprocessor.postprocessor_args
-        self.args_dict = self.config.postprocessor.postprocessor_sweep
-        self.dim = self.args.dim
         self.setup_flag = False
 
     def setup(self, net: nn.Module, id_loader_dict, ood_loader_dict):

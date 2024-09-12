@@ -1,5 +1,7 @@
 import torch
 from openood.postprocessors.vim_postprocessor import VIMPostprocessor
+import numpy as np
+import pickle
 
 from openood.evaluation_api import Evaluator
 from openood.networks import (
@@ -16,6 +18,13 @@ net.load_state_dict(
 net.cuda()
 net.eval()
 
+# net = ResNet18_32x32(num_classes=100)
+# net.load_state_dict(
+#     torch.load('./models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+# )
+# net.cuda()
+# net.eval()
+
 # net = ResNet18_224x224(num_classes=200)
 # net.load_state_dict(
 #     torch.load(
@@ -25,7 +34,7 @@ net.eval()
 # net.cuda()
 # net.eval()
 
-postprocessor_name = 'neovim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
+postprocessor_name = 'test'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
 # postprocessor =
 
 evaluator = Evaluator(
@@ -45,3 +54,6 @@ evaluator = Evaluator(
 
 
 metrics = evaluator.eval_ood(fsood=False)
+
+with open(f'{postprocessor_name}.pkl', 'wb') as file:
+    pickle.dump(evaluator.scores, file)
