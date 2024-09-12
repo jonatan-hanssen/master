@@ -549,9 +549,15 @@ OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Reco
 
 \subsubsection{HyperKvasir} \label{chapter:hyperkvasir}
 
-HyperKvasir is one of the largest gastrointestinal machine learning datasets, containing over X amount of hours of endoscopic video and over X labeled images. Something something.
+HyperKvasir is the largest gastrointestinal (GI) machine learning datasets, containing $110 \,079$ images and $374$ videos collected during gastro- and colonoscopy examinations \cite{hyperkvasir}. It is of utmost importance to detect and correctly classify disease found in the GI-tract, as the different diseases can range from minor annoyances to highly deadly diseases such as GI-cancer, which has a mortality rate of $63 \%$ \cite{hyperkvasir}. Furthermore, the effectiveness of endoscopy in locating these diseases is highly dependent on the skill and knowledge of the human operator, with polyps in the colon having a $20 \%$ miss rate \cite{kaminski2010quality}. Thus, this is a field which could benefit greatly from computer aided diagnosis, but such an integration requires robust and trustworthy AI-systems which do not make erroneous decisions with high confidence. This makes HyperKvasir an ideal dataset to test a new OOD detection method in a more practical real-world scenario.
+
+Of the $100 \, 079$ images, $10 \, 662$ have been labeled, with a total of 23 classes. HyperKvasir also contains segmentations and labeled video, however, I shall limit myself to the labeled images and to the task of classification, as this is the task which OOD detection is most commonly applied to.
 
 \chapter{New method} \label{chapter:newmethod}
+
+I now introduce the GOAT-method.
+
+\chapter{Method} \label{chapter:method}
 
 \chapter{Experiments and Results} \label{chapter:experiments}
 
