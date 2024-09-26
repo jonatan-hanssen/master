@@ -80,6 +80,7 @@ class TestPostprocessor(BasePostprocessor):
 
             cams = list()
             preds = list()
+            features = list()
             for i, batch in enumerate(
                 tqdm(id_loader_dict['train'], desc='Setup: ', position=0, leave=True)
             ):
@@ -87,8 +88,8 @@ class TestPostprocessor(BasePostprocessor):
                 data = data.float()
                 with torch.no_grad():
                     _, feature = net(data, return_feature=True)
-                    print(feature.shape)
 
+                features.append(feature.cpu().numpy())
                 grayscale_cam = cam(input_tensor=data)
 
                 n_classes = cam.outputs.shape[-1]
@@ -103,13 +104,17 @@ class TestPostprocessor(BasePostprocessor):
 
             gradcams = np.concatenate(cams, axis=0)
             preds = np.concatenate(preds, axis=0)
+            features = np.concatenate(features, axis=0)
 
             self.clusterers = list()
+
+            print('Performing clustering on training')
             for i in range(n_classes):
                 class_gradcams = gradcams[np.where(preds == i)]
+                class_features = features[np.where(preds == i)]
 
                 clusterer = KMeans(random_state=1, n_clusters=self.num_clusters)
-                clusterer.fit(class_gradcams)
+                clusterer.fit(np.hstack([class_gradcams, class_features]))
                 self.clusterers.append(clusterer)
 
             self.setup_flag = True
@@ -123,6 +128,11 @@ class TestPostprocessor(BasePostprocessor):
         b, h, w = gradcams.shape
         gradcams = gradcams.reshape((b, h * w))
 
+        with torch.no_grad():
+            _, features = net(data, return_feature=True)
+
+        features = features.cpu().numpy()
+
         _, preds = torch.max(cam.outputs, dim=1)
         preds = preds.cpu().numpy()
         n_classes = cam.outputs.shape[-1]
@@ -133,7 +143,9 @@ class TestPostprocessor(BasePostprocessor):
             indices = np.where(preds == i)
             if len(indices[0]) == 0:
                 continue
-            distances[indices] = self.clusterers[i].transform(gradcams[indices])
+            distances[indices] = self.clusterers[i].transform(
+                np.hstack([gradcams[indices], features[indices]])
+            )
 
         score_ood = np.min(distances, axis=1) * -1
 
