@@ -5,6 +5,9 @@
 # Uke 37
 
 - [x] Implementere NeoViM som OpenOOD postprocessor
+
+![](./progresspictures/neovim.png)
+
 - [x] Eksperimentere videre med NeoViM for å se om man kan få bedre performance
 - [x] Finne ut om det finnes noen XAI assisterte OOD metoder, skriver related work
 - [ ] Finne på nye metoder
@@ -20,9 +23,8 @@
 
 # Uke 39
 
-- [x] Implementer CAM clustering
+- [x] Implementer CAM clustering som OpenOOD postprocessor
 
 ![](./progresspictures/cam_clustering.png)
-![](./progresspictures/neovim.png)
 
 
