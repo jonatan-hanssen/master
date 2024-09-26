@@ -3,6 +3,7 @@ from openood.postprocessors.vim_postprocessor import VIMPostprocessor
 import numpy as np
 import pickle
 
+from openood.postprocessors.test_postprocessor import TestPostprocessor
 from openood.evaluation_api import Evaluator
 from openood.networks import (
     ResNet18_32x32,
@@ -35,7 +36,8 @@ net.eval()
 # net.eval()
 
 postprocessor_name = 'test'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
-# postprocessor =
+postprocessor = TestPostprocessor(None)
+
 
 evaluator = Evaluator(
     net,
@@ -44,8 +46,8 @@ evaluator = Evaluator(
     data_root='./data',  # change if necessary
     config_root=None,  # see notes above
     preprocessor=None,  # default preprocessing for the target ID dataset
-    postprocessor_name=postprocessor_name,  # the postprocessor to use
-    postprocessor=None,  # if you want to use your own postprocessor
+    postprocessor_name=None,  # the postprocessor to use
+    postprocessor=postprocessor,  # if you want to use your own postprocessor
     batch_size=200,  # for certain methods the results can be slightly affected by batch size
     shuffle=False,
     num_workers=2,
@@ -55,5 +57,5 @@ evaluator = Evaluator(
 
 metrics = evaluator.eval_ood(fsood=False)
 
-with open(f'{postprocessor_name}.pkl', 'wb') as file:
+with open(f'saved_metrics/{postprocessor_name}.pkl', 'wb') as file:
     pickle.dump(evaluator.scores, file)

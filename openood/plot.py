@@ -5,7 +5,7 @@ import seaborn as sns
 import sys
 
 
-filename = f'{sys.argv[1]}.pkl'
+filename = f'saved_metrics/{sys.argv[1]}.pkl'
 
 plt.rcParams.update({'font.size': 22})
 
@@ -32,7 +32,7 @@ width = 3
 sns.kdeplot(id_scores, bw_method=smoothing, label='id', linewidth=3)
 sns.kdeplot(near_ood_scores, bw_method=smoothing, label='near ood', linewidth=3)
 sns.kdeplot(far_ood_scores, bw_method=smoothing, label='far ood', linewidth=3)
-plt.title(f'Density plot for {filename.split(".")[0]} method')
+plt.title(f'Density plot for {sys.argv[1]} method')
 plt.xlabel(f'Value of metric used for separation')
 plt.legend()
 plt.show()
