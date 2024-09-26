@@ -10,5 +10,16 @@
 - [ ] Finne på nye metoder
     - [ ] Finne på metoder som bygger på allerede eksisterende OOD
     - [ ] Finne på metoder som bare bygger på XAI
-- [ ] Tenke over muligheten for å ha mange ulike metoder framfor bare én
+- [x] Tenke over muligheten for å ha mange ulike metoder framfor bare én
 - [ ] Finne flere XAI metoder, se på hvordan de kunne integreres i OOD
+
+# Uke 38
+
+- [ ] Finne på nye metoder
+    - [ ] Finne på metoder som bare bygger på XAI
+    - [ ] Noe med LIME? Eller Shapley values?
+- [ ] Finne flere XAI metoder, se på hvordan de kunne integreres i OOD
+    - [ ] Finne flere XAI metoder, se på hvordan de kunne integreres i OOD
+    - [ ] Se på LIME og Shapley
+- [ ] Skriv om LIME og Shapley kanskje
+
