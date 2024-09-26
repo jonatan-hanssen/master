@@ -13,12 +13,20 @@
 - [ ] Finne på nye metoder
     - [ ] Finne på metoder som bygger på allerede eksisterende OOD
     - [ ] Finne på metoder som bare bygger på XAI
-- [ ] Tenke over muligheten for å ha mange ulike metoder framfor bare én
+- [x] Tenke over muligheten for å ha mange ulike metoder framfor bare én
 - [ ] Finne flere XAI metoder, se på hvordan de kunne integreres i OOD
 
 # Uke 38
 
-- [x] Finne på nye metoder
+- [ ] Finne på nye metoder
+    - [ ] Finne på metoder som bare bygger på XAI
+    - [ ] Noe med LIME? Eller Shapley values?
+- [ ] Finne flere XAI metoder, se på hvordan de kunne integreres i OOD
+    - [x] Finne flere XAI metoder, se på hvordan de kunne integreres i OOD
+    - [x] Se på LIME og Shapley
+- [ ] Skriv om LIME og Shapley kanskje
+    - [x] Skriv om LIME
+- [x] Finne nye metoder
     - CAM clustering
 
 # Uke 39
@@ -26,5 +34,3 @@
 - [x] Implementer CAM clustering som OpenOOD postprocessor
 
 ![](./progresspictures/cam_clustering.png)
-
-

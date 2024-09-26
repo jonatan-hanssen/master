@@ -1,9 +1,10 @@
 # Explainable AI for Out Of Distribution Detection
 
-Essay ligger [her](./essay/essay.pdf).
+Selve masteroppgaven ligger [her](./master/master.pdf).
 
 ## Overordnet mål
 
+Målet med masteroppgaven er å utvikle en Out of Distribution Detector som er inspirert av Explainable AI. XAI kan inneholde nyttig informasjon utover forklarbarhet, og dette kan kanskje utnyttes til andre formål, for eksempel for å oppdage datapunkter som er langt unna treningsdataen.
 Utvikle en Out-of-Distribution detector som er inspirert av XAI. Bruk et datasett med kjente out of distribution punkter, kjør XAI OOD detector og state of the art OOD detectors og se om man får bedre resultater.
 
 Metrikken er som oftest FPR95 med ImageNet som ID. FPR95 er false positive rate når true positive rate er 95%. OOD dataset er f.eks iNaturalist, SUN, Places og Textures. Fordi vi bruker ImageNet som ID kan man bare bruke pretrained ting fra pytorch. Trenger ikke trene.
