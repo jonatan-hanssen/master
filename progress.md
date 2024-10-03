@@ -34,3 +34,11 @@
 - [x] Implementer CAM clustering som OpenOOD postprocessor
 
 ![](./progresspictures/cam_clustering.png)
+
+# Uke 40
+
+- Se på PCA gradcams
+
+![](./progresspictures/gradcam_pca.png)
+
+- Ganske liten forskjell her, sikkert vanskelig å skille dem
