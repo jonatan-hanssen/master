@@ -14,6 +14,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
+from utils import get_dataloaders
 
 plt.rcParams.update({'font.size': 22})
 
@@ -79,11 +80,7 @@ class GradCAMNoRescale(GradCAM):
         return cam_per_target_layer
 
 
-dataloader_dict = get_id_ood_dataloader(
-    id_name, data_root, preprocessor, data_split='val', **loader_kwargs
-)
-print(dataloader_dict)
-
+dataloaders = get_dataloaders(id_name)
 
 # load the model
 
@@ -95,7 +92,7 @@ net.cuda()
 net.eval()
 
 
-def get_pca(dictionary):
+def get_pca(dataloader):
     cams = list()
     pred_labels = list()
     preds = list()
@@ -103,25 +100,22 @@ def get_pca(dictionary):
     target_layers = [net.layer3[-1]]
     cam = GradCAMNoRescale(model=net, target_layers=target_layers)
 
-    for key in dictionary:
-        print(key)
-        dataloader = dictionary[key]
-        pbar = tqdm(dataloader)
+    pbar = tqdm(dataloader)
 
-        for i, batch in enumerate(pbar):
-            data = batch['data']
-            data = data.to(device)
+    for i, batch in enumerate(pbar):
+        data = batch['data']
+        data = data.to(device)
 
-            gradcam = cam(input_tensor=data)
-            pred, pred_label = torch.max(cam.outputs, dim=1)
-            b, h, w = gradcam.shape
-            gradcam = gradcam.reshape((b, h * w))
-            cams.append(gradcam)
-            pred_labels.append(pred_label.cpu().numpy())
-            preds.append(pred.detach().cpu().numpy())
-            if i > 20:
-                pass
-                # break
+        gradcam = cam(input_tensor=data)
+        pred, pred_label = torch.max(cam.outputs, dim=1)
+        b, h, w = gradcam.shape
+        gradcam = gradcam.reshape((b, h * w))
+        cams.append(gradcam)
+        pred_labels.append(pred_label.cpu().numpy())
+        preds.append(pred.detach().cpu().numpy())
+        if i > 100:
+            pass
+            # break
 
     pca = PCA(n_components=3)
     gradcams = np.concatenate(cams, axis=0)
@@ -138,9 +132,9 @@ def get_pca(dictionary):
     return pca_data
 
 
-id_cams = get_pca(dataloader_dict['id'])
-near_cams = get_pca(dataloader_dict['ood']['near'])
-far_cams = get_pca(dataloader_dict['ood']['far'])
+id_cams = get_pca(dataloaders['id'])
+near_cams = get_pca(dataloaders['near'])
+far_cams = get_pca(dataloaders['far'])
 
 scatter = lambda data, label: plt.scatter(data[:, 0], data[:, 1], label=label)
 
