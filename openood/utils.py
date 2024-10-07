@@ -32,13 +32,21 @@ def get_dataloaders(id_name: str):
 
     def combine_dataloaders(dictionary):
         for key in dictionary:
-            print(key)
-            print(len(dictionary[key]))
             for batch in dictionary[key]:
                 yield batch
+
+    get_length = lambda dictionary: sum([len(dictionary[key]) for key in dictionary])
 
     id_generator = combine_dataloaders(dataloader_dict['id'])
     near_generator = combine_dataloaders(dataloader_dict['ood']['near'])
     far_generator = combine_dataloaders(dataloader_dict['ood']['far'])
 
-    return {'id': id_generator, 'near': near_generator, 'far': far_generator}
+    id_length = get_length(dataloader_dict['id'])
+    near_length = get_length(dataloader_dict['ood']['near'])
+    far_length = get_length(dataloader_dict['ood']['far'])
+
+    return {
+        'id': (id_generator, id_length),
+        'near': (near_generator, near_length),
+        'far': (far_generator, far_length),
+    }

@@ -100,7 +100,7 @@ def get_pca(dataloader):
     target_layers = [net.layer3[-1]]
     cam = GradCAMNoRescale(model=net, target_layers=target_layers)
 
-    pbar = tqdm(dataloader)
+    pbar = tqdm(dataloader[0], total=dataloader[1])
 
     for i, batch in enumerate(pbar):
         data = batch['data']
