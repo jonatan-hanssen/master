@@ -50,3 +50,35 @@ def get_dataloaders(id_name: str):
         'near': (near_generator, near_length),
         'far': (far_generator, far_length),
     }
+
+
+def lime_explanation(net, batch):
+    pass
+
+
+def mask_image(mask_tensor):
+    # Define block size
+    block_size = 4
+
+    # Prepare the mask array
+    mask_tensor = torch.tensor(mask_tensor, dtype=int)
+    mask_array = (
+        mask_tensor.reshape((2, 4, 4))
+        .repeat_interleave(block_size, dim=1)
+        .repeat_interleave(block_size, dim=2)
+    )
+
+    # Ensure the mask matches the image dimensions
+    print(mask_array)
+
+
+# Example usage:
+# Define the mask tensor of 64 bits (8x8 regions)
+
+
+
+
+
+
+
+
