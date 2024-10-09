@@ -3,7 +3,7 @@ from openood.postprocessors.vim_postprocessor import VIMPostprocessor
 import numpy as np
 import pickle
 
-from openood.postprocessors.test_postprocessor import TestPostprocessor
+from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
 from openood.postprocessors.cam_distance_postprocessor import CamDistancePostprocessor
 from openood.evaluation_api import Evaluator
 from openood.networks import (
@@ -36,8 +36,8 @@ net.eval()
 # net.cuda()
 # net.eval()
 
-postprocessor_name = 'camdistance'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
-postprocessor = CamDistancePostprocessor(None)
+postprocessor_name = 'limevim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
+postprocessor = LimeVIMPostprocessor(None)
 
 
 evaluator = Evaluator(
