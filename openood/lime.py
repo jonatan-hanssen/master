@@ -12,9 +12,11 @@ import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
-from utils import get_dataloaders, mask_image
+from utils import get_dataloaders, mask_image, display_pytorch_image, lime_explanation
+import pickle
 
 id_name = 'cifar10'
+device = 'cuda'
 
 dataloaders = get_dataloaders(id_name)
 
@@ -34,10 +36,24 @@ mask_tensor = torch.tensor(
     ]
 )
 
+betas_per = dict()
 
-masked_image = mask_image(mask_tensor)
+for key in ('id', 'near', 'far'):
+    pbar = tqdm(dataloaders[key][0], total=dataloaders[key][1])
 
-pbar = tqdm(dataloaders['id'][0], total=dataloaders['id'][1])
+    all_betas = list()
 
-for batch in pbar:
-    print(batch.size)
+    for i, batch in enumerate(pbar):
+        data = batch['data'].to(device)
+        betas = lime_explanation(net, data, mask_prob=0.4)
+        all_betas.append(betas)
+        if i > 20:
+            pass
+            # break
+
+    betas = torch.cat(all_betas, dim=0)
+    print(betas.shape)
+    betas_per[key] = betas
+
+with open('saved_metrics/lime_betas.pkl', 'wb') as file:
+    pickle.dump(betas_per, file)
