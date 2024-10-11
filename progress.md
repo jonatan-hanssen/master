@@ -45,5 +45,7 @@
 
 # 41
 
+- Gjør LIME istedenfor gradcam, se på betaene for å skille
+
 ![](./progresspictures/lime_pca.png)
 
