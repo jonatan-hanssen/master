@@ -42,3 +42,8 @@
 ![](./progresspictures/gradcam_pca.png)
 
 - Ganske liten forskjell her, sikkert vanskelig å skille dem
+
+# 41
+
+![](./progresspictures/lime_pca.png)
+
