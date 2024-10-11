@@ -53,6 +53,7 @@ evaluator = Evaluator(
     shuffle=False,
     num_workers=2,
     data_split='val',  # added by me, split into val and test for development
+    bootstrap_seed=1,  # added by me, bootstrap validation
 )  # could use more num_workers outside colab
 
 

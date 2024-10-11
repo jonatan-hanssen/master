@@ -2,7 +2,7 @@ import os
 import gdown
 import zipfile
 
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, RandomSampler
 from torch import Generator
 import torchvision as tvs
 
@@ -411,7 +411,12 @@ def data_setup(data_root, id_data_name):
 
 
 def get_id_ood_dataloader(
-    id_name, data_root, preprocessor, data_split=None, **loader_kwargs
+    id_name,
+    data_root,
+    preprocessor,
+    data_split=None,
+    bootstrap_seed=None,
+    **loader_kwargs,
 ):
     if 'imagenet' in id_name:
         if tvs_new:
@@ -496,6 +501,7 @@ def get_id_ood_dataloader(
             dataloader = DataLoader(dataset, **loader_kwargs)
             dataloader_dict['ood'][split] = dataloader
         else:
+            sampler = None
             # dataloaders for nearood, farood
             sub_dataloader_dict = {}
             for dataset_name in split_config['datasets']:
@@ -516,11 +522,16 @@ def get_id_ood_dataloader(
 
                     if data_split == 'val':
                         dataset = val_set
+                        if bootstrap_seed is not None:
+                            generator = Generator().manual_seed(bootstrap_seed)
+                            sampler = RandomSampler(
+                                dataset, replacement=True, generator=generator
+                            )
                     elif data_split == 'test':
                         dataset = test_set
                     else:
                         raise ValueError("data_split only accepts 'val' or 'test'")
-                dataloader = DataLoader(dataset, **loader_kwargs)
+                dataloader = DataLoader(dataset, sampler=sampler, **loader_kwargs)
                 sub_dataloader_dict[dataset_name] = dataloader
             dataloader_dict['ood'][split] = sub_dataloader_dict
 
