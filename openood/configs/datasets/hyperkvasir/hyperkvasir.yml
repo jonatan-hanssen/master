@@ -1,8 +1,8 @@
 dataset:
-  name: imagenet
-  num_classes: 1000
-  pre_size: 256
+  name: hyperkvasir
+  num_classes: 13
   image_size: 224
+  pre_size: 224
 
   interpolation: bilinear
   normalization_type: imagenet
@@ -16,18 +16,18 @@ dataset:
   train:
     dataset_class: ImglistDataset
     data_dir: ./data/images_largescale/
-    imglist_pth: ./data/benchmark_imglist/imagenet/train_hyperkvasir.txt
+    imglist_pth: ./data/benchmark_imglist/hyperkvasir/train_hyperkvasir.txt
     batch_size: 128
     shuffle: True
   val:
     dataset_class: ImglistDataset
     data_dir: ./data/images_largescale/
-    imglist_pth: ./data/benchmark_imglist/imagenet/val_hyperkvasir.txt
+    imglist_pth: ./data/benchmark_imglist/hyperkvasir/val_hyperkvasir.txt
     batch_size: 128
     shuffle: False
   test:
     dataset_class: ImglistDataset
     data_dir: ./data/images_largescale/
-    imglist_pth: ./data/benchmark_imglist/imagenet/test_hyperkvasir.txt
+    imglist_pth: ./data/benchmark_imglist/hyperkvasir/test_hyperkvasir.txt
     batch_size: 128
     shuffle: False
