@@ -1,6 +1,6 @@
 ood_dataset:
   name: hyperkvasir_ood
-  num_classes: 1000
+  num_classes: 6
 
   dataset_class: ImglistDataset
   interpolation: bilinear
@@ -14,23 +14,26 @@ ood_dataset:
   split_names: [val, nearood, farood]
   val:
     data_dir: ./data/images_largescale/
-    imglist_pth: ./data/benchmark_imglist/imagenet/val_openimage_o.txt
+    imglist_pth: ./data/benchmark_imglist/hyperkvasir/val_lower.txt
   nearood:
-    datasets: [ssb_hard, ninco]
-    ssb_hard:
+    datasets: [lower, upper]
+    lower:
       data_dir: ./data/images_largescale/
-      imglist_pth: ./data/benchmark_imglist/imagenet/test_ssb_hard.txt
-    ninco:
+      imglist_pth: ./data/benchmark_imglist/hyperkvasir/test_upper.txt
+    upper:
       data_dir: ./data/images_largescale/
-      imglist_pth: ./data/benchmark_imglist/imagenet/test_ninco.txt
+      imglist_pth: ./data/benchmark_imglist/imagenet/test_lower.txt
   farood:
-    datasets: [inaturalist, textures, openimageo]
-    textures:
+    datasets: [mnist, svhn, texture, place365]
+    mnist:
       data_dir: ./data/images_classic/
-      imglist_pth: ./data/benchmark_imglist/imagenet/test_textures.txt
-    inaturalist:
-      data_dir: ./data/images_largescale/
-      imglist_pth: ./data/benchmark_imglist/imagenet/test_inaturalist.txt
-    openimageo:
-      data_dir: ./data/images_largescale/
-      imglist_pth: ./data/benchmark_imglist/imagenet/test_openimage_o.txt
+      imglist_pth: ./data/benchmark_imglist/cifar10/test_mnist.txt
+    svhn:
+      data_dir: ./data/images_classic/
+      imglist_pth: ./data/benchmark_imglist/cifar10/test_svhn.txt
+    texture:
+      data_dir: ./data/images_classic/
+      imglist_pth: ./data/benchmark_imglist/cifar10/test_texture.txt
+    place365:
+      data_dir: ./data/images_classic/
+      imglist_pth: ./data/benchmark_imglist/cifar10/test_places365.txt

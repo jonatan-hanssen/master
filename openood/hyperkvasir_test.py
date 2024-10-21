@@ -15,7 +15,7 @@ from openood.networks import (
 
 # load the model
 
-net = ResNet18_224x224(num_classes=13)
+net = ResNet18_224x224(num_classes=6)
 net.load_state_dict(
     torch.load(
         './results/hyperkvasir_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'

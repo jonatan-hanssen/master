@@ -1,6 +1,6 @@
 dataset:
   name: hyperkvasir
-  num_classes: 13
+  num_classes: 6
   image_size: 224
   pre_size: 224
 

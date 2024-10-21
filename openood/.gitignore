@@ -3,8 +3,6 @@ _test_*
 *-backup*
 
 # ignore data and output directory
-data
-data/
 results/
 checkpoints/
 ipynb_checkpoints/
