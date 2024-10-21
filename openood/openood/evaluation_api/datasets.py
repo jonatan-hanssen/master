@@ -450,6 +450,7 @@ def get_id_ood_dataloader(
     # id
     sub_dataloader_dict = {}
     for split in data_info['id'].keys():
+        print(split)
         dataset = ImglistDataset(
             name='_'.join((id_name, split)),
             imglist_pth=os.path.join(data_root, data_info['id'][split]['imglist_path']),
@@ -458,7 +459,26 @@ def get_id_ood_dataloader(
             preprocessor=preprocessor,
             data_aux_preprocessor=test_standard_preprocessor,
         )
-        dataloader = DataLoader(dataset, **loader_kwargs)
+        sampler = None
+        if split == 'test':
+            if data_split is not None:
+                generator = Generator().manual_seed(0)
+                val_set, test_set = random_split(
+                    dataset, [0.5, 0.5], generator=generator
+                )
+
+                if data_split == 'val':
+                    dataset = val_set
+                    if bootstrap_seed is not None:
+                        generator = Generator().manual_seed(bootstrap_seed)
+                        sampler = RandomSampler(
+                            dataset, replacement=True, generator=generator
+                        )
+                elif data_split == 'test':
+                    dataset = test_set
+                else:
+                    raise ValueError("data_split only accepts 'val' or 'test'")
+        dataloader = DataLoader(dataset, sampler=sampler, **loader_kwargs)
         sub_dataloader_dict[split] = dataloader
     dataloader_dict['id'] = sub_dataloader_dict
 
