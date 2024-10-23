@@ -35,7 +35,12 @@ default_preprocessing_dict = {
         'pre_size': 512,
         'img_size': 448,
         'normalization': [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
-    }
+    },
+    'hyperkvasir': {
+        'pre_size': 224,
+        'img_size': 224,
+        'normalization': [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]],
+    },
 }
 
 
@@ -49,22 +54,27 @@ class Convert:
 
 class TestStandardPreProcessor(BasePreprocessor):
     """For test and validation dataset standard image transformation."""
+
     def __init__(self, config: Config):
-        self.transform = tvs_trans.Compose([
-            Convert('RGB'),
-            tvs_trans.Resize(config.pre_size, interpolation=INTERPOLATION),
-            tvs_trans.CenterCrop(config.img_size),
-            tvs_trans.ToTensor(),
-            tvs_trans.Normalize(*config.normalization),
-        ])
+        self.transform = tvs_trans.Compose(
+            [
+                Convert('RGB'),
+                tvs_trans.Resize(config.pre_size, interpolation=INTERPOLATION),
+                tvs_trans.CenterCrop(config.img_size),
+                tvs_trans.ToTensor(),
+                tvs_trans.Normalize(*config.normalization),
+            ]
+        )
 
 
 class ImageNetCPreProcessor(BasePreprocessor):
     def __init__(self, mean, std):
-        self.transform = tvs_trans.Compose([
-            tvs_trans.ToTensor(),
-            tvs_trans.Normalize(mean, std),
-        ])
+        self.transform = tvs_trans.Compose(
+            [
+                tvs_trans.ToTensor(),
+                tvs_trans.Normalize(mean, std),
+            ]
+        )
 
 
 def get_default_preprocessor(data_name: str):

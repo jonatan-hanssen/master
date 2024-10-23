@@ -269,6 +269,62 @@ DATA_INFO = {
             },
         },
     },
+    'hyperkvasir': {
+        'num_classes': 6,
+        'id': {
+            'train': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir/train_hyperkvasir.txt',
+            },
+            'val': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir/val_hyperkvasir.txt',
+            },
+            'test': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir/test_hyperkvasir.txt',
+            },
+        },
+        'csid': {
+            'datasets': [],
+        },
+        'ood': {
+            'val': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir/val_lower.txt',
+            },
+            'near': {
+                'datasets': ['lower', 'upper'],
+                'lower': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir/test_lower.txt',
+                },
+                'upper': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir/test_upper.txt',
+                },
+            },
+            'far': {
+                'datasets': ['mnist', 'svhn', 'texture', 'places365'],
+                'mnist': {
+                    'data_dir': 'images_classic/',
+                    'imglist_path': 'benchmark_imglist/cifar10/test_mnist.txt',
+                },
+                'svhn': {
+                    'data_dir': 'images_classic/',
+                    'imglist_path': 'benchmark_imglist/cifar10/test_svhn.txt',
+                },
+                'texture': {
+                    'data_dir': 'images_classic/',
+                    'imglist_path': 'benchmark_imglist/cifar10/test_texture.txt',
+                },
+                'places365': {
+                    'data_dir': 'images_classic/',
+                    'imglist_path': 'benchmark_imglist/cifar10/test_places365.txt',
+                },
+            },
+        },
+    },
 }
 
 download_id_dict = {
@@ -396,6 +452,8 @@ def download_dataset(dataset, data_root):
 
 
 def data_setup(data_root, id_data_name):
+    if id_data_name == 'hyperkvasir':
+        return
     if not data_root.endswith('/'):
         data_root = data_root + '/'
 
