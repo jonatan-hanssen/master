@@ -9,20 +9,20 @@ hyperkvasir = [
     'lower-gi-tract/anatomical-landmarks/cecum',
     'lower-gi-tract/anatomical-landmarks/retroflex-rectum',
     'lower-gi-tract/pathological-findings/polyps',
+    'lower-gi-tract/therapeutic-interventions/dyed-lifted-polyps',
     'lower-gi-tract/pathological-findings/ulcerative-colitis-grade-2',
     'lower-gi-tract/quality-of-mucosal-views/bbps-0-1',
-    'lower-gi-tract/quality-of-mucosal-views/bbps-2-3',
 ]
 
 lower = [
-    'lower-gi-tract/therapeutic-interventions/dyed-lifted-polyps',
-    'lower-gi-tract/therapeutic-interventions/dyed-resection-margins',
+    'lower-gi-tract/quality-of-mucosal-views/bbps-2-3',
 ]
 
 upper = [
     'upper-gi-tract/anatomical-landmarks/pylorus',
     'upper-gi-tract/anatomical-landmarks/retroflex-stomach',
     'upper-gi-tract/anatomical-landmarks/z-line',
+    'lower-gi-tract/therapeutic-interventions/dyed-resection-margins',
     'upper-gi-tract/pathological-findings/esophagitis-a',
     'upper-gi-tract/pathological-findings/esophagitis-b-d',
 ]
