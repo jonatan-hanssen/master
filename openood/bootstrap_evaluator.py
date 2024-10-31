@@ -1,5 +1,6 @@
 import torch
 from openood.postprocessors.vim_postprocessor import VIMPostprocessor
+from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
 import numpy as np
 import pickle
 
@@ -36,14 +37,15 @@ net.eval()
 # net.cuda()
 # net.eval()
 
-postprocessor_name = 'limevim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
-postprocessor = LimeVIMPostprocessor(None)
+postprocessor_name = 'occvim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
+postprocessor = OcclusionVIMPostprocessor(None)
 
 
 all_metrics = list()
 all_scores = list()
 
 for i in range(10):
+    print(f'Run {i}')
     evaluator = Evaluator(
         net,
         id_name='cifar10',  # the target ID dataset
