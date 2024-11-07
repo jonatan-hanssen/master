@@ -18,11 +18,13 @@ from utils import (
     occlusion,
     numpify,
     lime_explanation,
+    overlay_saliency,
 )
 import pickle
 import matplotlib.cm as cm
 
 from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import scale_cam_image
 from typing import Callable, List, Tuple, Optional
 
 
@@ -64,17 +66,25 @@ class GradCAMNoRescale(GradCAM):
                 layer_grads,
                 eigen_smooth,
             )
-            cam = np.maximum(cam, 0)
+            # print(np.min(cam))
+            # cam = np.maximum(cam, 0)
             # scaled = scale_cam_image(cam, target_size)
             cam_per_target_layer.append(cam[:, None, :])
 
         return cam_per_target_layer
 
+    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
+        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
+        # cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        result = np.mean(cam_per_target_layer, axis=1)
+        return result
+
 
 id_name = 'hyperkvasir'
 device = 'cuda'
+batch_size = 16
 
-dataloaders = get_dataloaders(id_name)
+dataloaders = get_dataloaders(id_name, batch_size=batch_size)
 
 # load the model
 
@@ -87,7 +97,19 @@ net.load_state_dict(
 net.cuda()
 net.eval()
 
-betas_per = dict()
+# id_name = 'cifar10'
+# device = 'cuda'
+#
+# dataloaders = get_dataloaders(id_name)
+#
+# # load the model
+#
+# net = ResNet18_32x32(num_classes=10)
+# net.load_state_dict(
+#     torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+# )
+# net.cuda()
+# net.eval()
 
 hyperkvasir = [
     'cecum',
@@ -99,18 +121,9 @@ hyperkvasir = [
 ]
 
 
-def overlay(img, sal, desc):
-    display_pytorch_image(img)
-
-    if isinstance(sal, torch.Tensor):
-        sal = numpify(sal)
-    print(sal.shape)
-    sal = np.maximum(sal, 0)
-    sal = sal / np.max(sal)
-
-    plt.imshow(sal, alpha=sal, cmap=None)
-    plt.title(desc)
-    plt.axis('off')
+repeats = 8
+image_size = 224
+block_size = image_size // repeats
 
 
 for key in ('id', 'near', 'far'):
@@ -121,36 +134,43 @@ for key in ('id', 'near', 'far'):
 
     for i, batch in enumerate(pbar):
         data = batch['data'].to(device)
-        saliencies = occlusion(net, data)
-        betas = lime_explanation(net, data, 64, block_size=28)
+        preds = torch.argmax(net(data), dim=1)
+        saliencies = occlusion(net, data, repeats=repeats)
+        betas = lime_explanation(net, data, 64, repeats=repeats, kernel_width=0.25)
         cams = torch.from_numpy(camm(data))
+        print(cams.shape)
+        cam_block_size = image_size // cams.shape[-1]
 
         saliency_imgs = (
-            saliencies.reshape((16, 8, 8))
-            .repeat_interleave(28, dim=1)
-            .repeat_interleave(28, dim=2)
+            saliencies.reshape((batch_size, repeats, repeats))
+            .repeat_interleave(block_size, dim=1)
+            .repeat_interleave(block_size, dim=2)
         )
 
-        cams = cams.repeat_interleave(32, dim=1).repeat_interleave(32, dim=2)
+        cams = cams.repeat_interleave(cam_block_size, dim=1).repeat_interleave(
+            cam_block_size, dim=2
+        )
 
         beta_imgs = (
-            betas.reshape((16, 8, 8))
-            .repeat_interleave(28, dim=1)
-            .repeat_interleave(28, dim=2)
+            betas.reshape((batch_size, repeats, repeats))
+            .repeat_interleave(block_size, dim=1)
+            .repeat_interleave(block_size, dim=2)
         )
 
-        for img, sal, beta, cam, label in zip(
-            data, saliency_imgs, beta_imgs, cams, batch['label']
+        for img, sal, beta, cam, label, pred in zip(
+            data, saliency_imgs, beta_imgs, cams, batch['label'], preds
         ):
+            if label != 5 and label != 2:
+                continue
             plt.subplot(221)
-            plt.title(hyperkvasir[label])
+            plt.title(f'Original img, gt {hyperkvasir[label]} pred {hyperkvasir[pred]}')
             display_pytorch_image(img)
             plt.subplot(222)
-            overlay(img, cam, 'gradcam')
+            overlay_saliency(img, cam, 'gradcam')
             plt.subplot(223)
-            overlay(img, beta, 'lime')
+            overlay_saliency(img, beta, 'lime')
             plt.subplot(224)
-            overlay(img, sal, 'occlusion')
+            overlay_saliency(img, sal, 'occlusion')
 
             plt.tight_layout()
             plt.show()

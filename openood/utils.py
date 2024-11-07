@@ -15,7 +15,20 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 
-def get_dataloaders(id_name: str):
+def overlay_saliency(img, sal, desc):
+    display_pytorch_image(img)
+
+    if isinstance(sal, torch.Tensor):
+        sal = numpify(sal)
+    # sal = np.maximum(sal, 0)
+    sal = sal / np.max(np.abs(sal))
+
+    plt.imshow(sal, alpha=np.abs(sal), cmap='bwr', vmin=-1, vmax=1)
+    plt.title(desc)
+    plt.axis('off')
+
+
+def get_dataloaders(id_name: str, batch_size: int = 16):
     filepath = os.path.dirname(os.path.abspath(__file__))
     config_root = os.path.join(filepath, 'configs')
 
@@ -24,7 +37,7 @@ def get_dataloaders(id_name: str):
     preprocessor = get_default_preprocessor(id_name)
 
     loader_kwargs = {
-        'batch_size': 16,
+        'batch_size': batch_size,
         'shuffle': True,
         'num_workers': 8,
     }
@@ -112,12 +125,19 @@ def plot_tensor_image(tensor):
 
 
 def lime_explanation(
-    net, batch, perturbations=100, mask_prob=0.5, block_size=4, device='cuda'
+    net,
+    batch,
+    perturbations=100,
+    mask_prob=0.5,
+    repeats=8,
+    kernel_width=0.25,
+    device='cuda',
 ):
     preds = net(batch)
     max_pred_ind = torch.argmax(preds, dim=1)
 
-    kernel_width = 0.25
+    block_size = batch.shape[-1] // repeats
+
     kernel = lambda distances: torch.sqrt(torch.exp(-(distances**2) / kernel_width**2))
 
     all_betas = list()
@@ -152,13 +172,12 @@ def lime_explanation(
     return torch.cat(all_betas, dim=0)
 
 
-def occlusion(net, batch, block_size=28, device='cuda'):
+def occlusion(net, batch, repeats=8, device='cuda'):
     preds = net(batch)
 
     max_pred, max_pred_ind = torch.max(preds, dim=1)
 
-    repeats = batch.shape[-1] // block_size
-    print(repeats)
+    block_size = batch.shape[-1] // repeats
 
     saliencies = list()
 

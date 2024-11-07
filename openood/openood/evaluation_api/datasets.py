@@ -305,22 +305,10 @@ DATA_INFO = {
                 },
             },
             'far': {
-                'datasets': ['mnist', 'svhn', 'texture', 'places365'],
-                'mnist': {
-                    'data_dir': 'images_classic/',
-                    'imglist_path': 'benchmark_imglist/cifar10/test_mnist.txt',
-                },
-                'svhn': {
-                    'data_dir': 'images_classic/',
-                    'imglist_path': 'benchmark_imglist/cifar10/test_svhn.txt',
-                },
+                'datasets': ['texture'],
                 'texture': {
                     'data_dir': 'images_classic/',
                     'imglist_path': 'benchmark_imglist/cifar10/test_texture.txt',
-                },
-                'places365': {
-                    'data_dir': 'images_classic/',
-                    'imglist_path': 'benchmark_imglist/cifar10/test_places365.txt',
                 },
             },
         },

@@ -2,7 +2,7 @@ dataset:
   name: hyperkvasir
   num_classes: 6
   image_size: 224
-  pre_size: 224
+  pre_size: 256
 
   interpolation: bilinear
   normalization_type: imagenet

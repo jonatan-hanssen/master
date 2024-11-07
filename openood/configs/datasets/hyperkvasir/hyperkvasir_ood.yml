@@ -8,6 +8,7 @@ ood_dataset:
   shuffle: False
 
   image_size: 224
+  pre_size: 256
   num_workers: '@{num_workers}'
   num_gpus: '@{num_gpus}'
   num_machines: '@{num_machines}'
