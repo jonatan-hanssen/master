@@ -49,3 +49,8 @@
 
 ![](./progresspictures/lime_pca.png)
 
+# 44
+
+![](./progresspictures/comp.png)
+
+
