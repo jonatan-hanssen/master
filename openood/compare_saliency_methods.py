@@ -138,7 +138,6 @@ for key in ('id', 'near', 'far'):
         saliencies = occlusion(net, data, repeats=repeats)
         betas = lime_explanation(net, data, 64, repeats=repeats, kernel_width=0.25)
         cams = torch.from_numpy(camm(data))
-        print(cams.shape)
         cam_block_size = image_size // cams.shape[-1]
 
         saliency_imgs = (
