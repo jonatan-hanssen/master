@@ -46,6 +46,11 @@ default_preprocessing_dict = {
         'img_size': 224,
         'normalization': [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]],
     },
+    'hyperkvasir_polyp': {
+        'pre_size': 224,
+        'img_size': 224,
+        'normalization': [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]],
+    },
 }
 
 

@@ -2,29 +2,30 @@ import os
 import random
 
 root = os.path.dirname(__file__)
-data = os.path.join(root, 'data/images_largescale/hyperkvasir')
-files_dir = os.path.join(root, 'data/benchmark_imglist/hyperkvasir')
+data = os.path.join(root, 'data/images_largescale')
+files_dir = os.path.join(root, 'data/benchmark_imglist/hyperkvasir_polyp')
 
 hyperkvasir = [
-    'lower-gi-tract/anatomical-landmarks/cecum',
-    'lower-gi-tract/anatomical-landmarks/retroflex-rectum',
-    'lower-gi-tract/pathological-findings/polyps',
-    'lower-gi-tract/therapeutic-interventions/dyed-lifted-polyps',
-    'lower-gi-tract/pathological-findings/ulcerative-colitis-grade-2',
-    'lower-gi-tract/quality-of-mucosal-views/bbps-0-1',
+    'hyperkvasir/lower-gi-tract/pathological-findings/polyps',
+    'kvasir-sessile',
 ]
 
 lower = [
-    'lower-gi-tract/quality-of-mucosal-views/bbps-2-3',
+    'hyperkvasir/lower-gi-tract/quality-of-mucosal-views/bbps-2-3',
+    'hyperkvasir/lower-gi-tract/anatomical-landmarks/cecum',
+    'hyperkvasir/lower-gi-tract/anatomical-landmarks/retroflex-rectum',
+    'hyperkvasir/lower-gi-tract/therapeutic-interventions/dyed-lifted-polyps',
+    'hyperkvasir/lower-gi-tract/pathological-findings/ulcerative-colitis-grade-2',
+    'hyperkvasir/lower-gi-tract/quality-of-mucosal-views/bbps-0-1',
 ]
 
 upper = [
-    'upper-gi-tract/anatomical-landmarks/pylorus',
-    'upper-gi-tract/anatomical-landmarks/retroflex-stomach',
-    'upper-gi-tract/anatomical-landmarks/z-line',
-    'lower-gi-tract/therapeutic-interventions/dyed-resection-margins',
-    'upper-gi-tract/pathological-findings/esophagitis-a',
-    'upper-gi-tract/pathological-findings/esophagitis-b-d',
+    'hyperkvasir/upper-gi-tract/anatomical-landmarks/pylorus',
+    'hyperkvasir/upper-gi-tract/anatomical-landmarks/retroflex-stomach',
+    'hyperkvasir/upper-gi-tract/anatomical-landmarks/z-line',
+    'hyperkvasir/lower-gi-tract/therapeutic-interventions/dyed-resection-margins',
+    'hyperkvasir/upper-gi-tract/pathological-findings/esophagitis-a',
+    'hyperkvasir/upper-gi-tract/pathological-findings/esophagitis-b-d',
 ]
 
 
@@ -33,7 +34,7 @@ all_files = list()
 for i, dirname in enumerate(hyperkvasir):
     path = os.path.join(data, dirname)
     files = os.listdir(path)
-    files = [f"{os.path.join('hyperkvasir', dirname, file)} {i}" for file in files]
+    files = [f'{os.path.join(dirname, file)} {i}' for file in files]
     all_files = all_files + files
 
 random.shuffle(all_files)
@@ -61,7 +62,7 @@ all_files = list()
 for i, dirname in enumerate(lower):
     path = os.path.join(data, dirname)
     files = os.listdir(path)
-    files = [f"{os.path.join('hyperkvasir', dirname, file)} -1" for file in files]
+    files = [f'{os.path.join(dirname, file)} -1' for file in files]
     all_files = all_files + files
 
 random.shuffle(all_files)
@@ -84,7 +85,7 @@ all_files = list()
 for i, dirname in enumerate(upper):
     path = os.path.join(data, dirname)
     files = os.listdir(path)
-    files = [f"{os.path.join('hyperkvasir', dirname, file)} -1" for file in files]
+    files = [f'{os.path.join(dirname, file)} -1' for file in files]
     all_files = all_files + files
 
 random.shuffle(all_files)

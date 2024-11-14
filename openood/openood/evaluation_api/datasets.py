@@ -317,6 +317,54 @@ DATA_INFO = {
             },
         },
     },
+    'hyperkvasir_polyp': {
+        'num_classes': 2,
+        'id': {
+            'train': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/train_hyperkvasir.txt',
+            },
+            'val': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/val_hyperkvasir.txt',
+            },
+            'test': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_hyperkvasir.txt',
+            },
+        },
+        'csid': {
+            'datasets': [],
+        },
+        'ood': {
+            'val': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/val_lower.txt',
+            },
+            'near': {
+                'datasets': ['lower', 'upper', 'instrument'],
+                'lower': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_lower.txt',
+                },
+                'upper': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_upper.txt',
+                },
+                'instrument': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_instrument.txt',
+                },
+            },
+            'far': {
+                'datasets': ['texture'],
+                'texture': {
+                    'data_dir': 'images_classic/',
+                    'imglist_path': 'benchmark_imglist/cifar10/test_texture.txt',
+                },
+            },
+        },
+    },
 }
 
 download_id_dict = {
@@ -444,7 +492,7 @@ def download_dataset(dataset, data_root):
 
 
 def data_setup(data_root, id_data_name):
-    if id_data_name == 'hyperkvasir':
+    if 'hyperkvasir' in id_data_name:
         return
     if not data_root.endswith('/'):
         data_root = data_root + '/'
