@@ -3,6 +3,11 @@ import torchvision.transforms as tvs_trans
 from openood.preprocessors import BasePreprocessor
 from openood.utils import Config
 
+from torch import ones_like, triu, ones
+from torch.nn import Module
+import torchvision.transforms.functional as tf
+import torch
+
 INTERPOLATION = tvs_trans.InterpolationMode.BILINEAR
 
 default_preprocessing_dict = {
@@ -44,6 +49,30 @@ default_preprocessing_dict = {
 }
 
 
+class Mask(Module):
+    def __init__(self, ratio=0.2, square_ratio=0.32):
+        super().__init__()
+        self.ratio = ratio
+        self.square_ratio = square_ratio
+
+    def forward(self, img):
+        img = tvs_trans.PILToTensor()(img)
+        c, h, w = img.shape
+        mask = torch.ones(1, h, w, dtype=torch.uint8)
+        n = int(h * self.ratio)
+        square_n = int(h * self.square_ratio)
+
+        # mask[:, -n:, :n] = tf.rotate(triu(ones(1, n, n, dtype=torch.uint8)), 0)
+        mask[:, -square_n:, :square_n] = torch.zeros(
+            1, square_n, square_n, dtype=torch.uint8
+        )
+        mask[:, -n:, -n:] = tf.rotate(triu(ones(1, n, n, dtype=torch.uint8)), 90)
+        mask[:, :n, -n:] = tf.rotate(triu(ones(1, n, n, dtype=torch.uint8)), 180)
+        mask[:, :n, :n] = tf.rotate(triu(ones(1, n, n, dtype=torch.uint8)), 270)
+
+        return tvs_trans.ToPILImage()(img * mask)
+
+
 class Convert:
     def __init__(self, mode='RGB'):
         self.mode = mode
@@ -61,6 +90,7 @@ class TestStandardPreProcessor(BasePreprocessor):
                 Convert('RGB'),
                 tvs_trans.Resize(config.pre_size, interpolation=INTERPOLATION),
                 tvs_trans.CenterCrop(config.img_size),
+                Mask(),
                 tvs_trans.ToTensor(),
                 tvs_trans.Normalize(*config.normalization),
             ]

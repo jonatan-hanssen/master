@@ -29,13 +29,6 @@ net.load_state_dict(
 net.cuda()
 net.eval()
 
-mask_tensor = torch.tensor(
-    [
-        [0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0],
-        [1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0],
-    ]
-)
-
 betas_per = dict()
 
 for key in ('id', 'near', 'far'):
@@ -45,7 +38,7 @@ for key in ('id', 'near', 'far'):
 
     for i, batch in enumerate(pbar):
         data = batch['data'].to(device)
-        betas = lime_explanation(net, data, mask_prob=0.4)
+        betas = lime_explanation(net, data, block_size=2, mask_prob=0.4)
         all_betas.append(betas)
         if i > 20:
             pass
@@ -55,5 +48,5 @@ for key in ('id', 'near', 'far'):
     print(betas.shape)
     betas_per[key] = betas
 
-with open('saved_metrics/lime_betas.pkl', 'wb') as file:
+with open('saved_metrics/lime_betas1.pkl', 'wb') as file:
     pickle.dump(betas_per, file)

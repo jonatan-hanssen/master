@@ -1,11 +1,13 @@
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+import matplotlib
 import seaborn as sns
 import sys
 import torch
 from sklearn.decomposition import PCA
 import pandas as pd
+matplotlib.use('pdf')
 
 
 filename = 'saved_metrics/lime_betas.pkl'
@@ -45,10 +47,11 @@ summary(id_betas)
 summary(near_betas)
 summary(far_betas)
 
-exit()
-plot(id_stds, 'id')
-plot(near_stds, 'near')
-plot(far_stds, 'far')
+plot(id_betas[:, 0], 'id')
+plot(near_betas[:, 0], 'near')
+plot(far_betas[:, 0], 'far')
+plt.xlabel('betas')
+plt.title('Hello')
 plt.legend()
-plt.show()
+plt.savefig('temp.png', bbox_inches='tight')
 

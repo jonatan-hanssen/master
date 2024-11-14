@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
-from openood.postprocessors.cam_distance_postprocessor import CamDistancePostprocessor
+from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
 from openood.evaluation_api import Evaluator
 from openood.networks import (
     ResNet18_32x32,
@@ -13,12 +13,12 @@ from openood.networks import (
 
 # load the model
 
-net = ResNet18_32x32(num_classes=10)
-net.load_state_dict(
-    torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
-)
-net.cuda()
-net.eval()
+# net = ResNet18_32x32(num_classes=10)
+# net.load_state_dict(
+#     torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+# )
+# net.cuda()
+# net.eval()
 
 # net = ResNet18_32x32(num_classes=100)
 # net.load_state_dict(
@@ -37,7 +37,7 @@ net.cuda()
 net.eval()
 
 postprocessor_name = 'neovim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
-postprocessor = LimeVIMPostprocessor(None)
+postprocessor = OcclusionVIMPostprocessor(None)
 
 evaluator = Evaluator(
     net,

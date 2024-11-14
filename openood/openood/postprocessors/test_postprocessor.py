@@ -131,8 +131,6 @@ class TestPostprocessor(BasePostprocessor):
         with torch.no_grad():
             _, features = net(data, return_feature=True)
 
-        features = features.cpu().numpy()
-
         _, preds = torch.max(cam.outputs, dim=1)
         preds = preds.cpu().numpy()
         n_classes = cam.outputs.shape[-1]

@@ -45,4 +45,5 @@ from .relation_postprocessor import RelationPostprocessor
 from .t2fnorm_postprocessor import T2FNormPostprocessor
 from .reweightood_postprocessor import ReweightOODPostprocessor
 from .neovim_postprocessor import NeoVIMPostprocessor
+from .occlusion_postprocessor import OcclusionVIMPostprocessor
 from .test_postprocessor import TestPostprocessor

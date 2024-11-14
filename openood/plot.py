@@ -13,6 +13,7 @@ with open(filename, 'rb') as file:
     scores = pickle.load(file)
 
 id_scores = scores['id']['test'][1]
+print(len(id_scores))
 
 near_ood_scores = np.array([])
 for key in scores['ood']['near']:

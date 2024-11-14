@@ -294,7 +294,7 @@ DATA_INFO = {
                 'imglist_path': 'benchmark_imglist/hyperkvasir/val_lower.txt',
             },
             'near': {
-                'datasets': ['lower', 'upper'],
+                'datasets': ['lower', 'upper', 'instrument'],
                 'lower': {
                     'data_dir': 'images_largescale/',
                     'imglist_path': 'benchmark_imglist/hyperkvasir/test_lower.txt',
@@ -302,6 +302,10 @@ DATA_INFO = {
                 'upper': {
                     'data_dir': 'images_largescale/',
                     'imglist_path': 'benchmark_imglist/hyperkvasir/test_upper.txt',
+                },
+                'instrument': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir/test_instrument.txt',
                 },
             },
             'far': {
