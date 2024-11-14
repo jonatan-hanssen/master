@@ -165,3 +165,15 @@ group_config/
 # local dev
 local/
 *legacy*
+
+
+data/benchmark_imglist/cifar10/
+data/benchmark_imglist/cifar100/
+data/benchmark_imglist/covid/
+data/benchmark_imglist/imagenet/
+data/benchmark_imglist/imagenet200/
+data/benchmark_imglist/mnist/
+data/benchmark_imglist/osr_cifar50/
+data/benchmark_imglist/osr_cifar6/
+data/benchmark_imglist/osr_mnist6/
+data/benchmark_imglist/osr_tin20/

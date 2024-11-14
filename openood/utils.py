@@ -13,6 +13,49 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from sklearn.linear_model import LinearRegression
+import numpy as np
+import pickle
+from openood.networks import (
+    ResNet18_32x32,
+    ResNet18_224x224,
+)  # just a wrapper around the ResNet
+
+
+def get_network(id_name: str):
+    if id_name == 'cifar10':
+        net = ResNet18_32x32(num_classes=10)
+        net.load_state_dict(
+            torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+        )
+
+    elif id_name == 'cifar100':
+        net = ResNet18_32x32(num_classes=100)
+        net.load_state_dict(
+            torch.load('./models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+        )
+
+    elif id_name == 'hyperkvasir':
+        net = ResNet18_224x224(num_classes=6)
+        net.load_state_dict(
+            torch.load(
+                './results/hyperkvasir_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
+            )
+        )
+
+    elif id_name == 'hyperkvasir_polyp':
+        net = ResNet18_224x224(num_classes=2)
+        net.load_state_dict(
+            torch.load(
+                './results/hyperkvasir_polyp_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
+            )
+        )
+
+    else:
+        raise ValueError('No such dataset')
+
+    net.cuda()
+    net.eval()
+    return net
 
 
 def overlay_saliency(img, sal, desc):

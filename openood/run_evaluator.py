@@ -2,55 +2,34 @@ import torch
 from openood.postprocessors.vim_postprocessor import VIMPostprocessor
 import numpy as np
 import pickle
+from utils import get_network
 
 from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
 from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
 from openood.evaluation_api import Evaluator
-from openood.networks import (
-    ResNet18_32x32,
-    ResNet18_224x224,
-)  # just a wrapper around the ResNet
+import sys
 
-# load the model
-
-# net = ResNet18_32x32(num_classes=10)
-# net.load_state_dict(
-#     torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
-# )
-# net.cuda()
-# net.eval()
-
-# net = ResNet18_32x32(num_classes=100)
-# net.load_state_dict(
-#     torch.load('./models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
-# )
-# net.cuda()
-# net.eval()
-
-# net = ResNet18_224x224(num_classes=6)
-# net.load_state_dict(
-#     torch.load(
-#         './results/hyperkvasir_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
-#     )
-# )
-# net.cuda()
-# net.eval()
-
-net = ResNet18_224x224(num_classes=2)
-net.load_state_dict(
-    torch.load(
-        './results/hyperkvasir_polyp_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
-    )
-)
-net.cuda()
-net.eval()
-
+id_name = 'hyperkvasir'
 postprocessor_name = 'vim'  # @param ["openmax", "msp", "temp_scaling", "odin", "mds", "mds_ensemble", "rmds", "gram", "ebo", "gradnorm", "react", "mls", "klm", "vim", "knn", "dice", "rankfeat", "ash", "she"] {allow-input: true}
+
+if len(sys.argv) > 1:
+    id_name = sys.argv[1]
+
+if len(sys.argv) > 2:
+    postprocessor_name = sys.argv[2]
+
+
+
+net = get_network(id_name)
+
+
 postprocessor = OcclusionVIMPostprocessor(None)
+print(f'ID Dataset: {id_name}')
+print(f'Postprocessor: {postprocessor_name}')
 
 evaluator = Evaluator(
     net,
-    id_name='hyperkvasir_polyp',  # the target ID dataset
+    id_name=id_name,  # the target ID dataset
     # id_name='imagenet200',  # the target ID dataset
     data_root='./data',  # change if necessary
     config_root=None,  # see notes above

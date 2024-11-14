@@ -548,7 +548,6 @@ def get_id_ood_dataloader(
     # id
     sub_dataloader_dict = {}
     for split in data_info['id'].keys():
-        print(split)
         dataset = ImglistDataset(
             name='_'.join((id_name, split)),
             imglist_pth=os.path.join(data_root, data_info['id'][split]['imglist_path']),
