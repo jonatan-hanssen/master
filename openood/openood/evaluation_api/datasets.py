@@ -318,7 +318,7 @@ DATA_INFO = {
         },
     },
     'hyperkvasir_polyp': {
-        'num_classes': 2,
+        'num_classes': 4,
         'id': {
             'train': {
                 'data_dir': 'images_largescale/',

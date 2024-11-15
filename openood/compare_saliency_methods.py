@@ -80,7 +80,7 @@ class GradCAMNoRescale(GradCAM):
         return result
 
 
-id_name = 'hyperkvasir'
+id_name = 'hyperkvasir_polyp'
 device = 'cuda'
 batch_size = 16
 
@@ -88,10 +88,10 @@ dataloaders = get_dataloaders(id_name, batch_size=batch_size)
 
 # load the model
 
-net = ResNet18_224x224(num_classes=6)
+net = ResNet18_224x224(num_classes=4)
 net.load_state_dict(
     torch.load(
-        './results/hyperkvasir_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
+        './results/hyperkvasir_polyp_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
     )
 )
 net.cuda()
@@ -121,7 +121,7 @@ hyperkvasir = [
 ]
 
 
-repeats = 8
+repeats = 4
 image_size = 224
 block_size = image_size // repeats
 
@@ -136,7 +136,7 @@ for key in ('id', 'near', 'far'):
         data = batch['data'].to(device)
         preds = torch.argmax(net(data), dim=1)
         saliencies = occlusion(net, data, repeats=repeats)
-        betas = lime_explanation(net, data, 64, repeats=repeats, kernel_width=0.25)
+        betas = lime_explanation(net, data, 64, repeats=repeats, kernel_width=0.75)
         cams = torch.from_numpy(camm(data))
         cam_block_size = image_size // cams.shape[-1]
 
@@ -159,8 +159,8 @@ for key in ('id', 'near', 'far'):
         for img, sal, beta, cam, label, pred in zip(
             data, saliency_imgs, beta_imgs, cams, batch['label'], preds
         ):
-            if label != 5 and label != 2:
-                continue
+            # if label != 5 and label != 2:
+            #     continue
             plt.subplot(221)
             plt.title(f'Original img, gt {hyperkvasir[label]} pred {hyperkvasir[pred]}')
             display_pytorch_image(img)

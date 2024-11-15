@@ -43,7 +43,7 @@ def get_network(id_name: str):
         )
 
     elif id_name == 'hyperkvasir_polyp':
-        net = ResNet18_224x224(num_classes=2)
+        net = ResNet18_224x224(num_classes=4)
         net.load_state_dict(
             torch.load(
                 './results/hyperkvasir_polyp_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'

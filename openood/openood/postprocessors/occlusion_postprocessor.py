@@ -14,7 +14,7 @@ from .base_postprocessor import BasePostprocessor
 from typing import Callable, List, Tuple, Optional
 
 
-def occlusion(net, batch, repeats=8, device='cuda'):
+def occlusion(net, batch, repeats=4, device='cuda'):
     preds = net(batch)
 
     max_pred, max_pred_ind = torch.max(preds, dim=1)

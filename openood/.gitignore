@@ -177,3 +177,5 @@ data/benchmark_imglist/osr_cifar50/
 data/benchmark_imglist/osr_cifar6/
 data/benchmark_imglist/osr_mnist6/
 data/benchmark_imglist/osr_tin20/
+
+saved_metrics/
