@@ -27,23 +27,24 @@ if len(sys.argv) > 2:
         postprocessor_name = None
 
 
-
 net = get_network(id_name)
 
 
 print(f'ID Dataset: {id_name}')
-print(f'Postprocessor: {sys.argv[2] if postprocessor_name is None else postprocessor_name}')
+print(
+    f'Postprocessor: {sys.argv[2] if postprocessor_name is None else postprocessor_name}'
+)
 
 evaluator = Evaluator(
     net,
-    id_name=id_name,  # the target ID dataset
-    # id_name='imagenet200',  # the target ID dataset
+    # id_name=id_name,  # the target ID dataset
+    id_name='imagenet',  # the target ID dataset
     data_root='./data',  # change if necessary
     config_root=None,  # see notes above
     preprocessor=None,  # default preprocessing for the target ID dataset
     postprocessor_name=postprocessor_name,  # the postprocessor to use
     postprocessor=postprocessor,  # if you want to use your own postprocessor
-    batch_size=50,  # for certain methods the results can be slightly affected by batch size
+    batch_size=200,  # for certain methods the results can be slightly affected by batch size
     shuffle=False,
     num_workers=2,
     data_split='val',  # added by me, split into val and test for development

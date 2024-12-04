@@ -25,13 +25,17 @@ def get_network(id_name: str):
     if id_name == 'cifar10':
         net = ResNet18_32x32(num_classes=10)
         net.load_state_dict(
-            torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+            torch.load(
+                './models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt'
+            )
         )
 
     elif id_name == 'cifar100':
         net = ResNet18_32x32(num_classes=100)
         net.load_state_dict(
-            torch.load('./models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+            torch.load(
+                './models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt'
+            )
         )
 
     elif id_name == 'hyperkvasir':
@@ -49,6 +53,13 @@ def get_network(id_name: str):
                 './results/hyperkvasir_polyp_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
             )
         )
+    elif id_name == 'imagewoof':
+        net = ResNet18_224x224(num_classes=10)
+        net.load_state_dict(
+            torch.load(
+                './results/imagewoof_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
+            )
+        )
 
     else:
         raise ValueError('No such dataset')
@@ -58,13 +69,21 @@ def get_network(id_name: str):
     return net
 
 
-def overlay_saliency(img, sal, desc):
+def overlay_saliency(img, sal, desc, maxval=None):
+    print(maxval)
     display_pytorch_image(img)
 
     if isinstance(sal, torch.Tensor):
         sal = numpify(sal)
     # sal = np.maximum(sal, 0)
-    sal = sal / np.max(np.abs(sal))
+    if maxval is None:
+        sal = sal / np.max(np.abs(sal))
+    elif maxval > np.max(np.abs(sal)):
+        print(f'{np.max(np.abs(sal))=}')
+        print(f'{maxval=}')
+        sal = sal / maxval
+    else:
+        sal = sal / np.max(np.abs(sal))
 
     plt.imshow(sal, alpha=np.abs(sal), cmap='bwr', vmin=-1, vmax=1)
     plt.title(desc)
@@ -81,7 +100,7 @@ def get_dataloaders(id_name: str, batch_size: int = 16):
 
     loader_kwargs = {
         'batch_size': batch_size,
-        'shuffle': True,
+        'shuffle': False,
         'num_workers': 8,
     }
 

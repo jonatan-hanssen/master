@@ -218,7 +218,7 @@ DATA_INFO = {
             },
         },
         'csid': {
-            'datasets': ['imagenet_v2', 'imagenet_c', 'imagenet_r', 'imagenet_es'],
+            'datasets': ['imagenet_v2', 'imagenet_c', 'imagenet_r'],
             'imagenet_v2': {
                 'data_dir': 'images_largescale/',
                 'imglist_path': 'benchmark_imglist/imagenet/test_imagenet_v2.txt',
@@ -230,10 +230,6 @@ DATA_INFO = {
             'imagenet_r': {
                 'data_dir': 'images_largescale/',
                 'imglist_path': 'benchmark_imglist/imagenet/test_imagenet_r.txt',
-            },
-            'imagenet_es': {
-                'data_dir': 'images_largescale/',
-                'imglist_path': 'benchmark_imglist/imagenet/test_imagenet_es.txt',
             },
         },
         'ood': {
@@ -365,6 +361,54 @@ DATA_INFO = {
             },
         },
     },
+    'imagewoof': {
+        'num_classes': 10,
+        'id': {
+            'train': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/imagewoof/train_imagewoof.txt',
+            },
+            'val': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/imagewoof/val_imagewoof.txt',
+            },
+            'test': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/imagewoof/test_imagewoof.txt',
+            },
+        },
+        'csid': {
+            'datasets': [],
+        },
+        'ood': {
+            'val': {
+                'data_dir': 'images_largescale/',
+                'imglist_path': 'benchmark_imglist/cifar100/test_places365.txt',
+            },
+            'near': {
+                'datasets': ['lower', 'upper', 'instrument'],
+                'lower': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_lower.txt',
+                },
+                'upper': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_upper.txt',
+                },
+                'instrument': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_instrument.txt',
+                },
+            },
+            'far': {
+                'datasets': ['places365'],
+                'places365': {
+                    'data_dir': 'images_classic/',
+                    'imglist_path': 'benchmark_imglist/cifar100/test_places365.txt',
+                },
+            },
+        },
+    },
 }
 
 download_id_dict = {
@@ -492,7 +536,7 @@ def download_dataset(dataset, data_root):
 
 
 def data_setup(data_root, id_data_name):
-    if 'hyperkvasir' in id_data_name:
+    if 'hyperkvasir' in id_data_name or 'woof' in id_data_name:
         return
     if not data_root.endswith('/'):
         data_root = data_root + '/'

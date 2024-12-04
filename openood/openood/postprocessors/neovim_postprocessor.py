@@ -10,11 +10,11 @@ from tqdm import tqdm
 
 from .base_postprocessor import BasePostprocessor
 
-from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam import GradCAM, GradCAMPlusPlus, HiResCAM
 from typing import Callable, List, Tuple, Optional
 
 
-class GradCAMNoRescale(GradCAM):
+class GradCAMNoRescale(HiResCAM):
     # Class that removes rescaling and just the dim of the conv layer
     def __init__(self, model, target_layers, reshape_transform=None):
         super(GradCAMNoRescale, self).__init__(model, target_layers, reshape_transform)
