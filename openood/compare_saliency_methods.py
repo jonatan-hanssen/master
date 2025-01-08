@@ -6,7 +6,7 @@ from openood.networks import (
     ResNet18_32x32,
     ResNet18_224x224,
 )  # just a wrapper around the ResNet
-from pytorch_grad_cam import GradCAM, GradCAMPlusPlus
+from pytorch_grad_cam import GradCAM, GradCAMPlusPlus, HiResCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputSoftmaxTarget as CO
 from typing import Callable, List, Tuple, Optional
 import numpy as np
@@ -28,6 +28,19 @@ import matplotlib.cm as cm
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import scale_cam_image
 from typing import Callable, List, Tuple, Optional
+
+dogs = {
+    0: 'Shih-Zu',
+    1: 'Rhodesian_ridgeback',
+    2: 'Beagle',
+    3: 'English_foxhound',
+    4: 'Border_terrier',
+    5: 'Australian_terrier',
+    6: 'Golden_retriever',
+    7: 'Old_English_sheepdog',
+    8: 'Samoyed',
+    9: 'Dingo',
+}
 
 
 class GradCAMNoRescale(GradCAM):
@@ -155,11 +168,13 @@ for i in range(3):
 
         target_layers = [net.layer4[-1]]
         camm = GradCAMPlusPlusNoRescale(model=net, target_layers=target_layers)
+        cammm = HiResCAM(model=net, target_layers=target_layers)
 
         preds = torch.argmax(net(data), dim=1)
         saliencies = occlusion(net, data, repeats=repeats)
         betas = lime_explanation(net, data, 64, repeats=repeats, kernel_width=0.75)
         cams = torch.from_numpy(camm(data))
+        grayscale_cam = torch.from_numpy(cammm(data))
         cam_block_size = image_size // cams.shape[-1]
 
         occlusions = (
@@ -202,14 +217,17 @@ for i in range(3):
         # plt.title(f'Original img, gt {hyperkvasir[label]} pred {hyperkvasir[pred]}')
         display_pytorch_image(img)
         plt.subplot(222)
-        overlay_saliency(img, gradcam_sal, 'gradcam', maxval_gradcam)
+        # overlay_saliency(img, gradcam_sal, 'gradcam', maxval_gradcam)
+        plt.imshow(grayscale_cam[i])
+        print(f'{np.abs(np.max(numpify(gradcam_sal)))=}')
         plt.subplot(223)
         overlay_saliency(img, lime_sal, 'lime')
         plt.subplot(224)
         overlay_saliency(img, occlusion_sal, 'occlusion')
 
-        maxval_gradcam = np.abs(np.max(numpify(gradcam_sal)))
+        # maxval_gradcam = np.abs(np.max(numpify(gradcam_sal)))
 
+        plt.suptitle(f'pred={dogs[pred.item()]}')
         plt.tight_layout()
         plt.show()
 

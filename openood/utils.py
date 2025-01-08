@@ -11,6 +11,7 @@ from openood.networks import (
 from typing import Callable, List, Tuple, Optional
 import matplotlib.pyplot as plt
 import numpy as np
+from torchvision.transforms import Resize, InterpolationMode
 
 from sklearn.linear_model import LinearRegression
 import numpy as np
@@ -18,6 +19,7 @@ import pickle
 from openood.networks import (
     ResNet18_32x32,
     ResNet18_224x224,
+    ResNet50,
 )  # just a wrapper around the ResNet
 
 
@@ -25,13 +27,21 @@ def get_network(id_name: str):
     if id_name == 'cifar10':
         net = ResNet18_32x32(num_classes=10)
         net.load_state_dict(
-            torch.load('./models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+            torch.load(
+                './models/cifar10_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt'
+            )
         )
+
+    elif id_name == 'imagenet':
+        net = ResNet50(num_classes=1000)
+        net.load_state_dict(torch.load('./models/resnet50_imagenet1k_v1.pth'))
 
     elif id_name == 'cifar100':
         net = ResNet18_32x32(num_classes=100)
         net.load_state_dict(
-            torch.load('./models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt')
+            torch.load(
+                './models/cifar100_resnet18_32x32_base_e100_lr0.1_default/s0/best.ckpt'
+            )
         )
 
     elif id_name == 'hyperkvasir':
@@ -49,6 +59,13 @@ def get_network(id_name: str):
                 './results/hyperkvasir_polyp_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
             )
         )
+    elif id_name == 'imagewoof':
+        net = ResNet18_224x224(num_classes=10)
+        net.load_state_dict(
+            torch.load(
+                './results/imagewoof_resnet18_224x224_base_e100_lr0.1_default/s0/best.ckpt'
+            )
+        )
 
     else:
         raise ValueError('No such dataset')
@@ -58,15 +75,87 @@ def get_network(id_name: str):
     return net
 
 
-def overlay_saliency(img, sal, desc):
+class GradCAMWrapper(torch.nn.Module):
+    def __init__(self, model=None, target_layer=None, do_relu=False):
+        super().__init__()
+        self.model = model
+        self.target_layer = target_layer
+        self.do_relu = do_relu
+
+        self.grads = None
+        self.acts = None
+
+        self.handles = list()
+
+        self.handles.append(
+            self.target_layer.register_full_backward_hook(self.grad_hook)
+        )
+        self.handles.append(self.target_layer.register_forward_hook(self.act_hook))
+
+    def grad_hook(self, module, grad_input, grad_output):
+        self.grads = grad_output[0]
+
+    def act_hook(self, module, input, output):
+        self.acts = output
+
+    def forward(self, x, return_feature=False):
+        batch_size = x.shape[0]
+
+        if return_feature:
+            preds, feature = self.model(x, return_feature=True)
+
+        else:
+            preds = self.model(x)
+
+        self.model.zero_grad(set_to_none=True)
+
+        idxs = torch.argmax(preds, dim=1)
+
+        # backward pass, this gets gradients for each prediction
+        torch.sum(preds[torch.arange(batch_size), idxs]).backward()
+
+        average_gradients = self.grads.mean(-1).mean(-1).unsqueeze(-1).unsqueeze(-1)
+        saliency = self.acts * average_gradients
+
+        saliency = torch.sum(saliency, dim=1)
+        if self.do_relu:
+            saliency = torch.nn.functional.relu(saliency)
+
+        if return_feature:
+            return saliency.cpu().detach(), feature
+
+        else:
+            return saliency.cpu().detach()
+
+    def __del__(self):
+        for handle in self.handles:
+            handle.remove()
+
+
+def overlay_saliency(img, sal, desc, maxval=None):
+    print(maxval)
     display_pytorch_image(img)
+
+    sal = Resize(img.shape[-2:], interpolation=InterpolationMode.NEAREST)(
+        sal.unsqueeze(0)
+    ).squeeze()
 
     if isinstance(sal, torch.Tensor):
         sal = numpify(sal)
     # sal = np.maximum(sal, 0)
-    sal = sal / np.max(np.abs(sal))
+    # if maxval is None:
+    #     sal = sal / np.max(np.abs(sal))
+    # elif maxval > np.max(np.abs(sal)):
+    #     print(f'{np.max(np.abs(sal))=}')
+    #     print(f'{maxval=}')
+    #     sal = sal / maxval
+    # else:
+    #     sal = sal / np.max(np.abs(sal))
 
-    plt.imshow(sal, alpha=np.abs(sal), cmap='bwr', vmin=-1, vmax=1)
+    sal -= np.min(sal)
+    max_val = np.max(sal) if np.max(sal) > 1 else 1
+
+    plt.imshow(sal, alpha=np.abs(sal), cmap='jet', vmax=max_val)
     plt.title(desc)
     plt.axis('off')
 
@@ -81,7 +170,7 @@ def get_dataloaders(id_name: str, batch_size: int = 16):
 
     loader_kwargs = {
         'batch_size': batch_size,
-        'shuffle': True,
+        'shuffle': False,
         'num_workers': 8,
     }
 

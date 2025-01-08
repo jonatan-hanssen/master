@@ -42,11 +42,18 @@ default_preprocessing_dict = {
         'normalization': [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
     },
     'hyperkvasir': {
+        'mask': True,
         'pre_size': 224,
         'img_size': 224,
         'normalization': [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]],
     },
     'hyperkvasir_polyp': {
+        'mask': True,
+        'pre_size': 224,
+        'img_size': 224,
+        'normalization': [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]],
+    },
+    'imagewoof': {
         'pre_size': 224,
         'img_size': 224,
         'normalization': [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]],
@@ -90,16 +97,27 @@ class TestStandardPreProcessor(BasePreprocessor):
     """For test and validation dataset standard image transformation."""
 
     def __init__(self, config: Config):
-        self.transform = tvs_trans.Compose(
-            [
-                Convert('RGB'),
-                tvs_trans.Resize(config.pre_size, interpolation=INTERPOLATION),
-                tvs_trans.CenterCrop(config.img_size),
-                Mask(),
-                tvs_trans.ToTensor(),
-                tvs_trans.Normalize(*config.normalization),
-            ]
-        )
+        if 'mask' in config:
+            self.transform = tvs_trans.Compose(
+                [
+                    Convert('RGB'),
+                    tvs_trans.Resize(config.pre_size, interpolation=INTERPOLATION),
+                    tvs_trans.CenterCrop(config.img_size),
+                    Mask(),
+                    tvs_trans.ToTensor(),
+                    tvs_trans.Normalize(*config.normalization),
+                ]
+            )
+        else:
+            self.transform = tvs_trans.Compose(
+                [
+                    Convert('RGB'),
+                    tvs_trans.Resize(config.pre_size, interpolation=INTERPOLATION),
+                    tvs_trans.CenterCrop(config.img_size),
+                    tvs_trans.ToTensor(),
+                    tvs_trans.Normalize(*config.normalization),
+                ]
+            )
 
 
 class ImageNetCPreProcessor(BasePreprocessor):
