@@ -8,29 +8,29 @@ data = os.path.join(root, 'data/images_largescale/imagewoof')
 files_dir = os.path.join(root, 'data/benchmark_imglist/imagewoof')
 
 train = [
-    'train/n02086240',
-    'train/n02087394',
-    'train/n02088364',
-    'train/n02089973',
-    'train/n02093754',
-    'train/n02096294',
-    'train/n02099601',
-    'train/n02105641',
-    'train/n02111889',
-    'train/n02115641',
+    'train/n02086240',  # shih zu
+    'train/n02087394',  # rhodesian
+    'train/n02088364',  # beagle
+    'train/n02089973',  # english foxhound
+    'train/n02093754',  # border terrier
+    'train/n02096294',  # australian terrier
+    'train/n02099601',  # golden retriever
+    'train/n02105641',  # old english sheepdog
+    'train/n02111889',  # samoyed
+    'train/n02115641',  # dingo
 ]
 
 val_test = [
-    'val/n02086240',
-    'val/n02087394',
-    'val/n02088364',
-    'val/n02089973',
-    'val/n02093754',
-    'val/n02096294',
-    'val/n02099601',
-    'val/n02105641',
-    'val/n02111889',
-    'val/n02115641',
+    'val/n02086240',  # shih zu
+    'val/n02087394',  # rhodesian
+    'val/n02088364',  # beagle
+    'val/n02089973',  # english foxhound
+    'val/n02093754',  # border terrier
+    'val/n02096294',  # australian terrier
+    'val/n02099601',  # golden retriever
+    'val/n02105641',  # old english sheepdog
+    'val/n02111889',  # samoyed
+    'val/n02115641',  # dingo
 ]
 
 train_list = list()
