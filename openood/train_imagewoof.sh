@@ -1,0 +1,1 @@
+python main.py --config configs/datasets/imagewoof/imagewoof.yml configs/preprocessors/base_preprocessor.yml configs/networks/resnet18_224x224.yml configs/pipelines/train/baseline.yml --seed 0 --network.pretrained True --network.checkpoint models/imagenet200_resnet18_224x224_base_e90_lr0.1_default/s0/best.ckpt
