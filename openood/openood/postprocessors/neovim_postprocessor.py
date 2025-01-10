@@ -46,19 +46,36 @@ class GradCAMWrapper(torch.nn.Module):
         else:
             preds = self.model(x)
 
-        self.model.zero_grad(set_to_none=True)
+        idxs = torch.argsort(preds, dim=1)
 
-        idxs = torch.argmax(preds, dim=1)
+        highest = preds[torch.arange(batch_size), idxs[:, -1]]
+        second_highest = preds[torch.arange(batch_size), idxs[:, -2]]
+        third_highest = preds[torch.arange(batch_size), idxs[:, -3]]
 
-        # backward pass, this gets gradients for each prediction
-        torch.sum(preds[torch.arange(batch_size), idxs]).backward()
+        saliencies = list()
 
-        average_gradients = self.grads.mean(-1).mean(-1).unsqueeze(-1).unsqueeze(-1)
-        saliency = self.acts * average_gradients
+        for i in range(1, 5):
+            self.model.zero_grad(set_to_none=True)
+            # backward pass, this gets gradients for each prediction
+            if i != 4:
+                torch.sum(preds[torch.arange(batch_size), idxs[:, -i]]).backward(
+                    retain_graph=True
+                )
+            else:
+                torch.sum(preds[torch.arange(batch_size), idxs[:, -i]]).backward(
+                    retain_graph=False
+                )
 
-        saliency = torch.sum(saliency, dim=1)
-        if self.do_relu:
-            saliency = torch.nn.functional.relu(saliency)
+            average_gradients = self.grads.mean(-1).mean(-1).unsqueeze(-1).unsqueeze(-1)
+            saliency = self.acts * average_gradients
+
+            saliency = torch.sum(saliency, dim=1)
+            if self.do_relu:
+                saliency = torch.nn.functional.relu(saliency)
+
+            saliencies.append(saliency)
+
+        saliency = torch.stack(saliencies, dim=1)
 
         if return_feature:
             return saliency.cpu().detach(), feature.cpu().detach()
@@ -155,8 +172,8 @@ class NeoVIMPostprocessor(BasePostprocessor):
                     feature.detach().cpu().numpy().astype('float32')
                 )
 
-                b, h, w = grayscale_cam.shape
-                cams.append(grayscale_cam.reshape((b, h * w)))
+                b, c, h, w = grayscale_cam.shape
+                cams.append(grayscale_cam.reshape((b, c * h * w)))
 
             gradcam_id_train = np.concatenate(cams, axis=0).astype('float32')
             print(f'{gradcam_id_train.shape=}')
@@ -199,8 +216,8 @@ class NeoVIMPostprocessor(BasePostprocessor):
         # grayscale_cam = cam(input_tensor=data)
         grayscale_cam, feature_ood = cam(data, return_feature=True)
         feature_ood = feature_ood.cpu()
-        b, h, w = grayscale_cam.shape
-        gradcam_ood = grayscale_cam.reshape((b, h * w))
+        b, c, h, w = grayscale_cam.shape
+        gradcam_ood = grayscale_cam.reshape((b, c * h * w))
 
         stacked_feature_ood = np.hstack([feature_ood, gradcam_ood])
 

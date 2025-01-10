@@ -386,18 +386,10 @@ DATA_INFO = {
                 'imglist_path': 'benchmark_imglist/cifar100/test_places365.txt',
             },
             'near': {
-                'datasets': ['lower', 'upper', 'instrument'],
-                'lower': {
+                'datasets': ['stanforddogs'],
+                'stanforddogs': {
                     'data_dir': 'images_largescale/',
-                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_lower.txt',
-                },
-                'upper': {
-                    'data_dir': 'images_largescale/',
-                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_upper.txt',
-                },
-                'instrument': {
-                    'data_dir': 'images_largescale/',
-                    'imglist_path': 'benchmark_imglist/hyperkvasir_polyp/test_instrument.txt',
+                    'imglist_path': 'benchmark_imglist/stanforddogs/test_stanforddogs.txt',
                 },
             },
             'far': {
