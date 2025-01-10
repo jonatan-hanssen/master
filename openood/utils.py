@@ -85,6 +85,8 @@ class GradCAMWrapper(torch.nn.Module):
         self.grads = None
         self.acts = None
 
+        self.outputs = None
+
         self.handles = list()
 
         self.handles.append(
@@ -106,6 +108,8 @@ class GradCAMWrapper(torch.nn.Module):
 
         else:
             preds = self.model(x)
+
+        self.outputs = preds
 
         self.model.zero_grad(set_to_none=True)
 
@@ -132,32 +136,56 @@ class GradCAMWrapper(torch.nn.Module):
             handle.remove()
 
 
-def overlay_saliency(img, sal, desc, maxval=None):
-    print(maxval)
-    display_pytorch_image(img)
+def overlay_saliency(
+    img,
+    sal,
+    opacity=1,
+    interpolation='nearest',
+    normalize=False,
+    previous_maxval=None,
+    ax=None,
+):
+    display_pytorch_image(img, ax=ax)
 
-    sal = Resize(img.shape[-2:], interpolation=InterpolationMode.NEAREST)(
-        sal.unsqueeze(0)
-    ).squeeze()
+    if interpolation == 'nearest':
+        sal = Resize(img.shape[-2:], interpolation=InterpolationMode.NEAREST)(
+            sal.unsqueeze(0)
+        ).squeeze()
+    elif interpolation == 'bilinear':
+        sal = Resize(img.shape[-2:], interpolation=InterpolationMode.BILINEAR)(
+            sal.unsqueeze(0)
+        ).squeeze()
 
     if isinstance(sal, torch.Tensor):
         sal = numpify(sal)
-    # sal = np.maximum(sal, 0)
-    # if maxval is None:
-    #     sal = sal / np.max(np.abs(sal))
-    # elif maxval > np.max(np.abs(sal)):
-    #     print(f'{np.max(np.abs(sal))=}')
-    #     print(f'{maxval=}')
-    #     sal = sal / maxval
-    # else:
-    #     sal = sal / np.max(np.abs(sal))
 
     sal -= np.min(sal)
-    max_val = np.max(sal) if np.max(sal) > 1 else 1
 
-    plt.imshow(sal, alpha=np.abs(sal), cmap='jet', vmax=max_val)
-    plt.title(desc)
-    plt.axis('off')
+    if normalize:
+        sal = sal / np.max(np.abs(sal))
+
+    if previous_maxval is None:
+        max_val = np.max(sal)
+    else:
+        if previous_maxval > np.max(sal):
+            max_val = previous_maxval
+        else:
+            max_val = np.max(sal)
+
+    if ax is not None:
+        ax.axis('off')
+        if opacity > 1:
+            return ax.imshow(sal, cmap='jet', vmax=max_val)
+        else:
+            return ax.imshow(sal, alpha=np.abs(sal) * opacity, cmap='jet', vmax=max_val)
+
+    else:
+        if opacity > 1:
+            plt.imshow(sal, cmap='jet', vmax=max_val)
+        else:
+            plt.imshow(sal, alpha=np.abs(sal) * opacity, cmap='jet', vmax=max_val)
+        plt.axis('off')
+        plt.axis('off')
 
 
 def get_dataloaders(id_name: str, batch_size: int = 16):
@@ -301,7 +329,7 @@ def lime_explanation(
 
         all_betas.append(betas)
 
-    return torch.cat(all_betas, dim=0)
+    return torch.cat(all_betas, dim=0).reshape(-1, repeats, repeats)
 
 
 def occlusion(net, batch, repeats=8, device='cuda'):
@@ -322,7 +350,7 @@ def occlusion(net, batch, repeats=8, device='cuda'):
             network_preds = net(masked_images)[:, pred_label]
         saliencies.append((pred_value - network_preds).unsqueeze(0))
 
-    return torch.cat(saliencies, dim=0)
+    return torch.cat(saliencies, dim=0).reshape(-1, repeats, repeats)
 
 
 def numpify(tensor: torch.Tensor):
@@ -373,7 +401,7 @@ def occlude_images(batch, block_size=4):
     return masked_images
 
 
-def display_pytorch_image(image: torch.Tensor, mask: torch.Tensor = None):
+def display_pytorch_image(image: torch.Tensor, mask: torch.Tensor = None, ax=None):
     def inverse_normalize(tensor, mean, std):
         for t, m, s in zip(tensor, mean, std):
             t.mul_(s).add_(m)
@@ -388,5 +416,9 @@ def display_pytorch_image(image: torch.Tensor, mask: torch.Tensor = None):
     if image.device != 'cpu':
         image = image.cpu()
 
-    plt.imshow(image.permute(1, 2, 0))
-    plt.axis('off')
+    if ax is not None:
+        ax.imshow(image.permute(1, 2, 0))
+        ax.axis('off')
+    else:
+        plt.imshow(image.permute(1, 2, 0))
+        plt.axis('off')

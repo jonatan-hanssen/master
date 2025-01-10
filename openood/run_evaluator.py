@@ -7,6 +7,7 @@ import argparse
 import sys
 
 from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
+from openood.postprocessors.gradknn_postprocessor import GradKNNPostprocessor
 from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
 from openood.evaluation_api import Evaluator
 import sys
@@ -28,6 +29,10 @@ if postprocessor_name == 'occlusion':
     postprocessor_name = None
 if postprocessor_name == 'lime':
     postprocessor = LimeVIMPostprocessor(None)
+    postprocessor_name = None
+
+if postprocessor_name == 'gradknn':
+    postprocessor = GradKNNPostprocessor(None)
     postprocessor_name = None
 
 
