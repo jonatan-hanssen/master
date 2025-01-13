@@ -28,11 +28,11 @@ import matplotlib.cm as cm
 
 dogs = {
     0: 'Shih-Zu',
-    1: 'Rhodesian_ridgeback',
+    1: 'Rhod. Ridgeback',
     2: 'Beagle',
-    3: 'English_foxhound',
+    3: 'Eng. Foxhound',
     4: 'Border_terrier',
-    5: 'Australian_terrier',
+    5: 'Aus. Terrier',
     6: 'Golden_retriever',
     7: 'Old_English_sheepdog',
     8: 'Samoyed',
@@ -79,9 +79,9 @@ for i in range(3):
     id_data = outputs[0]
     ood_data = outputs[1]
 
-    normalize = False
+    normalize = True
     interpolation = 'bilinear'
-    opacity = 100
+    opacity = 0.9
 
     for i in range(16):
         id_img = id_data[0][i]
@@ -140,7 +140,7 @@ for i in range(3):
             normalize=normalize,
             interpolation=interpolation,
             opacity=opacity,
-            previous_maxval=torch.max(id_gradcam_sal),
+            # previous_maxval=torch.max(id_gradcam_sal),
         )
         plt.subplot(247)
         plt.title('Lime')
@@ -150,7 +150,7 @@ for i in range(3):
             normalize=normalize,
             interpolation=interpolation,
             opacity=opacity,
-            previous_maxval=torch.max(id_lime_sal),
+            # previous_maxval=torch.max(id_lime_sal),
         )
         plt.subplot(248)
         plt.title('Occlusion')
@@ -160,12 +160,12 @@ for i in range(3):
             normalize=normalize,
             interpolation=interpolation,
             opacity=opacity,
-            previous_maxval=torch.max(id_occlusion_sal),
+            # previous_maxval=torch.max(id_occlusion_sal),
         )
         # maxval_gradcam = np.abs(np.max(numpify(gradcam_sal)))
 
         plt.suptitle(
-            f'ID and OOD unnormalized saliencies for different XAI methods', size=25
+            f'ID and OOD normalized saliencies for different XAI methods', size=25
         )
         plt.tight_layout()
         plt.show()

@@ -53,7 +53,6 @@ for key in ('id', 'near', 'far'):
     for i, batch in enumerate(pbar):
         data = batch['data'].to(device)
         cams = camm(data)
-        print(grads)
         grads.append(cams)
 
     grads = torch.cat(grads)
