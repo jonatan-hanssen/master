@@ -188,7 +188,7 @@ def overlay_saliency(
         plt.axis('off')
 
 
-def get_dataloaders(id_name: str, batch_size: int = 16):
+def get_dataloaders(id_name: str, batch_size: int = 16, full: bool = False):
     filepath = os.path.dirname(os.path.abspath(__file__))
     config_root = os.path.join(filepath, 'configs')
 
@@ -213,19 +213,31 @@ def get_dataloaders(id_name: str, batch_size: int = 16):
 
     get_length = lambda dictionary: sum([len(dictionary[key]) for key in dictionary])
 
-    id_generator = combine_dataloaders(dataloader_dict['id'])
-    near_generator = combine_dataloaders(dataloader_dict['ood']['near'])
-    far_generator = combine_dataloaders(dataloader_dict['ood']['far'])
+    if not full:
+        id_generator = combine_dataloaders(dataloader_dict['id'])
+        near_generator = combine_dataloaders(dataloader_dict['ood']['near'])
+        far_generator = combine_dataloaders(dataloader_dict['ood']['far'])
 
-    id_length = get_length(dataloader_dict['id'])
-    near_length = get_length(dataloader_dict['ood']['near'])
-    far_length = get_length(dataloader_dict['ood']['far'])
+        id_length = get_length(dataloader_dict['id'])
+        near_length = get_length(dataloader_dict['ood']['near'])
+        far_length = get_length(dataloader_dict['ood']['far'])
 
-    return {
-        'id': (id_generator, id_length),
-        'near': (near_generator, near_length),
-        'far': (far_generator, far_length),
-    }
+        return {
+            'id': (id_generator, id_length),
+            'near': (near_generator, near_length),
+            'far': (far_generator, far_length),
+        }
+
+    else:
+        id_generator = combine_dataloaders(dataloader_dict['id'])
+        near_generator = dataloader_dict['ood']['near']
+        far_generator = dataloader_dict['ood']['far']
+
+        return {
+            'id': {id_name: id_generator},
+            'near': near_generator,
+            'far': far_generator,
+        }
 
 
 def denormalize(tensor, mean, std):
