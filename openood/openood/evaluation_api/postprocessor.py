@@ -48,6 +48,7 @@ from openood.postprocessors import (
     fDBDPostprocessor,
     NeoVIMPostprocessor,
     TestPostprocessor,
+    GradRMDSPostprocessor,
 )
 from openood.utils.config import Config, merge_configs
 
@@ -99,6 +100,7 @@ postprocessors = {
     'reweightood': ReweightOODPostprocessor,
     'neovim': NeoVIMPostprocessor,
     'test': TestPostprocessor,
+    'gradrmds': GradRMDSPostprocessor,
 }
 
 link_prefix = (

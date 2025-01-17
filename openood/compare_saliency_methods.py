@@ -22,9 +22,11 @@ from utils import (
     overlay_saliency,
     get_network,
     GradCAMWrapper,
+    GradCAMNoRescale,
 )
 import pickle
 import matplotlib.cm as cm
+import shap
 
 dogs = {
     0: 'Shih-Zu',
@@ -51,6 +53,7 @@ plt.rcParams.update({'font.size': 16})
 # load the model
 
 net = get_network(id_name)
+net2 = get_network(id_name)
 
 repeats = 4
 image_size = 224
@@ -59,29 +62,31 @@ block_size = image_size // repeats
 
 for i in range(3):
     id_batch = next(dataloaders['id'][0])
-    ood_batch = next(dataloaders['far'][0])
+    ood_batch = next(dataloaders['near'][0])
 
     outputs = list()
     for batch in (id_batch, ood_batch):
         data = batch['data'].to(device)
 
-        target_layers = [net.layer4[-1]]
         cam_wrapper = GradCAMWrapper(net, target_layer=net.layer4[-1])
-
         cams = cam_wrapper(data)
+
+        cam_wrapper2 = GradCAMNoRescale(net, target_layers=[net.layer4[-1]])
+        new_cams = torch.tensor(cam_wrapper2(data))
+
         occlusions = occlusion(net, data, repeats=repeats)
         limes = lime_explanation(net, data, 64, repeats=repeats, kernel_width=0.75)
 
         preds = torch.argmax(cam_wrapper.outputs, dim=1)
 
-        outputs.append([data, occlusions, limes, cams, batch['label'], preds])
+        outputs.append([data, new_cams, limes, cams, batch['label'], preds])
 
     id_data = outputs[0]
     ood_data = outputs[1]
 
-    normalize = True
+    normalize = False
     interpolation = 'bilinear'
-    opacity = 0.9
+    opacity = 1.9
 
     for i in range(16):
         id_img = id_data[0][i]
@@ -100,7 +105,7 @@ for i in range(3):
 
         plt.subplot(241)
         display_pytorch_image(id_img)
-        plt.title(f'ID Image,\nprediction: {dogs[id_pred.item()]}')
+        plt.title(f'ID Image,\nprediction: {id_pred.item()}')
         plt.subplot(242)
         plt.title('GradCAM')
         overlay_saliency(
@@ -140,7 +145,7 @@ for i in range(3):
             normalize=normalize,
             interpolation=interpolation,
             opacity=opacity,
-            # previous_maxval=torch.max(id_gradcam_sal),
+            previous_maxval=torch.max(id_gradcam_sal),
         )
         plt.subplot(247)
         plt.title('Lime')
@@ -150,7 +155,7 @@ for i in range(3):
             normalize=normalize,
             interpolation=interpolation,
             opacity=opacity,
-            # previous_maxval=torch.max(id_lime_sal),
+            previous_maxval=torch.max(id_lime_sal),
         )
         plt.subplot(248)
         plt.title('Occlusion')
@@ -160,7 +165,7 @@ for i in range(3):
             normalize=normalize,
             interpolation=interpolation,
             opacity=opacity,
-            # previous_maxval=torch.max(id_occlusion_sal),
+            previous_maxval=torch.max(id_occlusion_sal),
         )
         # maxval_gradcam = np.abs(np.max(numpify(gradcam_sal)))
 

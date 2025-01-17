@@ -12,7 +12,13 @@ from typing import Callable, List, Tuple, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 from torchvision.transforms import Resize, InterpolationMode
+import pytorch_grad_cam
 
+from torchvision import transforms
+import captum
+
+from skimage.segmentation import slic
+from skimage.segmentation import find_boundaries
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import pickle
@@ -76,11 +82,13 @@ def get_network(id_name: str):
 
 
 class GradCAMWrapper(torch.nn.Module):
-    def __init__(self, model=None, target_layer=None, do_relu=False):
+    def __init__(self, model=None, target_layer=None, do_relu=False, subtype=None):
         super().__init__()
         self.model = model
         self.target_layer = target_layer
         self.do_relu = do_relu
+
+        self.subtype = subtype
 
         self.grads = None
         self.acts = None
@@ -136,6 +144,215 @@ class GradCAMWrapper(torch.nn.Module):
             handle.remove()
 
 
+def segmented_occlusion(net, batch, device='cuda'):
+    batch_size = batch.shape[0]
+
+    preds = torch.argmax(net(batch), dim=1)
+
+    segmentations = list()
+    for i in range(batch_size):
+        seg = slic(batch[i].permute(1, 2, 0).cpu().numpy())
+        segmentations.append(seg)
+
+    segmentations = (
+        torch.from_numpy(np.stack(segmentations)).unsqueeze(dim=1).to(device)
+    )
+
+    ablator = captum.attr.FeatureAblation(net)
+    saliency = (
+        ablator.attribute(batch, target=preds, feature_mask=segmentations)
+        .detach()
+        .cpu()
+        .mean(dim=1)
+    )
+
+    return saliency
+
+
+class EigenCAM(pytorch_grad_cam.EigenCAM):
+    # Class that removes rescaling and just the dim of the conv layer
+    def __init__(self, model, target_layers, reshape_transform=None):
+        super(GradCAMNoRescale, self).__init__(model, target_layers, reshape_transform)
+
+    def compute_cam_per_layer(
+        self,
+        input_tensor: torch.Tensor,
+        targets: List[torch.nn.Module],
+        eigen_smooth: bool,
+    ) -> np.ndarray:
+        activations_list = [
+            a.cpu().data.numpy() for a in self.activations_and_grads.activations
+        ]
+        grads_list = [
+            g.cpu().data.numpy() for g in self.activations_and_grads.gradients
+        ]
+        target_size = self.get_target_width_height(input_tensor)
+
+        cam_per_target_layer = []
+        # Loop over the saliency image from every layer
+        for i in range(len(self.target_layers)):
+            target_layer = self.target_layers[i]
+            layer_activations = None
+            layer_grads = None
+            if i < len(activations_list):
+                layer_activations = activations_list[i]
+            if i < len(grads_list):
+                layer_grads = grads_list[i]
+
+            cam = self.get_cam_image(
+                input_tensor,
+                target_layer,
+                targets,
+                layer_activations,
+                layer_grads,
+                eigen_smooth,
+            )
+            # print(np.min(cam))
+            # cam = np.maximum(cam, 0)
+            # scaled = scale_cam_image(cam, target_size)
+            cam_per_target_layer.append(cam[:, None, :])
+
+        return cam_per_target_layer
+
+    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
+        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
+        cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        result = np.mean(cam_per_target_layer, axis=1)
+        return result
+
+
+def get_saliency_generator(name: str, net: torch.nn.Module, repeats: int) -> Callable:
+    if name == 'gradcam':
+        cam_wrapper = GradCAMWrapper(model=net, target_layer=net.layer4[-1])
+        generator_func = cam_wrapper
+
+    elif name == 'occlusion':
+        generator_func = lambda data: occlusion(net, data, repeats=args.repeats)
+    elif name == 'lime':
+        generator_func = lambda data: lime_explanation(net, data, args.repeats)
+
+    elif name == 'eigencam':
+        cam_wrapper = EigenCAM(model=net, target_layers=[net.layer4[-1]])
+        generator_func = lambda data: torch.tensor(cam_wrapper(data))
+
+    elif name == 'eigengradcam':
+        cam_wrapper = EigenGradCAM(model=net, target_layers=[net.layer4[-1]])
+        generator_func = lambda data: torch.tensor(cam_wrapper(data))
+
+    elif name == 'ablation':
+        cam_wrapper = Ablation(model=net, target_layers=[net.layer4[-1]])
+        generator_func = lambda data: torch.tensor(cam_wrapper(data))
+
+    else:
+        raise TypeError('No such generator')
+
+    return generator_func
+
+
+class Ablation(pytorch_grad_cam.AblationCAM):
+    # Class that removes rescaling and just the dim of the conv layer
+    def __init__(self, model, target_layers, reshape_transform=None):
+        super(Ablation, self).__init__(model, target_layers, reshape_transform)
+
+    def compute_cam_per_layer(
+        self,
+        input_tensor: torch.Tensor,
+        targets: List[torch.nn.Module],
+        eigen_smooth: bool,
+    ) -> np.ndarray:
+        activations_list = [
+            a.cpu().data.numpy() for a in self.activations_and_grads.activations
+        ]
+        grads_list = [
+            g.cpu().data.numpy() for g in self.activations_and_grads.gradients
+        ]
+        target_size = self.get_target_width_height(input_tensor)
+
+        cam_per_target_layer = []
+        # Loop over the saliency image from every layer
+        for i in range(len(self.target_layers)):
+            target_layer = self.target_layers[i]
+            layer_activations = None
+            layer_grads = None
+            if i < len(activations_list):
+                layer_activations = activations_list[i]
+            if i < len(grads_list):
+                layer_grads = grads_list[i]
+
+            cam = self.get_cam_image(
+                input_tensor,
+                target_layer,
+                targets,
+                layer_activations,
+                layer_grads,
+                eigen_smooth,
+            )
+            # print(np.min(cam))
+            # cam = np.maximum(cam, 0)
+            # scaled = scale_cam_image(cam, target_size)
+            cam_per_target_layer.append(cam[:, None, :])
+
+        return cam_per_target_layer
+
+    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
+        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
+        cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        result = np.mean(cam_per_target_layer, axis=1)
+        return result
+
+
+class EigenGradCAM(pytorch_grad_cam.EigenGradCAM):
+    # Class that removes rescaling and just the dim of the conv layer
+    def __init__(self, model, target_layers, reshape_transform=None):
+        super(EigenGradCAM, self).__init__(model, target_layers, reshape_transform)
+
+    def compute_cam_per_layer(
+        self,
+        input_tensor: torch.Tensor,
+        targets: List[torch.nn.Module],
+        eigen_smooth: bool,
+    ) -> np.ndarray:
+        activations_list = [
+            a.cpu().data.numpy() for a in self.activations_and_grads.activations
+        ]
+        grads_list = [
+            g.cpu().data.numpy() for g in self.activations_and_grads.gradients
+        ]
+        target_size = self.get_target_width_height(input_tensor)
+
+        cam_per_target_layer = []
+        # Loop over the saliency image from every layer
+        for i in range(len(self.target_layers)):
+            target_layer = self.target_layers[i]
+            layer_activations = None
+            layer_grads = None
+            if i < len(activations_list):
+                layer_activations = activations_list[i]
+            if i < len(grads_list):
+                layer_grads = grads_list[i]
+
+            cam = self.get_cam_image(
+                input_tensor,
+                target_layer,
+                targets,
+                layer_activations,
+                layer_grads,
+                eigen_smooth,
+            )
+            # print(np.min(cam))
+            # cam = np.maximum(cam, 0)
+            # scaled = scale_cam_image(cam, target_size)
+            cam_per_target_layer.append(cam[:, None, :])
+
+        return cam_per_target_layer
+
+    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
+        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
+        cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        result = np.mean(cam_per_target_layer, axis=1)
+        return result
+
+
 def overlay_saliency(
     img,
     sal,
@@ -180,7 +397,9 @@ def overlay_saliency(
             return ax.imshow(sal, alpha=np.abs(sal) * opacity, cmap='jet', vmax=max_val)
 
     else:
-        if opacity > 1:
+        if opacity > 1 and opacity < 2:
+            plt.imshow(sal, alpha=opacity - 1, cmap='jet', vmax=max_val)
+        elif opacity > 2:
             plt.imshow(sal, cmap='jet', vmax=max_val)
         else:
             plt.imshow(sal, alpha=np.abs(sal) * opacity, cmap='jet', vmax=max_val)
@@ -188,7 +407,23 @@ def overlay_saliency(
         plt.axis('off')
 
 
-def get_dataloaders(id_name: str, batch_size: int = 16, full: bool = False):
+def visualize_borders(segmentation: torch.Tensor, opacity_modifier: float = 0.8):
+    if isinstance(segmentation, torch.Tensor):
+        segmentation = segmentation.numpy()
+    borders = find_boundaries(segmentation, mode='subpixel').astype('float32')
+    borders = (
+        transforms.Resize(
+            segmentation.shape, interpolation=transforms.InterpolationMode.NEAREST
+        )(torch.tensor(borders).unsqueeze(0))
+        .squeeze()
+        .numpy()
+    )
+    plt.imshow(borders, alpha=borders * opacity_modifier, cmap='grey')
+
+
+def get_dataloaders(
+    id_name: str, batch_size: int = 16, full: bool = False, shuffle: bool = False
+):
     filepath = os.path.dirname(os.path.abspath(__file__))
     config_root = os.path.join(filepath, 'configs')
 
@@ -198,7 +433,7 @@ def get_dataloaders(id_name: str, batch_size: int = 16, full: bool = False):
 
     loader_kwargs = {
         'batch_size': batch_size,
-        'shuffle': False,
+        'shuffle': shuffle,
         'num_workers': 8,
     }
 
@@ -360,7 +595,7 @@ def occlusion(net, batch, repeats=8, device='cuda'):
 
         with torch.no_grad():
             network_preds = net(masked_images)[:, pred_label]
-        saliencies.append((pred_value - network_preds).unsqueeze(0))
+        saliencies.append((pred_value.detach() - network_preds.detach()).unsqueeze(0))
 
     return torch.cat(saliencies, dim=0).reshape(-1, repeats, repeats)
 

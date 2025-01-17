@@ -7,20 +7,19 @@ import matplotlib.pyplot as plt
 from utils import (
     get_dataloaders,
     display_pytorch_image,
-    occlusion,
-    numpify,
-    lime_explanation,
     overlay_saliency,
     get_network,
-    GradCAMWrapper,
+    get_saliency_generator,
 )
 import pickle
+from pytorch_grad_cam import AblationCAM
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--batch_size', '-b', type=int, default=128)
+parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--full', '-f', type=bool, default=True)
 
 args = parser.parse_args(sys.argv[1:])
@@ -29,20 +28,16 @@ id_name = args.dataset
 device = 'cuda'
 batch_size = args.batch_size
 
-dataloaders = get_dataloaders(id_name, batch_size=batch_size, full=args.full)
+dataloaders = get_dataloaders(
+    id_name, batch_size=batch_size, full=args.full, shuffle=True
+)
 
 # load the model
 net = get_network(id_name)
+generator_func = get_saliency_generator(args.generator, net, args.repeats)
 
 saliency_dict = dict()
 
-if args.generator == 'gradcam':
-    cam_wrapper = GradCAMWrapper(model=net, target_layer=net.layer4[-1])
-    generator_func = cam_wrapper
-elif args.generator == 'occlusion':
-    generator_func = lambda data: occlusion(net, data, repeats=8)
-elif args.generator == 'lime':
-    generator_func = lambda data: lime_explanation(net, data, repeats=8)
 
 for key in ('id', 'near', 'far'):
     if isinstance(dataloaders[key], dict):
@@ -66,5 +61,7 @@ for key in ('id', 'near', 'far'):
 
         saliency_dict[key] = torch.cat(saliencies)
 
-with open(f'saved_metrics/{args.dataset}_{args.generator}.pkl', 'wb') as file:
+with open(
+    f'saved_saliencies/{args.dataset}_{args.generator}_{args.repeats}.pkl', 'wb'
+) as file:
     pickle.dump(saliency_dict, file)

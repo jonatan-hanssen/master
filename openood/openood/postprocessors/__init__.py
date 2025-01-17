@@ -47,3 +47,4 @@ from .reweightood_postprocessor import ReweightOODPostprocessor
 from .neovim_postprocessor import NeoVIMPostprocessor
 from .occlusion_postprocessor import OcclusionVIMPostprocessor
 from .test_postprocessor import TestPostprocessor
+from .grad_rmds_postprocessor import GradRMDSPostprocessor

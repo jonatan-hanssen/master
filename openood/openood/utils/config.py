@@ -168,24 +168,19 @@ class Config(dict):
 
     # traverse keys / values/ items
     def all_keys(self, only_leaf=True):
-        for key in traverse_dfs(self,
-                                'key',
-                                continue_type=Config,
-                                only_leaf=only_leaf):
+        for key in traverse_dfs(self, 'key', continue_type=Config, only_leaf=only_leaf):
             yield key
 
     def all_values(self, only_leaf=True):
-        for value in traverse_dfs(self,
-                                  'value',
-                                  continue_type=Config,
-                                  only_leaf=only_leaf):
+        for value in traverse_dfs(
+            self, 'value', continue_type=Config, only_leaf=only_leaf
+        ):
             yield value
 
     def all_items(self, only_leaf=True):
-        for key, value in traverse_dfs(self,
-                                       'item',
-                                       continue_type=Config,
-                                       only_leaf=only_leaf):
+        for key, value in traverse_dfs(
+            self, 'item', continue_type=Config, only_leaf=only_leaf
+        ):
             yield key, value
 
     # for command line arguments
@@ -193,6 +188,7 @@ class Config(dict):
         unknown_args = []
         if cmd_args is None:
             import sys
+
             cmd_args = sys.argv[1:]
         index = 0
         while index < len(cmd_args):
@@ -207,8 +203,7 @@ class Config(dict):
                 key, full_value_str = arg.split('=')
                 index += 1
             else:
-                assert len(
-                    cmd_args) > index + 1, 'incomplete command line arguments'
+                assert len(cmd_args) > index + 1, 'incomplete command line arguments'
                 key = arg
                 full_value_str = cmd_args[index + 1]
                 index += 2
@@ -247,19 +242,25 @@ class Config(dict):
     def parse_refs(self, subconf=None, stack_depth=1, max_stack_depth=10):
         if stack_depth > max_stack_depth:
             raise Exception(
-                ('Recursively calling `parse_refs` too many times'
-                 'with stack depth > {}. '
-                 'A circular reference may exists in your config.\n'
-                 'If deeper calling stack is really needed,'
-                 'please call `parse_refs` with extra argument like: '
-                 '`parse_refs(max_stack_depth=9999)`').format(max_stack_depth))
+                (
+                    'Recursively calling `parse_refs` too many times'
+                    'with stack depth > {}. '
+                    'A circular reference may exists in your config.\n'
+                    'If deeper calling stack is really needed,'
+                    'please call `parse_refs` with extra argument like: '
+                    '`parse_refs(max_stack_depth=9999)`'
+                ).format(max_stack_depth)
+            )
         if subconf is None:
             subconf = self
         for key in subconf.keys():
             value = subconf[key]
             if type(value) is str and '@' in value:
-                if value.count('@') == 1 and value.startswith(
-                        '@{') and value.endswith('}'):
+                if (
+                    value.count('@') == 1
+                    and value.startswith('@{')
+                    and value.endswith('}')
+                ):
                     # pure reference
                     ref_key = value[2:-1]
                     ref_value = self[ref_key]
@@ -268,14 +269,13 @@ class Config(dict):
                     # compositional references
                     ref_key_list = re.findall("'@{(.+?)}'", value)
                     ref_key_list = list(set(ref_key_list))
-                    ref_value_list = [
-                        self[ref_key] for ref_key in ref_key_list
-                    ]
+                    ref_value_list = [self[ref_key] for ref_key in ref_key_list]
                     origin_ref_key_list = [
                         "'@{" + ref_key + "}'" for ref_key in ref_key_list
                     ]
                     for origin_ref_key, ref_value in zip(
-                            origin_ref_key_list, ref_value_list):
+                        origin_ref_key_list, ref_value_list
+                    ):
                         value = value.replace(origin_ref_key, str(ref_value))
                     subconf[key] = value
         for key in subconf.keys():
@@ -293,8 +293,10 @@ def merge_configs(*configs):
                 'config.merge_configs expect `Config` type inputs, '
                 'but got `{}`.\n'
                 'Correct usage: merge_configs(config1, config2, ...)\n'
-                'Incorrect usage: merge_configs([configs1, configs2, ...])'.
-                format(type(config)))
+                'Incorrect usage: merge_configs([configs1, configs2, ...])'.format(
+                    type(config)
+                )
+            )
         final_config = final_config(dict(config.all_items()))
     return final_config
 
@@ -306,8 +308,8 @@ def consume_dots(config, key, create_default):
     if sub_key in Config.__dict__:
         raise KeyError(
             '"{}" is a preserved API name, '
-            'which should not be used as normal dictionary key'.format(
-                sub_key))
+            'which should not be used as normal dictionary key'.format(sub_key)
+        )
 
     if not dict.__contains__(config, sub_key) and len(sub_keys) == 2:
         if create_default:
@@ -333,28 +335,19 @@ def traverse_dfs(root, mode, continue_type, only_leaf, key_prefix=''):
         full_key = '.'.join([key_prefix, key]).strip('.')
         child_kvs = []
         if type(value) == continue_type:
-            for kv in traverse_dfs(value, mode, continue_type, only_leaf,
-                                   full_key):
+            for kv in traverse_dfs(value, mode, continue_type, only_leaf, full_key):
                 child_kvs.append(kv)
         # equivalent:
         # if not (len(child_kvs) > 0 and
         # type(value) == continue_type and
         # only_leaf)
-        if len(child_kvs
-               ) == 0 or type(value) != continue_type or not only_leaf:
-            yield {
-                'key': full_key,
-                'value': value,
-                'item': (full_key, value)
-            }[mode]
+        if len(child_kvs) == 0 or type(value) != continue_type or not only_leaf:
+            yield {'key': full_key, 'value': value, 'item': (full_key, value)}[mode]
         for kv in child_kvs:
             yield kv
 
 
 def init_assign(config, d):
-    for full_key, value in traverse_dfs(d,
-                                        'item',
-                                        continue_type=dict,
-                                        only_leaf=True):
+    for full_key, value in traverse_dfs(d, 'item', continue_type=dict, only_leaf=True):
         sub_cfg, sub_key = consume_dots(config, full_key, create_default=True)
         sub_cfg[sub_key] = value

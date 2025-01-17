@@ -6,7 +6,7 @@ from openood.networks import (
     ResNet18_32x32,
     ResNet18_224x224,
 )  # just a wrapper around the ResNet
-from pytorch_grad_cam import GradCAM, GradCAMPlusPlus, HiResCAM
+from pytorch_grad_cam import GradCAM, GradCAMPlusPlus, HiResCAM, EigenCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputSoftmaxTarget as CO
 from typing import Callable, List, Tuple, Optional
 import numpy as np
@@ -44,7 +44,7 @@ dogs = {
 }
 
 
-class GradCAMNoRescale(GradCAM):
+class GradCAMNoRescale(EigenCAM):
     # Class that removes rescaling and just the dim of the conv layer
     def __init__(self, model, target_layers, reshape_transform=None):
         super(GradCAMNoRescale, self).__init__(model, target_layers, reshape_transform)
@@ -123,12 +123,6 @@ for i in range(3):
         cams = torch.from_numpy(camm(data))
         self_cams = other_cam(data)
 
-        cam_block_size = image_size // cams.shape[-1]
-
-        gradcams = cams.repeat_interleave(cam_block_size, dim=1).repeat_interleave(
-            cam_block_size, dim=2
-        )
-
         outputs.append([data, cams, self_cams, batch['label'], camm.outputs])
 
     maxval_gradcam = None
@@ -145,14 +139,16 @@ for i in range(3):
         label = values[3][i]
         pred = values[4][i]
 
-        plt.subplot(211)
+        plt.subplot(311)
         # plt.title(f'Original img, gt {hyperkvasir[label]} pred {hyperkvasir[pred]}')
         display_pytorch_image(img)
-        # plt.subplot(212)
-        # overlay_saliency(img, gradcam_sal, 'gradcam')
+        plt.subplot(312)
+        plt.title('library')
+        plt.imshow(gradcam_sal)
         # plt.imshow(gradcam_sal, vmax=1)
-        plt.subplot(212)
-        overlay_saliency(img, self_gradcam_sal, 'self')
+        plt.subplot(313)
+        plt.title('self')
+        plt.imshow(self_gradcam_sal)
         # plt.imshow(self_gradcam_sal, vmax=1)
 
         # plt.suptitle(f'pred={dogs[pred.item()]}')
