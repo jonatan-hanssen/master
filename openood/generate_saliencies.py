@@ -45,7 +45,9 @@ for key in ('id', 'near', 'far'):
 
         for second_key in dataloaders[key]:
             saliencies = list()
-            for i, batch in tqdm(enumerate(dataloaders[key][second_key])):
+            for i, batch in enumerate(tqdm(dataloaders[key][second_key])):
+                if i > 2:
+                    break
                 data = batch['data'].to(device)
                 saliencies.append(generator_func(data))
 

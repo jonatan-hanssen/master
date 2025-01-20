@@ -16,6 +16,7 @@ import pytorch_grad_cam
 
 from torchvision import transforms
 import captum
+from sklearn.metrics import roc_curve, auc
 
 from skimage.segmentation import slic
 from skimage.segmentation import find_boundaries
@@ -27,6 +28,39 @@ from openood.networks import (
     ResNet18_224x224,
     ResNet50,
 )  # just a wrapper around the ResNet
+
+
+def replace_layer_recursive(model, old_layer, new_layer):
+    for name, layer in model._modules.items():
+        if layer == old_layer:
+            model._modules[name] = new_layer
+            return True
+        elif replace_layer_recursive(layer, old_layer, new_layer):
+            return True
+    return False
+
+
+def replace_all_layer_type_recursive(model, old_layer_type, new_layer):
+    for name, layer in model._modules.items():
+        if isinstance(layer, old_layer_type):
+            model._modules[name] = new_layer
+        replace_all_layer_type_recursive(layer, old_layer_type, new_layer)
+
+
+def find_layer_types_recursive(model, layer_types):
+    def predicate(layer):
+        return type(layer) in layer_types
+
+    return find_layer_predicate_recursive(model, predicate)
+
+
+def find_layer_predicate_recursive(model, predicate):
+    result = []
+    for name, layer in model._modules.items():
+        if predicate(layer):
+            result.append(layer)
+        result.extend(find_layer_predicate_recursive(layer, predicate))
+    return result
 
 
 def get_network(id_name: str):
@@ -79,6 +113,17 @@ def get_network(id_name: str):
     net.cuda()
     net.eval()
     return net
+
+
+def calculate_auc(id_aggregate, ood_aggregate):
+    values = torch.cat((id_aggregate, ood_aggregate)).numpy()
+    labels = torch.cat(
+        (torch.zeros_like(id_aggregate), torch.ones_like(ood_aggregate))
+    ).numpy()
+
+    fpr_list, tpr_list, thresholds = roc_curve(labels, -values)
+    auroc = auc(fpr_list, tpr_list)
+    return auroc
 
 
 class GradCAMWrapper(torch.nn.Module):
@@ -172,7 +217,7 @@ def segmented_occlusion(net, batch, device='cuda'):
 class EigenCAM(pytorch_grad_cam.EigenCAM):
     # Class that removes rescaling and just the dim of the conv layer
     def __init__(self, model, target_layers, reshape_transform=None):
-        super(GradCAMNoRescale, self).__init__(model, target_layers, reshape_transform)
+        super(EigenCAM, self).__init__(model, target_layers, reshape_transform)
 
     def compute_cam_per_layer(
         self,
@@ -227,9 +272,9 @@ def get_saliency_generator(name: str, net: torch.nn.Module, repeats: int) -> Cal
         generator_func = cam_wrapper
 
     elif name == 'occlusion':
-        generator_func = lambda data: occlusion(net, data, repeats=args.repeats)
+        generator_func = lambda data: occlusion(net, data, repeats=repeats)
     elif name == 'lime':
-        generator_func = lambda data: lime_explanation(net, data, args.repeats)
+        generator_func = lambda data: lime_explanation(net, data, repeats=repeats)
 
     elif name == 'eigencam':
         cam_wrapper = EigenCAM(model=net, target_layers=[net.layer4[-1]])
@@ -243,6 +288,14 @@ def get_saliency_generator(name: str, net: torch.nn.Module, repeats: int) -> Cal
         cam_wrapper = Ablation(model=net, target_layers=[net.layer4[-1]])
         generator_func = lambda data: torch.tensor(cam_wrapper(data))
 
+    elif name == 'lrp':
+
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            lrp = captum.attr.GradientShap(net)
+            baselines = torch.randn_like(data)
+            return lrp.attribute(data, baselines=baselines, target=targets).mean(dim=1)
+
     else:
         raise TypeError('No such generator')
 
@@ -253,6 +306,85 @@ class Ablation(pytorch_grad_cam.AblationCAM):
     # Class that removes rescaling and just the dim of the conv layer
     def __init__(self, model, target_layers, reshape_transform=None):
         super(Ablation, self).__init__(model, target_layers, reshape_transform)
+
+    def get_cam_weights(
+        self,
+        input_tensor: torch.Tensor,
+        target_layer: torch.nn.Module,
+        targets: List[Callable],
+        activations: torch.Tensor,
+        grads: torch.Tensor,
+    ) -> np.ndarray:
+        # Do a forward pass, compute the target scores, and cache the
+        # activations
+        handle = target_layer.register_forward_hook(self.save_activation)
+        with torch.no_grad():
+            outputs = self.model(input_tensor)
+            handle.remove()
+            original_scores = np.float32(
+                [
+                    target(output).cpu().item()
+                    for target, output in zip(targets, outputs)
+                ]
+            )
+
+        # Replace the layer with the ablation layer.
+        # When we finish, we will replace it back, so the
+        # original model is unchanged.
+        ablation_layer = self.ablation_layer
+        replace_layer_recursive(self.model, target_layer, ablation_layer)
+
+        number_of_channels = activations.shape[1]
+        weights = []
+        # This is a "gradient free" method, so we don't need gradients here.
+        with torch.no_grad():
+            # Loop over each of the batch images and ablate activations for it.
+            for batch_index, (target, tensor) in enumerate(zip(targets, input_tensor)):
+                new_scores = []
+                batch_tensor = tensor.repeat(self.batch_size, 1, 1, 1)
+
+                # Check which channels should be ablated. Normally this will be all channels,
+                # But we can also try to speed this up by using a low
+                # ratio_channels_to_ablate.
+                channels_to_ablate = ablation_layer.activations_to_be_ablated(
+                    activations[batch_index, :], self.ratio_channels_to_ablate
+                )
+                number_channels_to_ablate = len(channels_to_ablate)
+
+                for i in range(0, number_channels_to_ablate, self.batch_size):
+                    if i + self.batch_size > number_channels_to_ablate:
+                        batch_tensor = batch_tensor[: (number_channels_to_ablate - i)]
+
+                    # Change the state of the ablation layer so it ablates the next channels.
+                    # TBD: Move this into the ablation layer forward pass.
+                    ablation_layer.set_next_batch(
+                        input_batch_index=batch_index,
+                        activations=self.activations,
+                        num_channels_to_ablate=batch_tensor.size(0),
+                    )
+                    score = [target(o).cpu().item() for o in self.model(batch_tensor)]
+                    new_scores.extend(score)
+                    ablation_layer.indices = ablation_layer.indices[
+                        batch_tensor.size(0) :
+                    ]
+
+                new_scores = self.assemble_ablation_scores(
+                    new_scores,
+                    original_scores[batch_index],
+                    channels_to_ablate,
+                    number_of_channels,
+                )
+                weights.extend(new_scores)
+
+        weights = np.float32(weights)
+        weights = weights.reshape(activations.shape[:2])
+        original_scores = original_scores[:, None]
+        weights = (original_scores - weights) / original_scores
+
+        # Replace the model back to the original state
+        replace_layer_recursive(self.model, ablation_layer, target_layer)
+        # Returning the weights from new_scores
+        return weights
 
     def compute_cam_per_layer(
         self,
@@ -293,12 +425,6 @@ class Ablation(pytorch_grad_cam.AblationCAM):
             cam_per_target_layer.append(cam[:, None, :])
 
         return cam_per_target_layer
-
-    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
-        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
-        cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
-        result = np.mean(cam_per_target_layer, axis=1)
-        return result
 
 
 class EigenGradCAM(pytorch_grad_cam.EigenGradCAM):
@@ -353,6 +479,10 @@ class EigenGradCAM(pytorch_grad_cam.EigenGradCAM):
         return result
 
 
+def fontsize(size):
+    plt.rcParams.update({'font.size': size})
+
+
 def overlay_saliency(
     img,
     sal,
@@ -372,6 +502,10 @@ def overlay_saliency(
         sal = Resize(img.shape[-2:], interpolation=InterpolationMode.BILINEAR)(
             sal.unsqueeze(0)
         ).squeeze()
+    elif interpolation == 'none':
+        pass
+
+    print(normalize)
 
     if isinstance(sal, torch.Tensor):
         sal = numpify(sal)
@@ -387,6 +521,7 @@ def overlay_saliency(
         if previous_maxval > np.max(sal):
             max_val = previous_maxval
         else:
+            print('here')
             max_val = np.max(sal)
 
     if ax is not None:
@@ -398,6 +533,7 @@ def overlay_saliency(
 
     else:
         if opacity > 1 and opacity < 2:
+            print(f'plotting with {max_val=}')
             plt.imshow(sal, alpha=opacity - 1, cmap='jet', vmax=max_val)
         elif opacity > 2:
             plt.imshow(sal, cmap='jet', vmax=max_val)
@@ -464,7 +600,7 @@ def get_dataloaders(
         }
 
     else:
-        id_generator = combine_dataloaders(dataloader_dict['id'])
+        id_generator = dataloader_dict['id']['test']
         near_generator = dataloader_dict['ood']['near']
         far_generator = dataloader_dict['ood']['far']
 

@@ -46,8 +46,16 @@ parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--full', '-f', type=bool, default=True)
 parser.add_argument('--ood', '-o', type=str, default='near')
+parser.add_argument(
+    '--interpolation',
+    '-i',
+    type=str,
+    default='bilinear',
+    choices=['bilinear', 'nearest', 'none'],
+)
 
 args = parser.parse_args(sys.argv[1:])
+print(args)
 
 id_name = args.dataset
 device = 'cuda'
@@ -70,9 +78,10 @@ while True:
 
     id_saliencies = generator_func(id_images)
     ood_saliencies = generator_func(ood_images)
+    print(id_saliencies.shape)
 
     normalize = False
-    interpolation = 'bilinear'
+    interpolation = args.interpolation
     opacity = 1.6
 
     for i in range(8):
@@ -80,7 +89,7 @@ while True:
         plt.title('id')
         display_pytorch_image(id_images[i])
         plt.subplot(4, 8, i * 2 + 2)
-        plt.title(f'{torch.mean(id_saliencies[i]):.3f}')
+        plt.title(f'{torch.mean(id_saliencies[i]):.10f}')
         overlay_saliency(
             id_images[i],
             id_saliencies[i],
@@ -88,12 +97,13 @@ while True:
             interpolation=interpolation,
             opacity=opacity,
         )
+        print(torch.max(id_saliencies[i]))
 
         plt.subplot(4, 8, i * 2 + 17)
         plt.title('ood')
         display_pytorch_image(ood_images[i])
         plt.subplot(4, 8, i * 2 + 18)
-        plt.title(f'{torch.mean(ood_saliencies[i]):.3f}')
+        plt.title(f'{torch.mean(ood_saliencies[i]):.10f}')
         overlay_saliency(
             ood_images[i],
             ood_saliencies[i],

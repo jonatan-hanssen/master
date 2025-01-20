@@ -250,6 +250,8 @@ class Evaluator:
                     self.net, self.dataloader_dict['id']['test'], progress
                 )
                 self.scores['id']['test'] = [id_pred, id_conf, id_gt]
+                print(id_conf.mean())
+                print(id_conf.shape)
             else:
                 id_pred, id_conf, id_gt = self.scores['id']['test']
 

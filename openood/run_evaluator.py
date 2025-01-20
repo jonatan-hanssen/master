@@ -9,6 +9,7 @@ import sys
 from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
 from openood.postprocessors.gradknn_postprocessor import GradKNNPostprocessor
 from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
+from openood.postprocessors.grad_mean_postprocessor import GradMeanPostprocessor
 from openood.evaluation_api import Evaluator
 import sys
 
@@ -35,14 +36,16 @@ if postprocessor_name == 'gradknn':
     postprocessor = GradKNNPostprocessor(None)
     postprocessor_name = None
 
+if postprocessor_name == 'gradmean':
+    postprocessor = GradMeanPostprocessor(None)
+    postprocessor_name = None
+
 
 net = get_network(id_name)
 
 
 print(f'ID Dataset: {id_name}')
-print(
-    f'Postprocessor: {sys.argv[2] if postprocessor_name is None else postprocessor_name}'
-)
+print(f'Postprocessor: {args.postprocessor}')
 
 evaluator = Evaluator(
     net,

@@ -7,6 +7,7 @@ import sys, argparse
 import torch
 from sklearn.decomposition import PCA
 import pandas as pd
+from utils import calculate_auc
 
 parser = argparse.ArgumentParser()
 
@@ -52,6 +53,7 @@ with open(filename, 'rb') as file:
 
 functions = (
     ('Mean', torch.mean),
+    ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
     ('Std', torch.std),
     ('Entropy', entropy),
     ('PCA', pca_wrapper()),
@@ -63,16 +65,41 @@ plot = lambda data, label: sns.kdeplot(
 )
 
 for name, function in functions:
+    id_aggregate = None
+    near_aucs = list()
+    far_aucs = list()
     for key in ('id', 'near', 'far'):
         if isinstance(saliency_dict[key], dict):
             for second_key in saliency_dict[key]:
                 saliency = saliency_dict[key][second_key]
                 saliency = saliency.cpu()
-                b, h, w = saliency.shape
-                saliency = saliency.reshape((b, h * w))
+                if len(saliency.shape) != 2:
+                    b, h, w = saliency.shape
+                    saliency = saliency.reshape((b, h * w))
                 aggregate = function(saliency, dim=-1)
-                plot(aggregate, f'{key}: {second_key}')
-    plt.title(f'{name} for {args.generator} saliencies on {args.dataset}')
+
+                if isinstance(aggregate, np.ndarray):
+                    aggregate = torch.tensor(aggregate)
+
+                if key == 'id':
+                    id_aggregate = aggregate
+                    plot(aggregate, f'{key}: {second_key}')
+                elif key == 'near':
+                    auc = calculate_auc(id_aggregate, aggregate)
+                    near_aucs.append(auc)
+                    plot(aggregate, f'{key}: {second_key}, AUC: {auc:.2f}')
+
+                elif key == 'far':
+                    auc = calculate_auc(id_aggregate, aggregate)
+                    far_aucs.append(auc)
+                    plot(aggregate, f'{key}: {second_key}, AUC: {auc:.2f}')
+
+    near_auc = np.array(near_aucs).mean()
+    far_auc = np.array(far_aucs).mean()
+
+    plt.title(
+        f'{name} for {args.generator} saliencies on {args.dataset}.\nNear AUC {near_auc:.2f}, far AUC {far_auc:.2f}'
+    )
     plt.xlabel(name)
     plt.legend()
     plt.show()
