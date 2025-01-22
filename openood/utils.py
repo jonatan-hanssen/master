@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from torchvision.transforms import Resize, InterpolationMode
 import pytorch_grad_cam
+from lime import lime_image
 
 from torchvision import transforms
 import captum
@@ -266,7 +267,9 @@ class EigenCAM(pytorch_grad_cam.EigenCAM):
         return result
 
 
-def get_saliency_generator(name: str, net: torch.nn.Module, repeats: int) -> Callable:
+def get_saliency_generator(
+    name: str, net: torch.nn.Module, repeats: int, just_mean: bool = False
+) -> Callable:
     if name == 'gradcam':
         cam_wrapper = GradCAMWrapper(model=net, target_layer=net.layer4[-1])
         generator_func = cam_wrapper
@@ -296,10 +299,31 @@ def get_saliency_generator(name: str, net: torch.nn.Module, repeats: int) -> Cal
             baselines = torch.randn_like(data)
             return lrp.attribute(data, baselines=baselines, target=targets).mean(dim=1)
 
+    elif name == 'segocc':
+        if not just_mean:
+            generator_func = lambda data: segmented_occlusion(net, data)
+        else:
+
+            def generator_func(data):
+                saliencies = segmented_occlusion(net, data)
+                means = torch.zeros(data.shape[0])
+                for i, saliency in enumerate(saliencies):
+                    means[i] = torch.unique(saliency).mean()
+                return means
+    elif name == 'seglime':
+        if not just_mean:
+            generator_func = lambda data: segmented_lime(net, data)
+
     else:
         raise TypeError('No such generator')
 
     return generator_func
+
+
+def segmented_lime(net, data):
+    explainer = lime_image.LimeImageExplainer()
+
+    predict = lambda data: torch.nn.functional.softmax(net(data), dim=1).cpu().numpy()
 
 
 class Ablation(pytorch_grad_cam.AblationCAM):
@@ -505,8 +529,6 @@ def overlay_saliency(
     elif interpolation == 'none':
         pass
 
-    print(normalize)
-
     if isinstance(sal, torch.Tensor):
         sal = numpify(sal)
 
@@ -521,7 +543,6 @@ def overlay_saliency(
         if previous_maxval > np.max(sal):
             max_val = previous_maxval
         else:
-            print('here')
             max_val = np.max(sal)
 
     if ax is not None:
@@ -533,7 +554,6 @@ def overlay_saliency(
 
     else:
         if opacity > 1 and opacity < 2:
-            print(f'plotting with {max_val=}')
             plt.imshow(sal, alpha=opacity - 1, cmap='jet', vmax=max_val)
         elif opacity > 2:
             plt.imshow(sal, cmap='jet', vmax=max_val)

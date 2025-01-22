@@ -14,11 +14,22 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
-parser.add_argument('--full', '-f', type=bool, default=True)
+parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument(
+    '--show_scores', '-s', action=argparse.BooleanOptionalAction, default=False
+)
 
 args = parser.parse_args(sys.argv[1:])
 
 filename = f'saved_saliencies/{args.dataset}_{args.generator}_{args.repeats}.pkl'
+with open(filename, 'rb') as file:
+    saliency_dict = pickle.load(file)
+
+if args.show_scores:
+    score_filename = f'saved_scores/{args.dataset}.pkl'
+    with open(score_filename, 'rb') as file:
+        score_dict = pickle.load(file)
+
 
 plt.rcParams.update({'font.size': 22})
 
@@ -48,8 +59,7 @@ class pca_wrapper:
             return self.pca.transform(saliencies).squeeze()
 
 
-with open(filename, 'rb') as file:
-    saliency_dict = pickle.load(file)
+# print(score_dict)
 
 functions = (
     ('Mean', torch.mean),
@@ -64,8 +74,21 @@ plot = lambda data, label: sns.kdeplot(
     data, bw_method=smoothing, label=label, linewidth=3
 )
 
+# for key in saliency_dict:
+#     for second_key in saliency_dict[key]:
+#         score = score_dict[key][second_key]
+#         saliency = saliency_dict[key][second_key]
+#         b, h, w = saliency.shape
+#         saliency = saliency.reshape((b, h * w))
+#         aggregate = torch.mean(saliency, dim=-1)
+#         print(np.corrcoef(score.cpu(), aggregate.cpu()))
+#         plt.scatter(score, aggregate)
+#         plt.show()
+# exit()
+
 for name, function in functions:
     id_aggregate = None
+    id_score = None
     near_aucs = list()
     far_aucs = list()
     for key in ('id', 'near', 'far'):
@@ -73,26 +96,48 @@ for name, function in functions:
             for second_key in saliency_dict[key]:
                 saliency = saliency_dict[key][second_key]
                 saliency = saliency.cpu()
-                if len(saliency.shape) != 2:
+
+                if len(saliency.shape) == 1:
+                    aggregate = saliency
+                else:
                     b, h, w = saliency.shape
                     saliency = saliency.reshape((b, h * w))
-                aggregate = function(saliency, dim=-1)
+
+                    aggregate = function(saliency, dim=-1)
 
                 if isinstance(aggregate, np.ndarray):
                     aggregate = torch.tensor(aggregate)
 
+                if args.show_scores:
+                    score = score_dict[key][second_key]
+                    score = torch.max(score, dim=1)[0]
+
                 if key == 'id':
                     id_aggregate = aggregate
                     plot(aggregate, f'{key}: {second_key}')
+
+                    if args.show_scores:
+                        id_score = score
+                        plot(score, f'{key}: {second_key} scores')
+
                 elif key == 'near':
                     auc = calculate_auc(id_aggregate, aggregate)
                     near_aucs.append(auc)
+
                     plot(aggregate, f'{key}: {second_key}, AUC: {auc:.2f}')
+
+                    if args.show_scores:
+                        score_auc = calculate_auc(id_score, score)
+                        plot(score, f'{key}: {second_key} scores {score_auc:.2f}')
 
                 elif key == 'far':
                     auc = calculate_auc(id_aggregate, aggregate)
                     far_aucs.append(auc)
                     plot(aggregate, f'{key}: {second_key}, AUC: {auc:.2f}')
+
+                    if args.show_scores:
+                        score_auc = calculate_auc(id_score, score)
+                        plot(score, f'{key}: {second_key} scores {score_auc:.2f}')
 
     near_auc = np.array(near_aucs).mean()
     far_auc = np.array(far_aucs).mean()

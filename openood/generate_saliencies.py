@@ -20,7 +20,10 @@ parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--batch_size', '-b', type=int, default=128)
 parser.add_argument('--repeats', '-r', type=int, default=4)
-parser.add_argument('--full', '-f', type=bool, default=True)
+parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument(
+    '--just_mean', '-j', action=argparse.BooleanOptionalAction, default=False
+)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -34,24 +37,30 @@ dataloaders = get_dataloaders(
 
 # load the model
 net = get_network(id_name)
-generator_func = get_saliency_generator(args.generator, net, args.repeats)
+generator_func = get_saliency_generator(
+    args.generator, net, args.repeats, just_mean=args.just_mean
+)
 
 saliency_dict = dict()
+score_dict = dict()
 
 
 for key in ('id', 'near', 'far'):
     if isinstance(dataloaders[key], dict):
         saliency_dict[key] = dict()
+        score_dict[key] = dict()
 
         for second_key in dataloaders[key]:
             saliencies = list()
+            scores = list()
             for i, batch in enumerate(tqdm(dataloaders[key][second_key])):
-                if i > 2:
-                    break
                 data = batch['data'].to(device)
+                preds = net(data).detach().cpu()
+                scores.append(preds)
                 saliencies.append(generator_func(data))
 
             saliency_dict[key][second_key] = torch.cat(saliencies)
+            score_dict[key][second_key] = torch.cat(scores)
 
     else:
         pbar = tqdm(dataloaders[key][0], total=dataloaders[key][1])
@@ -67,3 +76,6 @@ with open(
     f'saved_saliencies/{args.dataset}_{args.generator}_{args.repeats}.pkl', 'wb'
 ) as file:
     pickle.dump(saliency_dict, file)
+
+with open(f'saved_scores/{args.dataset}.pkl', 'wb') as file:
+    pickle.dump(score_dict, file)

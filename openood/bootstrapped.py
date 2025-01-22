@@ -1,9 +1,16 @@
 import numpy as np
-import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
-import sys
+import sys, argparse, pickle
 from scipy.stats import ttest_ind
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--dataset', '-d', type=str, default='cifar10')
+parser.add_argument('--first_postprocessor', '-f', type=str, default='vim')
+parser.add_argument('--second_postprocessor', '-s', type=str, default='gradmean')
+
+args = parser.parse_args(sys.argv[1:])
 
 
 def get_metrics(filename):
@@ -11,38 +18,21 @@ def get_metrics(filename):
         data = pickle.load(file)
 
     all_metrics, all_scores = data
+    names = list(all_metrics[0].index)
     metrics = np.stack([metric.to_numpy() for metric in all_metrics])
-    return metrics
+    return metrics, names
 
 
-if len(sys.argv) > 1:
-    # filename = f'saved_metrics/{sys.argv[1]}.pkl'
-    filename = sys.argv[1]
-else:
-    filename = 'saved_metrics/neovim_bootstrapped2.pkl'
-
-vim = get_metrics(f'saved_metrics/vim_bootstrapped.pkl')
-other = get_metrics(filename)
-print('vim')
-print(vim.mean(axis=0))
-
-print(filename)
-print(other.mean(axis=0))
-
-names = [
-    'cifar100',
-    'tin',
-    'nearood',
-    'mnist',
-    'svhn',
-    'texture',
-    'places365',
-    'farood',
-]
+first_metric, names = get_metrics(
+    f'saved_metrics/{args.dataset}_{args.first_postprocessor}_bootstrapped.pkl'
+)
+second_metric, _ = get_metrics(
+    f'saved_metrics/{args.dataset}_{args.second_postprocessor}_bootstrapped.pkl'
+)
 
 for i in range(8):
-    a = vim[:, i, 1]
-    b = other[:, i, 1]
+    a = first_metric[:, i, 1]
+    b = second_metric[:, i, 1]
 
     pval = ttest_ind(a, b, alternative='less').pvalue
 
