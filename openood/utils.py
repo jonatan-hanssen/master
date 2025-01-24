@@ -188,7 +188,10 @@ class GradCAMWrapper(torch.nn.Module):
             saliency = torch.nn.functional.relu(saliency)
 
         if self.normalize:
-            pass
+            mins = saliency.min(dim=-1)[0].min(dim=-1)[0].unsqueeze(-1).unsqueeze(-1)
+            saliency -= mins
+            maxes = saliency.max(dim=-1)[0].max(dim=-1)[0].unsqueeze(-1).unsqueeze(-1)
+            saliency /= maxes
 
         if return_feature:
             return saliency.cpu().detach(), feature
@@ -282,7 +285,9 @@ def get_saliency_generator(
     name: str, net: torch.nn.Module, repeats: int, just_mean: bool = False
 ) -> Callable:
     if name == 'gradcam':
-        cam_wrapper = GradCAMWrapper(model=net, target_layer=net.layer4[-1])
+        cam_wrapper = GradCAMWrapper(
+            model=net, target_layer=net.layer4[-1], normalize=True
+        )
         generator_func = cam_wrapper
 
     elif name == 'occlusion':
@@ -323,7 +328,9 @@ def get_saliency_generator(
                 return means
     elif name == 'seglime':
         if not just_mean:
-            generator_func = lambda data: segmented_lime(net, data)[0]
+            generator_func = lambda data: segmented_lime(
+                net, data, perturbations=200, kernel_width=0.25, batch_size=100
+            )[0]
         else:
 
             def generator_func(data):
@@ -745,11 +752,17 @@ def lime_explanation(
 
 
 def segmented_lime(
-    net, batch, perturbations=100, mask_prob=0.5, kernel_width=0.25, device='cuda'
+    net,
+    batch,
+    perturbations=100,
+    mask_prob=0.5,
+    kernel_width=0.25,
+    batch_size=128,
+    device='cuda',
 ):
-    batch_size, c, h, w = batch.shape
+    num_images, c, h, w = batch.shape
 
-    saliencies = torch.empty(batch_size, h, w)
+    saliencies = torch.empty(num_images, h, w)
 
     preds = torch.argmax(net(batch), dim=1)
 
@@ -757,10 +770,7 @@ def segmented_lime(
 
     kernel = lambda distances: torch.sqrt(torch.exp(-(distances**2) / kernel_width**2))
 
-    for i in range(batch_size):
-        if i > 20:
-            break
-
+    for i in range(num_images):
         image = batch[i]
         pred = preds[i]
         segmentation = torch.from_numpy(
@@ -784,8 +794,19 @@ def segmented_lime(
 
         masked_images = stacked_image * masks
 
-        with torch.no_grad():
-            network_preds = net(masked_images)[:, pred]
+        if perturbations <= batch_size:
+            with torch.no_grad():
+                network_preds = net(masked_images)[:, pred]
+            print(network_preds.shape)
+
+        else:
+            network_preds = list()
+            with torch.no_grad():
+                for sub_batch in torch.split(masked_images, batch_size):
+                    network_preds.append(net(sub_batch)[:, pred])
+
+            network_preds = torch.cat(network_preds)
+            print(network_preds.shape)
 
         original = torch.ones((1, mask_tensor.shape[-1]))
 

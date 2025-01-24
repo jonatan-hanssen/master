@@ -67,9 +67,7 @@ while True:
         plt.title('id')
         display_pytorch_image(id_images[i])
         plt.subplot(4, 8, i * 2 + 2)
-        plt.title(
-            f'{torch.mean(id_saliencies[i] - torch.min(id_saliencies[i])):.3f}, {id_preds[i]:.3f}'
-        )
+        plt.title(f'{torch.max(id_saliencies[i]):.3f}, {id_preds[i]:.3f}')
         overlay_saliency(
             id_images[i],
             id_saliencies[i],
