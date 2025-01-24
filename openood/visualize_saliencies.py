@@ -6,8 +6,11 @@ import seaborn as sns
 import sys, argparse
 import torch
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from utils import calculate_auc
+
+plt.rcParams.update({'font.size': 22})
 
 parser = argparse.ArgumentParser()
 
@@ -15,6 +18,9 @@ parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument(
+    '--normalize', '-n', action=argparse.BooleanOptionalAction, default=False
+)
 parser.add_argument(
     '--show_scores', '-s', action=argparse.BooleanOptionalAction, default=False
 )
@@ -30,8 +36,23 @@ if args.show_scores:
     with open(score_filename, 'rb') as file:
         score_dict = pickle.load(file)
 
+    for key in saliency_dict:
+        for second_key in saliency_dict[key]:
+            score = score_dict[key][second_key]
+            score = torch.max(score, dim=-1)[0]
+            saliency = saliency_dict[key][second_key]
+            b, h, w = saliency.shape
+            saliency = saliency.reshape((b, h * w))
 
-plt.rcParams.update({'font.size': 22})
+            aggregate = torch.mean(saliency, dim=-1)
+            correlation = np.corrcoef(score.cpu(), aggregate.cpu())[0][1]
+            plt.scatter(score, aggregate, label=f'{second_key}: {correlation=:.4f}')
+
+    plt.xlabel('Maximum Logit Score')
+    plt.ylabel('Mean Saliency')
+    plt.legend()
+    plt.show()
+    exit()
 
 
 def entropy(saliencies, dim=-1):
@@ -52,6 +73,8 @@ class pca_wrapper:
         self.pca = None
 
     def __call__(self, saliencies, dim=-1):
+        saliencies = saliencies - torch.min(saliencies, dim=0)[0]
+        saliencies = saliencies / torch.max(saliencies, dim=0)[0]
         if self.pca is None:
             self.pca = PCA(n_components=1)
             return self.pca.fit_transform(saliencies).squeeze()
@@ -63,10 +86,10 @@ class pca_wrapper:
 
 functions = (
     ('Mean', torch.mean),
-    ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
     ('Std', torch.std),
-    ('Entropy', entropy),
     ('PCA', pca_wrapper()),
+    ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
+    ('Entropy', entropy),
 )
 
 smoothing = 0.3
@@ -74,17 +97,6 @@ plot = lambda data, label: sns.kdeplot(
     data, bw_method=smoothing, label=label, linewidth=3
 )
 
-# for key in saliency_dict:
-#     for second_key in saliency_dict[key]:
-#         score = score_dict[key][second_key]
-#         saliency = saliency_dict[key][second_key]
-#         b, h, w = saliency.shape
-#         saliency = saliency.reshape((b, h * w))
-#         aggregate = torch.mean(saliency, dim=-1)
-#         print(np.corrcoef(score.cpu(), aggregate.cpu()))
-#         plt.scatter(score, aggregate)
-#         plt.show()
-# exit()
 
 for name, function in functions:
     id_aggregate = None
@@ -102,6 +114,10 @@ for name, function in functions:
                 else:
                     b, h, w = saliency.shape
                     saliency = saliency.reshape((b, h * w))
+
+                    if args.normalize:
+                        saliency -= torch.mean(saliency, dim=0)
+                        # saliency /= torch.std(saliency, dim=0)[0]
 
                     aggregate = function(saliency, dim=-1)
 

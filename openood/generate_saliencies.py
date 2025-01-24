@@ -20,6 +20,7 @@ parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--batch_size', '-b', type=int, default=128)
 parser.add_argument('--repeats', '-r', type=int, default=4)
+parser.add_argument('--early_stop', '-e', type=int, default=10000)
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument(
     '--just_mean', '-j', action=argparse.BooleanOptionalAction, default=False
@@ -54,6 +55,8 @@ for key in ('id', 'near', 'far'):
             saliencies = list()
             scores = list()
             for i, batch in enumerate(tqdm(dataloaders[key][second_key])):
+                if i > args.early_stop:
+                    break
                 data = batch['data'].to(device)
                 preds = net(data).detach().cpu()
                 scores.append(preds)
