@@ -22,6 +22,8 @@ parser.add_argument('--batch_size', '-b', type=int, default=128)
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--early_stop', '-e', type=int, default=10000)
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument('--normalize', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument(
     '--just_mean', '-j', action=argparse.BooleanOptionalAction, default=False
 )
@@ -39,7 +41,11 @@ dataloaders = get_dataloaders(
 # load the model
 net = get_network(id_name)
 generator_func = get_saliency_generator(
-    args.generator, net, args.repeats, just_mean=args.just_mean
+    args.generator,
+    net,
+    args.repeats,
+    just_mean=args.just_mean,
+    normalize=args.normalize,
 )
 
 saliency_dict = dict()

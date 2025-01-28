@@ -7,8 +7,8 @@ from scipy.stats import ttest_ind
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
-parser.add_argument('--first_postprocessor', '-f', type=str, default='vim')
-parser.add_argument('--second_postprocessor', '-s', type=str, default='gradmean')
+parser.add_argument('--better_postprocessor', '-b', type=str, default='vim')
+parser.add_argument('--worse_postprocessor', '-w', type=str, default='gradmean')
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -23,23 +23,29 @@ def get_metrics(filename):
     return metrics, names
 
 
-first_metric, names = get_metrics(
-    f'saved_metrics/{args.dataset}_{args.first_postprocessor}_bootstrapped.pkl'
+better_metric, names = get_metrics(
+    f'saved_metrics/{args.dataset}_{args.better_postprocessor}_bootstrapped.pkl'
 )
-second_metric, _ = get_metrics(
-    f'saved_metrics/{args.dataset}_{args.second_postprocessor}_bootstrapped.pkl'
+worse_metric, _ = get_metrics(
+    f'saved_metrics/{args.dataset}_{args.worse_postprocessor}_bootstrapped.pkl'
 )
+
+print(args.better_postprocessor)
+print(better_metric.mean(axis=0))
+
+print(args.worse_postprocessor)
+print(worse_metric.mean(axis=0))
 
 for i in range(8):
-    a = first_metric[:, i, 1]
-    b = second_metric[:, i, 1]
+    better = better_metric[:, i, 1]
+    worse = worse_metric[:, i, 1]
 
-    pval = ttest_ind(a, b, alternative='less').pvalue
+    pval = ttest_ind(better, worse, alternative='greater').pvalue
 
     padding = 10 - len(names[i])
 
-    mean_diff = a.mean() - b.mean()
-    mean_scale = a.mean() / b.mean()
+    mean_diff = better.mean() - worse.mean()
+    mean_scale = better.mean() / worse.mean()
     print(
         f'{names[i]}: {" "*padding} pval: {pval:.5f}    mean_diff: {" " if mean_diff > 0 else ""}{mean_diff:.3f}%   mean_scale: {mean_scale:.3f}'
     )

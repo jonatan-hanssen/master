@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from torchvision.transforms import Resize, InterpolationMode
 import pytorch_grad_cam
-from lime import lime_image
 
 from torchvision import transforms
 import captum
@@ -29,6 +28,8 @@ from openood.networks import (
     ResNet18_224x224,
     ResNet50,
 )  # just a wrapper around the ResNet
+
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def replace_layer_recursive(model, old_layer, new_layer):
@@ -282,18 +283,27 @@ class EigenCAM(pytorch_grad_cam.EigenCAM):
 
 
 def get_saliency_generator(
-    name: str, net: torch.nn.Module, repeats: int, just_mean: bool = False
+    name: str,
+    net: torch.nn.Module,
+    repeats: int,
+    just_mean: bool = False,
+    do_relu: bool = False,
+    normalize: bool = False,
 ) -> Callable:
     if name == 'gradcam':
         cam_wrapper = GradCAMWrapper(
-            model=net, target_layer=net.layer4[-1], normalize=True
+            model=net, target_layer=net.layer4[-1], normalize=normalize
         )
         generator_func = cam_wrapper
 
     elif name == 'occlusion':
-        generator_func = lambda data: occlusion(net, data, repeats=repeats)
+        generator_func = lambda data: occlusion(
+            net, data, repeats=repeats, do_relu=do_relu
+        )
     elif name == 'lime':
-        generator_func = lambda data: lime_explanation(net, data, repeats=repeats)
+        generator_func = lambda data: lime_explanation(
+            net, data, repeats=repeats, do_relu=do_relu
+        )
 
     elif name == 'eigencam':
         cam_wrapper = EigenCAM(model=net, target_layers=[net.layer4[-1]])
@@ -307,13 +317,34 @@ def get_saliency_generator(
         cam_wrapper = Ablation(model=net, target_layers=[net.layer4[-1]])
         generator_func = lambda data: torch.tensor(cam_wrapper(data))
 
-    elif name == 'lrp':
+    elif name == 'integratedgradients':
+        if just_mean:
 
-        def generator_func(data):
-            targets = torch.argmax(net(data), dim=-1)
-            lrp = captum.attr.GradientShap(net)
-            baselines = torch.randn_like(data)
-            return lrp.attribute(data, baselines=baselines, target=targets).mean(dim=1)
+            def generator_func(data):
+                targets = torch.argmax(net(data), dim=-1)
+                lrp = captum.attr.IntegratedGradients(net)
+
+                attributions = lrp.attribute(data, target=targets)
+
+                attributions = torch.nn.functional.relu(attributions)
+
+                attributions = attributions.sum(dim=1)
+
+                return attributions.mean(dim=-1).mean(dim=-1).detach().cpu()
+
+        else:
+
+            def generator_func(data):
+                targets = torch.argmax(net(data), dim=-1)
+                lrp = captum.attr.IntegratedGradients(net)
+
+                attributions = lrp.attribute(data, target=targets)
+
+                attributions = torch.nn.functional.relu(attributions)
+
+                attributions = attributions.sum(dim=1)
+
+                return attributions
 
     elif name == 'segocc':
         if not just_mean:
@@ -326,10 +357,16 @@ def get_saliency_generator(
                 for i, saliency in enumerate(saliencies):
                     means[i] = torch.unique(saliency).mean()
                 return means
+
     elif name == 'seglime':
         if not just_mean:
             generator_func = lambda data: segmented_lime(
-                net, data, perturbations=200, kernel_width=0.25, batch_size=100
+                net,
+                data,
+                perturbations=200,
+                kernel_width=0.25,
+                batch_size=100,
+                do_relu=do_relu,
             )[0]
         else:
 
@@ -710,6 +747,7 @@ def lime_explanation(
     mask_prob=0.5,
     repeats=8,
     kernel_width=0.25,
+    do_relu=False,
     device='cuda',
 ):
     preds = net(batch)
@@ -748,7 +786,11 @@ def lime_explanation(
 
         all_betas.append(betas)
 
-    return torch.cat(all_betas, dim=0).reshape(-1, repeats, repeats)
+    all_betas = torch.cat(all_betas, dim=0)
+    if do_relu:
+        all_betas = torch.nn.functional.relu(all_betas)
+
+    return all_betas.reshape(-1, repeats, repeats)
 
 
 def segmented_lime(
@@ -758,6 +800,7 @@ def segmented_lime(
     mask_prob=0.5,
     kernel_width=0.25,
     batch_size=128,
+    do_relu=False,
     device='cuda',
 ):
     num_images, c, h, w = batch.shape
@@ -797,7 +840,6 @@ def segmented_lime(
         if perturbations <= batch_size:
             with torch.no_grad():
                 network_preds = net(masked_images)[:, pred]
-            print(network_preds.shape)
 
         else:
             network_preds = list()
@@ -822,6 +864,9 @@ def segmented_lime(
         )
 
         betas = torch.tensor(regressor.coef_)
+
+        if do_relu:
+            betas = torch.nn.functional.relu(betas)
 
         for j, v in enumerate(betas):
             saliencies[i][segmentation == j + 1] = v
@@ -875,7 +920,7 @@ def reverse_imagenet_transform(tensor: torch.tensor):
     )
 
 
-def occlusion(net, batch, repeats=8, device='cuda'):
+def occlusion(net, batch, repeats=8, do_relu=False, device='cuda'):
     preds = net(batch)
 
     max_pred, max_pred_ind = torch.max(preds, dim=1)
@@ -893,7 +938,12 @@ def occlusion(net, batch, repeats=8, device='cuda'):
             network_preds = net(masked_images)[:, pred_label]
         saliencies.append((pred_value.detach() - network_preds.detach()).unsqueeze(0))
 
-    return torch.cat(saliencies, dim=0).reshape(-1, repeats, repeats)
+    saliencies = torch.cat(saliencies, dim=0)
+
+    if do_relu:
+        saliencies = torch.nn.functional.relu(saliencies)
+
+    return saliencies.reshape(-1, repeats, repeats)
 
 
 def numpify(tensor: torch.Tensor):
