@@ -29,7 +29,9 @@ class NeoVIMPostprocessor(BasePostprocessor):
 
             target_layers = [net.layer4[-1]]
             # cam = GradCAMNoRescale(model=net, target_layers=target_layers)
-            cam = GradCAMWrapper(model=net, target_layer=target_layers[0])
+            cam = GradCAMWrapper(
+                model=net, target_layer=target_layers[0], normalize=True
+            )
 
             self.w, self.b = net.get_fc()
             print('Extracting id training feature')
@@ -47,8 +49,8 @@ class NeoVIMPostprocessor(BasePostprocessor):
                     feature.detach().cpu().numpy().astype('float32')
                 )
 
-                b, c, h, w = grayscale_cam.shape
-                cams.append(grayscale_cam.reshape((b, c * h * w)))
+                b, h, w = grayscale_cam.shape
+                cams.append(grayscale_cam.reshape((b, h * w)))
 
             gradcam_id_train = np.concatenate(cams, axis=0).astype('float32')
             print(f'{gradcam_id_train.shape=}')
@@ -87,12 +89,12 @@ class NeoVIMPostprocessor(BasePostprocessor):
 
         target_layers = [net.layer4[-1]]
         # cam = GradCAMNoRescale(model=net, target_layers=target_layers)
-        cam = GradCAMWrapper(model=net, target_layer=target_layers[0])
+        cam = GradCAMWrapper(model=net, target_layer=target_layers[0], normalize=True)
         # grayscale_cam = cam(input_tensor=data)
         grayscale_cam, feature_ood = cam(data, return_feature=True)
         feature_ood = feature_ood.cpu()
-        b, c, h, w = grayscale_cam.shape
-        gradcam_ood = grayscale_cam.reshape((b, c * h * w))
+        b, h, w = grayscale_cam.shape
+        gradcam_ood = grayscale_cam.reshape((b, h * w))
 
         stacked_feature_ood = np.hstack([feature_ood, gradcam_ood])
 

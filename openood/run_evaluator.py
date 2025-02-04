@@ -11,7 +11,6 @@ from openood.postprocessors.gradknn_postprocessor import GradKNNPostprocessor
 from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
 from openood.postprocessors.grad_mean_postprocessor import GradMeanPostprocessor
 from openood.evaluation_api import Evaluator
-import sys
 
 parser = argparse.ArgumentParser()
 

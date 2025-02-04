@@ -1,9 +1,16 @@
 import numpy as np
-import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
-import sys
+import sys, argparse, pickle
 from scipy.stats import ttest_ind
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--dataset', '-d', type=str, default='cifar10')
+parser.add_argument('--better_postprocessor', '-b', type=str, default='vim')
+parser.add_argument('--worse_postprocessor', '-w', type=str, default='gradmean')
+
+args = parser.parse_args(sys.argv[1:])
 
 
 def get_metrics(filename):
@@ -11,45 +18,34 @@ def get_metrics(filename):
         data = pickle.load(file)
 
     all_metrics, all_scores = data
+    names = list(all_metrics[0].index)
     metrics = np.stack([metric.to_numpy() for metric in all_metrics])
-    return metrics
+    return metrics, names
 
 
-if len(sys.argv) > 1:
-    # filename = f'saved_metrics/{sys.argv[1]}.pkl'
-    filename = sys.argv[1]
-else:
-    filename = 'saved_metrics/neovim_bootstrapped2.pkl'
+better_metric, names = get_metrics(
+    f'saved_metrics/{args.dataset}_{args.better_postprocessor}_bootstrapped.pkl'
+)
+worse_metric, _ = get_metrics(
+    f'saved_metrics/{args.dataset}_{args.worse_postprocessor}_bootstrapped.pkl'
+)
 
-vim = get_metrics(f'saved_metrics/vim_bootstrapped.pkl')
-other = get_metrics(filename)
-print('vim')
-print(vim.mean(axis=0))
+print(args.better_postprocessor)
+print(better_metric.mean(axis=0))
 
-print(filename)
-print(other.mean(axis=0))
-
-names = [
-    'cifar100',
-    'tin',
-    'nearood',
-    'mnist',
-    'svhn',
-    'texture',
-    'places365',
-    'farood',
-]
+print(args.worse_postprocessor)
+print(worse_metric.mean(axis=0))
 
 for i in range(8):
-    a = vim[:, i, 1]
-    b = other[:, i, 1]
+    better = better_metric[:, i, 1]
+    worse = worse_metric[:, i, 1]
 
-    pval = ttest_ind(a, b, alternative='less').pvalue
+    pval = ttest_ind(better, worse, alternative='greater').pvalue
 
     padding = 10 - len(names[i])
 
-    mean_diff = a.mean() - b.mean()
-    mean_scale = a.mean() / b.mean()
+    mean_diff = better.mean() - worse.mean()
+    mean_scale = better.mean() / worse.mean()
     print(
         f'{names[i]}: {" "*padding} pval: {pval:.5f}    mean_diff: {" " if mean_diff > 0 else ""}{mean_diff:.3f}%   mean_scale: {mean_scale:.3f}'
     )
