@@ -1,9 +1,11 @@
 import torch
 import argparse
 import matplotlib.pyplot as plt
+import matplotlib
 import seaborn as sns
 from utils import (
     get_dataloaders,
+    get_labels,
     display_pytorch_image,
     numpify,
     overlay_saliency,
@@ -17,8 +19,10 @@ parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument('--pgf', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument('--ood', '-o', type=str, default='near')
+parser.add_argument('--batch_size', '-b', type=int, default=8)
 parser.add_argument(
     '--normalize', '-n', action=argparse.BooleanOptionalAction, default=False
 )
@@ -33,10 +37,26 @@ parser.add_argument(
 args = parser.parse_args()
 print(args)
 
+
+if args.pgf:
+    matplotlib.use('pgf')
+    matplotlib.rcParams.update(
+        {
+            'pgf.texsystem': 'pdflatex',
+            'font.family': 'serif',
+            'text.usetex': True,
+            'pgf.rcfonts': False,
+        }
+    )
+
+
 id_name = args.dataset
 device = 'cuda'
 
-dataloaders = get_dataloaders(id_name, batch_size=8, full=False, shuffle=True)
+dataloaders = get_dataloaders(
+    id_name, batch_size=args.batch_size, full=False, shuffle=True
+)
+labels = get_labels(id_name)
 
 # load the model
 net = get_network(id_name)
@@ -57,21 +77,28 @@ while True:
     id_saliencies = generator_func(id_images)
     ood_saliencies = generator_func(ood_images)
 
-    id_preds = torch.max(torch.nn.functional.softmax(net(id_images), dim=-1), dim=-1)[0]
-    ood_preds = torch.max(torch.nn.functional.softmax(net(ood_images), dim=-1), dim=-1)[
-        0
-    ]
+    id_preds, id_labels = torch.max(
+        torch.nn.functional.softmax(net(id_images), dim=-1), dim=-1
+    )
+    ood_preds, ood_labels = torch.max(
+        torch.nn.functional.softmax(net(ood_images), dim=-1), dim=-1
+    )
+
+    maxval = max(torch.max(id_saliencies), torch.max(ood_saliencies))
 
     normalize = args.normalize
     interpolation = args.interpolation
     opacity = 1.6
 
-    for i in range(8):
-        plt.subplot(4, 8, i * 2 + 1)
+    for i in range(args.batch_size):
+        plt.subplot(4, args.batch_size, i * 2 + 1)
         plt.title('id')
         display_pytorch_image(id_images[i])
-        plt.subplot(4, 8, i * 2 + 2)
-        plt.title(f'{torch.mean(id_saliencies[i]):.3f}, {id_preds[i]:.3f}')
+        plt.subplot(4, args.batch_size, i * 2 + 2)
+        if labels is not None:
+            plt.title(f'{labels[id_labels[i]]}, {torch.mean(id_saliencies[i]):.3f}')
+        else:
+            plt.title(f'{torch.mean(id_saliencies[i]):.3f}')
         overlay_saliency(
             id_images[i],
             id_saliencies[i],
@@ -79,12 +106,16 @@ while True:
             interpolation=interpolation,
             opacity=opacity,
         )
+        # plt.colorbar()
 
-        plt.subplot(4, 8, i * 2 + 17)
+        plt.subplot(4, args.batch_size, i * 2 + args.batch_size * 2 + 1)
         plt.title('ood')
         display_pytorch_image(ood_images[i])
-        plt.subplot(4, 8, i * 2 + 18)
-        plt.title(f'{torch.mean(ood_saliencies[i]):.3f}, {ood_preds[i]:.3f}')
+        plt.subplot(4, args.batch_size, i * 2 + args.batch_size * 2 + 2)
+        if labels is not None:
+            plt.title(f'{labels[ood_labels[i]]}, {torch.mean(ood_saliencies[i]):.3f}')
+        else:
+            plt.title(f'{torch.mean(ood_saliencies[i]):.3f}')
         overlay_saliency(
             ood_images[i],
             ood_saliencies[i],
@@ -93,6 +124,13 @@ while True:
             opacity=opacity,
             previous_maxval=torch.max(id_saliencies[i]),
         )
+        # plt.colorbar()
 
     plt.tight_layout()
-    plt.show()
+    if args.pgf:
+        plt.savefig(
+            f'../master/figure/{args.dataset}_{args.generator}_heatmaps_{"" if args.normalize else "un"}normalized.pgf'
+        )
+        exit()
+    else:
+        plt.show()

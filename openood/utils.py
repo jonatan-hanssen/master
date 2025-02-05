@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from torchvision.transforms import Resize, InterpolationMode
 import pytorch_grad_cam
+import seaborn as sns
 
 from torchvision import transforms
 import captum
@@ -28,8 +29,63 @@ from openood.networks import (
     ResNet18_224x224,
     ResNet50,
 )  # just a wrapper around the ResNet
+from sklearn.decomposition import PCA
 
 from matplotlib.colors import LinearSegmentedColormap
+
+
+class GradCAMPlusPlusNoRescale(pytorch_grad_cam.GradCAMPlusPlus):
+    # Class that removes rescaling and just the dim of the conv layer
+    def __init__(self, model, target_layers, reshape_transform=None):
+        super(GradCAMPlusPlusNoRescale, self).__init__(
+            model, target_layers, reshape_transform
+        )
+
+    def compute_cam_per_layer(
+        self,
+        input_tensor: torch.Tensor,
+        targets: List[torch.nn.Module],
+        eigen_smooth: bool,
+    ) -> np.ndarray:
+        activations_list = [
+            a.cpu().data.numpy() for a in self.activations_and_grads.activations
+        ]
+        grads_list = [
+            g.cpu().data.numpy() for g in self.activations_and_grads.gradients
+        ]
+        target_size = self.get_target_width_height(input_tensor)
+
+        cam_per_target_layer = []
+        # Loop over the saliency image from every layer
+        for i in range(len(self.target_layers)):
+            target_layer = self.target_layers[i]
+            layer_activations = None
+            layer_grads = None
+            if i < len(activations_list):
+                layer_activations = activations_list[i]
+            if i < len(grads_list):
+                layer_grads = grads_list[i]
+
+            cam = self.get_cam_image(
+                input_tensor,
+                target_layer,
+                targets,
+                layer_activations,
+                layer_grads,
+                eigen_smooth,
+            )
+            # print(np.min(cam))
+            # cam = np.maximum(cam, 0)
+            # scaled = scale_cam_image(cam, target_size)
+            cam_per_target_layer.append(cam[:, None, :])
+
+        return cam_per_target_layer
+
+    def aggregate_multi_layers(self, cam_per_target_layer: np.ndarray) -> np.ndarray:
+        cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
+        # cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        result = np.mean(cam_per_target_layer, axis=1)
+        return result
 
 
 def replace_layer_recursive(model, old_layer, new_layer):
@@ -78,6 +134,14 @@ def get_network(id_name: str):
         net = ResNet50(num_classes=1000)
         net.load_state_dict(torch.load('./models/resnet50_imagenet1k_v1.pth'))
 
+    elif id_name == 'imagenet200':
+        net = ResNet18_224x224(num_classes=200)
+        net.load_state_dict(
+            torch.load(
+                './models/imagenet200_resnet18_224x224_base_e90_lr0.1_default/s0/best.ckpt'
+            )
+        )
+
     elif id_name == 'cifar100':
         net = ResNet18_32x32(num_classes=100)
         net.load_state_dict(
@@ -117,6 +181,15 @@ def get_network(id_name: str):
     return net
 
 
+def get_palette():
+    palette = sns.color_palette('bright', 10)
+    palette[0], palette[2] = palette[2], palette[0]
+    palette[2], palette[3] = palette[3], palette[2]
+    palette[1], palette[8] = palette[8], palette[1]
+
+    return palette
+
+
 def calculate_auc(id_aggregate, ood_aggregate):
     values = torch.cat((id_aggregate, ood_aggregate)).numpy()
     labels = torch.cat(
@@ -126,6 +199,39 @@ def calculate_auc(id_aggregate, ood_aggregate):
     fpr_list, tpr_list, thresholds = roc_curve(labels, -values)
     auroc = auc(fpr_list, tpr_list)
     return auroc
+
+
+def get_labels(id_name):
+    if id_name == 'imagewoof':
+        return [
+            'shih zu',
+            'rhodesian',
+            'beagle',
+            'english foxhound',
+            'border terrier',
+            'australian terrier',
+            'golden retriever',
+            'old english sheepdog',
+            'samoyed',
+            'dingo',
+        ]
+
+    if id_name == 'cifar10':
+        return [
+            'airplane',
+            'automobile',
+            'bird',
+            'cat',
+            'deer',
+            'dog',
+            'frog',
+            'horse',
+            'ship',
+            'truck',
+        ]
+
+    else:
+        return None
 
 
 class GradCAMWrapper(torch.nn.Module):
@@ -291,9 +397,16 @@ def get_saliency_generator(
     normalize: bool = False,
 ) -> Callable:
     if name == 'gradcam':
-        cam_wrapper = GradCAMWrapper(
-            model=net, target_layer=net.layer4[-1], normalize=normalize
-        )
+        if repeats == 4:
+            cam_wrapper = GradCAMWrapper(
+                model=net, target_layer=net.layer4[-1], normalize=normalize
+            )
+        elif repeats == 3:
+            cam_wrapper = GradCAMWrapper(
+                model=net, target_layer=net.layer3[-1], normalize=normalize
+            )
+        else:
+            raise ValueError()
         generator_func = cam_wrapper
 
     elif name == 'occlusion':
@@ -315,6 +428,12 @@ def get_saliency_generator(
 
     elif name == 'ablation':
         cam_wrapper = Ablation(model=net, target_layers=[net.layer4[-1]])
+        generator_func = lambda data: torch.tensor(cam_wrapper(data))
+
+    elif name == 'gradcamplusplus':
+        cam_wrapper = GradCAMPlusPlusNoRescale(
+            model=net, target_layers=[net.layer4[-1]]
+        )
         generator_func = lambda data: torch.tensor(cam_wrapper(data))
 
     elif name == 'integratedgradients':
@@ -346,13 +465,44 @@ def get_saliency_generator(
 
                 return attributions
 
-    elif name == 'segocc':
-        if not just_mean:
-            generator_func = lambda data: segmented_occlusion(net, data)
+    elif name == 'lrp':
+        if just_mean:
+
+            def generator_func(data):
+                targets = torch.argmax(net(data), dim=-1)
+                lrp = captum.attr.LRP(net)
+
+                attributions = lrp.attribute(data, target=targets)
+
+                attributions = torch.nn.functional.relu(attributions)
+
+                attributions = attributions.sum(dim=1)
+
+                return attributions.mean(dim=-1).mean(dim=-1).detach().cpu()
+
         else:
 
             def generator_func(data):
-                saliencies = segmented_occlusion(net, data)
+                targets = torch.argmax(net(data), dim=-1)
+                lrp = captum.attr.LRP(net)
+
+                attributions = lrp.attribute(data, target=targets)
+
+                attributions = torch.nn.functional.relu(attributions)
+
+                attributions = attributions.sum(dim=1)
+
+                return attributions
+
+    elif name == 'segocc':
+        if not just_mean:
+            generator_func = lambda data: segmented_occlusion(
+                net, data, do_relu=do_relu
+            )
+        else:
+
+            def generator_func(data):
+                saliencies = segmented_occlusion(net, data, do_relu=do_relu)
                 means = torch.zeros(data.shape[0])
                 for i, saliency in enumerate(saliencies):
                     means[i] = torch.unique(saliency).mean()
@@ -378,6 +528,86 @@ def get_saliency_generator(
         raise TypeError('No such generator')
 
     return generator_func
+
+
+def entropy(saliencies, dim=-1):
+    entropy = saliencies - saliencies.min(-1)[0].unsqueeze(1)
+    entropy = entropy / entropy.sum(-1).unsqueeze(1)
+
+    entropy = -1 * entropy * torch.log(entropy + 1e-10)
+    entropy = entropy.sum(-1)
+    return entropy
+
+
+def gini(saliencies, dim=-1):
+    """Calculate the Gini coefficient of a numpy array."""
+    # based on bottom eq: http://www.statsdirect.com/help/content/image/stat0206_wmf.gif
+    # from: http://www.statsdirect.com/help/default.htm#nonparametric_methods/gini.htm
+
+    ginies = list()
+
+    for row in saliencies:
+        array = row.numpy()
+        array = array.flatten()  # all values are treated equally, arrays must be 1d
+        if np.amin(array) < 0:
+            array -= np.amin(array)  # values cannot be negative
+        array += 0.0000001  # values cannot be 0
+        array = np.sort(array)  # values must be sorted
+        index = np.arange(1, array.shape[0] + 1)  # index per array element
+        n = array.shape[0]  # number of array elements
+        gini = (np.sum((2 * index - n - 1) * array)) / (
+            n * np.sum(array)
+        )  # Gini coefficient
+        ginies.append(gini)
+
+    return torch.tensor(ginies)
+
+
+def norm_std(saliencies, dim=-1):
+    saliencies = saliencies - saliencies.min(dim=-1)[0].unsqueeze(1)
+    saliencies = saliencies / saliencies.max(dim=-1)[0].unsqueeze(1)
+
+    return saliencies.std(dim=-1)
+
+
+def spread(saliencies, dim=-1):
+    return torch.std(saliencies, dim=-1) / torch.mean(saliencies, dim=-1)
+
+
+class pca_wrapper:
+    def __init__(self):
+        self.pca = None
+
+    def __call__(self, saliencies, dim=-1):
+        # saliencies = saliencies - torch.min(saliencies, dim=0)[0]
+        # saliencies = saliencies / torch.max(saliencies, dim=0)[0]
+        if self.pca is None:
+            self.pca = PCA(n_components=1)
+            return self.pca.fit_transform(saliencies).squeeze()
+        else:
+            return self.pca.transform(saliencies).squeeze()
+
+
+class pca_recon_loss:
+    def __init__(self):
+        self.pca = None
+
+    def __call__(self, saliencies, dim=-1):
+        # saliencies = saliencies - torch.min(saliencies, dim=0)[0]
+        # saliencies = saliencies / torch.max(saliencies, dim=0)[0]
+        if self.pca is None:
+            self.pca = PCA(n_components=1)
+            self.pca.fit(saliencies)
+
+        recon = self.pca.inverse_transform(self.pca.transform(saliencies))
+        recon = torch.tensor(recon)
+
+        recon_loss = torch.mean((saliencies - recon) ** 2, dim=1)
+
+        return recon_loss
+
+
+# print(score_dict)
 
 
 class Ablation(pytorch_grad_cam.AblationCAM):
@@ -658,12 +888,16 @@ def get_dataloaders(
 
     get_length = lambda dictionary: sum([len(dictionary[key]) for key in dictionary])
 
+    def make_generator(dataloader):
+        for batch in dataloader:
+            yield batch
+
     if not full:
-        id_generator = combine_dataloaders(dataloader_dict['id'])
+        id_generator = make_generator(dataloader_dict['id']['test'])
         near_generator = combine_dataloaders(dataloader_dict['ood']['near'])
         far_generator = combine_dataloaders(dataloader_dict['ood']['far'])
 
-        id_length = get_length(dataloader_dict['id'])
+        id_length = len(dataloader_dict['id']['test'])
         near_length = get_length(dataloader_dict['ood']['near'])
         far_length = get_length(dataloader_dict['ood']['far'])
 
@@ -848,7 +1082,6 @@ def segmented_lime(
                     network_preds.append(net(sub_batch)[:, pred])
 
             network_preds = torch.cat(network_preds)
-            print(network_preds.shape)
 
         original = torch.ones((1, mask_tensor.shape[-1]))
 
