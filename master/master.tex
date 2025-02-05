@@ -162,6 +162,16 @@ FFNNs have some inherent flaws which make them unsuitable for working with high 
 
 Convolutional Neural Networks solve both these issues by using small kernels of weights which are "slid" across the entire input. By using the same weights across all positions of the image, we do not need to train separate detectors for different positions, giving us translation invariance. By using several different kernels, we can detect many different patterns despite each kernel only detecting a single type. By using the outputs of all the kernels as inputs to a new set of kernels, we can use the same type layer structure as in an FFNN, allowing us to extract information in a hierarchical manner. It is common to see that trained CNNs have early layers that detect edges and texture, later layers that use these edge and pattern detections to detect larger shapes, while the final layers combine the shapes to detect entire objects \cite{lenet5}.
 
+\section{Metrics}
+
+\begin{figure}
+    \label{fig:auroc}
+    \begin{center}
+        \input{figure/auroc.pgf}
+    \end{center}
+    \caption[Hypothetical ID/OOD distributions for an OOD detection metric]{Graph showing the distribution of hypothetical ID, Near-OOD and Far-OOD data for an unspecified metric. The shaded region shows the overlap between the ID and OOD samples.}
+\end{figure}
+
 \section{Explainable AI} \label{chapter:xai}
 
 Below follows a thorough introduction to XAI, as well as detailed look at some important methods for explainability for neural networks applied to images.
@@ -200,6 +210,8 @@ Model dependence/agnosticity denotes whether an XAI method uses specifics of a p
 Global explanations provide general relationships between the input features and outputs learned by the model over the entire dataset \cite{xaioverview}. In this way, they can show how a specific feature affects the output in general, instead of just how it affects the output of a single point. These methods are ideal for finding trends in the data, but may not be suitable for a patient wanting an explanation for their specific case.
 
 Local explanations do not describe general trends, but focus only on a single data point. These methods give insight into how the features influenced the prediction of a single data point, but these relationships may not hold for other data points, and as such these methods do not give the same insight into the general behaviour of the model.
+
+\subsection{XAI methods adapted to images: Saliency maps}
 
 \subsection{Benchmarking}
 
@@ -345,7 +357,7 @@ There are several state of the art methods which utilize a classification-based 
 Density-based methods explicitly try to model the in-distribution \cite{oodoverview}, which is then used to detect outliers in low likelihood regions. Although the idea is intuitive, learning the distribution of the data set can often be prohibitively expensive, and thus these methods often lag behind classification-based methods \cite{oodoverview}.
 \\
 
-\subsubsection{Distance-based methods}
+\subsubsection{Distance-based methods} \label{section:distancebasedood}
 
 Distance-based methods attempt to detect OOD samples by calculating their distance to ID samples. Many different distance measures are used, such as Mahalanobis distance to estimated Gaussian distributions, cosine distance to the first singular vector of the data set or Euclidean distance in an embedding space.
 \\
@@ -361,7 +373,26 @@ Below follows a more detailed look a selection of specific OOD detection methods
 
 \subsubsection{Baseline model} \label{ood_baseline}
 
-The baseline model created by \cite{oodbaseline} is extremely simple, yet effective. It simply compares the softmax score the predicted class to a threshold, and labels it as OOD if it falls below this threshold. This works reasonably well, because the softmax scores for ID data generally is higher than for OOD data. Two years later, \cite{mls} showed that this baseline could be improved in settings with larger datasets by forgoing the softmax normalization and instead only looking at the maximum logits. Surprisingly, both these methods are quite good at detecting OOD samples. However, there are still many ways to improve these methods, as will be shown in the following sections.
+The baseline model created by \cite{oodbaseline} is extremely simple, yet effective. It simply compares the softmax score the predicted class to a threshold, and labels it as OOD if it falls below this threshold. Algorithm \ref{algo:baseline} shows pseudo-code for this detector. In this case we assume that our model $f$ outputs logits, i.e a vector of $C$ real numbers, where $C$ is the number of classes defined during training.
+
+\begin{algorithm}
+    \caption{Maximum Softmax Probability OOD Detector}
+    \label{algo:baseline}
+    \begin{algorithmic}
+    \Require Trained Neural Network $f$, Input Data Sample $x$
+    \Ensure ID Score
+
+    \Function{msp}{$f$, $x$}
+        \State $pred \gets f(x)$
+        \State $softmax\_scores \gets \text{softmax}(pred)$
+        \State $id\_score \gets \text{max}(softmax\_scores)$
+        \State \Return $id\_score$
+    \EndFunction
+
+    \end{algorithmic}
+\end{algorithm}
+
+This method reasonably well, because the softmax scores for ID data generally is higher than for OOD data. Two years later, \cite{mls} showed that this baseline could be improved in settings with larger datasets by forgoing the softmax normalization and instead only looking at the maximum logits. Surprisingly, both these methods are quite good at detecting OOD samples. However, there are still many ways to improve these methods, as will be shown in the following sections.
 \\
 
 \subsubsection{Out-of-Distribution Detector for Neural Networks (ODIN)} \label{ood_odin}
@@ -568,15 +599,17 @@ l_0 := \alpha || \bm{x}^{\text{Null}(P)}||
 
 This now takes part in the computation of the softmax values, and thus is affected by the size of the rest of the logits. They call the softmax value of the Virtual Logit the {\it ViM score}. In this way, the ViM score represents the size of the residual in comparison with the predictions of the model. If the model is very confident, then the norm of the residual will be small in comparison, and the ViM score will be low. If the residual is very large, the ViM score will be higher, and more indicative of an OOD sample. In this way, \cite{vim} have combined information from the feature, the logit and the softmax probability level to perform OOD detection.
 
-\subsection{Related work} \label{section:relatedwork}
+\section{Related work} \label{section:relatedwork}
 
 While the combination of XAI and OOD detection has been explored in many previous works, the majority of them focus on explaining why a data point was marked as OOD, as opposed to using XAI to aid the detection itself. Works like \cite{uncertainty}, \cite{generalxaiforood} and \cite{tallon2020explainable} are papers which combine XAI and OOD for this purpose. Within network security, XAI has been as part of anomaly detection systems to detect malicious or faulty network traffic. Here, it has been used to explain detections (\cite{idsxai}, \cite{mahbooba}), but also to aid in detection itself by inspecting the explanations of the detection system (\cite{tcydenova2021detection}, \cite{dnsxai}). These methods thus use XAI to aid OOD detection in a similar manner to my work, however they are strictly focused on sequential network traffic data as opposed to images, and are mostly concerned with detection "unnatural" data samples such as intentionally malicious traffic or that generated by faulty equipment, as opposed to natural OOD data caused by semantic or covariate shift occurring when a model is deployed.
 
-\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use XAI to improve OOD detection on images. They do this by looking at saliency maps produced by the model during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class (as explained in section \ref{section:gradcam}). By collecting all explanations for each image in the ID dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform OOD detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as OOD if it has a distance which is over a certain threshold. This method performs decently, but not competitively to State-of-the-Art OOD detection models, with the authors concluding that "OoD detection approaches that are specifically designed for the purpose achieve in general better detection scores at the cost of an additional computational burden in the model’s construction" \cite{martinez}.
+\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use XAI to improve OOD detection on images. They do this by looking at saliency maps produced by a GradCAM-based XAI method (section \ref{section:gradcam}) during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class. Using these heatmaps, they perform distance-based OOD detection (section \ref{section:distancebasedood}): By collecting all explanations for each image in the ID dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform OOD detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as OOD if it has a distance which is over a certain threshold.
+
+This method performs decently on toy datasets, achieving scores similar to State-of-the-Art methods when using {\it Fashin MNIST} as ID and {\it MNIST} as OOD. However, this method fails catastrophically in more complicated scenarios, achieving an AUROC score of only $52\%$ on {\it CIFAR10} vs {\it SVHN}, which is only marginally better than pure guessing and far below any other method. The paper thus ends with the authors concluding that "OoD detection approaches that are specifically designed for the purpose achieve in general better detection scores at the cost of an additional computational burden in the model’s construction" \cite{martinez}.
 
 For more potential related work, we can look to OpenOOD (\cite{openood}), which aims to provide a comprehensive benchmark of all relevant methods in the field of OOD detection. Out of all 41 OOD detection methods included in this benchmark, there are no methods which use XAI.
 
-From the absence of any relevant method utilizing XAI in OpenOOD and from the relatively poor results of \cite{martinez}, we can see that the potential for a truly effective OOD detection system using XAI has not been fully realized in any previous work.
+From the absence of any relevant method utilizing XAI in OpenOOD and from the poor results of \cite{martinez}, we can see that the potential for a truly effective OOD detection system using XAI has not been fully realized in any previous work.
 
 \chapter{Methodology}
 
@@ -586,8 +619,6 @@ As shown in the preceding chapter, there exists a plethora of XAI methods, which
 
 As an example, let us consider GradCAM. As explained in section \ref{section:gradcam}, GradCAM uses the gradients of the weights within the final convolutional layer with regard to the output prediction, along with the final feature maps, to generate an explanation.
 
-
-% The core intuition behind this master thesis is the idea that there may be 
 
 \section{Datasets}
 
@@ -601,6 +632,10 @@ As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an 
 
 OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for OOD detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding OOD datasets, separated into near-OOD and far-OOD.
 
+\subsubsection{CIFAR10}
+
+\subsubsection{ImagNet200}
+
 \subsection{HyperKvasir} \label{chapter:hyperkvasir}
 
 HyperKvasir is the largest gastrointestinal (GI) machine learning datasets, containing $110 \,079$ images and $374$ videos collected during gastro- and colonoscopy examinations \cite{hyperkvasir}. It is of utmost importance to detect and correctly classify disease found in the GI-tract, as the different diseases can range from minor annoyances to highly deadly diseases such as GI-cancer, which has a mortality rate of $63 \%$ \cite{hyperkvasir}. Furthermore, the effectiveness of endoscopy in locating these diseases is highly dependent on the skill and knowledge of the human operator, with polyps in the colon having a $20 \%$ miss rate \cite{kaminski2010quality}. Thus, this is a field which could benefit greatly from computer aided diagnosis, but such an integration requires robust and trustworthy AI-systems which do not make erroneous decisions with high confidence. This makes HyperKvasir an ideal dataset to test a new OOD detection method in a more practical real-world scenario.
@@ -608,6 +643,8 @@ HyperKvasir is the largest gastrointestinal (GI) machine learning datasets, cont
 Of the $100 \, 079$ images, $10 \, 662$ have been labeled, with a total of 23 classes. HyperKvasir also contains segmentations and labeled video, however, I shall limit myself to the labeled images and to the task of classification, as this is the task which OOD detection is most commonly applied to.
 
 \section{Data Analysis of Explanations}
+
+As part of my effort to integrate XAI methods into OOD detection, I plan to perform detailed data analysis
 
 \section{XAI methods for OOD detection}
 
@@ -620,104 +657,135 @@ As we have seen from section \ref{section:relatedwork}, there has been little re
 
 As mentioned previously, the field of OOD detection started with the simple baseline introduced by \cite{oodbaseline}, which simply uses the Maximum Softmax Probability (i.e the confidence score of the predicted class) as a way to measure OOD. As such, I propose a similarly simple baseline when using explanations for OOD detection. The {\it Mean Saliency OOD Detector} simply uses the mean saliency of an explanation of the prediction to calculate an OOD score. Similar to how \cite{oodbaseline} has shown that the softmax score (confidence) of a decision is higher, on average, for ID data, one might intuit that the same is true for the level of importance given to each region of an image by a saliency mapping XAI method.
 
-For a further justification for why using mean saliency values could differentiate between ID and OOD, let us consider the fact that we are dealing with semantically shifted data. Semantic shift means that no OOD data point contains any of the ID classes. Thus, when a neural network makes a prediction on an OOD data point, it will always be wrong, because it will always predict one of the ID classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to this prediction. Given that there are no objects of the predicted class in any region, we should expect the saliency values to be lower than in an ID case, where such objects actually are present.
+To give a further justification for why using mean saliency values could differentiate between ID and OOD data, I present a hypothetical scenario for such a method. Figure \ref{fig:meansaliency} shows the scenario, where I imagine a model which has been trained to differentiate between different breeds of dogs. In the first case, it is given an image of a dog, and a prediction of "English Foxhound" is made, which happens to be correct. Generating an explanation for this prediction, each region of the image is given a measure of importance, calculated using gradient information, differences in prediction score on counterfactual examples or by other means. As there actually is an English Foxhound in the image, we expect that these methods generate saliencies which have a magnitude which is higher than if there was no dog present.
 
-Algorithm \ref{algo:meansaliency} gives the pseudo-code for the Mean Saliency OOD Detector, while figure \ref{fig:meansaliency} shows an imagined example use.
+
+% For a further justification for why using mean saliency values could differentiate between ID and OOD, let us consider the fact that we are dealing with semantically shifted data. Semantic shift means that no OOD data point contains any of the ID classes. Thus, when a neural network makes a prediction on an OOD data point, it will always be wrong, because it will always predict one of the ID classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to this prediction. Given that there are no objects of the predicted class in any region, we should expect the saliency values to be lower than in an ID case, where such objects actually are present.
+
+\begin{figure}[H]
+    \begin{center}
+
+    \begin{tikzpicture}[
+    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    ]
+
+    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"English Foxhound"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/dog-img0.png}};
+    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Samyoed"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img2.png}};
+
+    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img1.png}};
+    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img3.png}};
+
+    \node[SIR] (idmean) [below=1.5cm of idsal] {Mean saliency = $0.152$};
+    \node[SIR] (oodmean) [below=1.5cm of oodsal] {Mean saliency = $0.034$};
+
+    \draw[->, very thick] (idimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (idsal.north);
+    \draw[->, very thick] (oodimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (oodsal.north);
+
+    \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (idmean.north);
+    \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (oodmean.north);
+
+    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
+    \node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as OOD};
+
+    \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
+    \draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
+
+    \end{tikzpicture}
+
+    \caption[Mean Saliency visual explanation]{Figure showing the functioning of the Mean Saliency OOD detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present}
+    \label{fig:meansaliency}
+
+    \end{center}
+\end{figure}
+
+In the second case, the model is given an image without any dogs present. Given that there is no class for images without dogs in them, the model will classify the image as one of the possible dog breeds. In this case, the model predicted the class of "Samoyed", a decision which can be considered essentially arbitrary. When a explanation is generated for this decision, the methods for calculating importance scores will most likely assign saliencies to most regions, given that no region contains a dog. As such, when the average scores are calculated for both the image with the dog and the one without, we expect the image with the dog to have a higher mean saliency. As long as we work with semantically shifted OOD data, it will always be the case that the prediction on OOD data is wrong, and thus we may also expect that the generated explanations in general output lower saliencies.
+
+Algorithm \ref{algo:meansaliency} shows the pseudo-code for the Mean Saliency OOD Detector. Like the baseline Maximum Softmax and Logit methods introduced by \cite{oodbaseline} and \cite{mls}, it is very simple:
 
 \begin{algorithm}
-\caption{Mean Saliency OOD Detector}
-\label{algo:meansaliency}
-\begin{algorithmic}
-\Require Trained Neural Network $f$, Saliency Method $s$, Input Data Sample $x$
-\Ensure ID Score
+    \caption{Mean Saliency OOD Detector}
+    \label{algo:meansaliency}
+    \begin{algorithmic}
+    \Require Trained Neural Network $f$, Saliency Method $s$, Input Data Sample $x$
+    \Ensure ID Score
 
-\Function{mean\_saliency}{$f$, $s$, $x$}
-    \State $pred \gets f(x)$
-    \State $class \gets \arg\max(pred)$
-    \State $saliency\_map \gets s(f, x, class)$
-    \State $id\_score \gets \text{mean}(saliency\_map)$
-    \State \Return $id\_score$
-\EndFunction
+    \Function{mean\_saliency}{$f$, $s$, $x$}
+        \State $pred \gets f(x)$
+        \State $class \gets \arg\max(pred)$
+        \State $saliency\_map \gets s(f, x, class)$
+        \State $id\_score \gets \text{mean}(saliency\_map)$
+        \State \Return $id\_score$
+    \EndFunction
 
-\end{algorithmic}
+    \end{algorithmic}
 \end{algorithm}
 
 
-\begin{figure}
-\begin{center}
 
-\begin{tikzpicture}[
-SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
-]
+\subsubsection{Spread of Saliency}
 
-\node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"English Foxhound"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/dog-img0.png}};
-\node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Samyoed"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img2.png}};
+A similarly simple method is the {\it Spread of Saliency OOD Detector}, which essentially functions identically to the Mean Saliency method, but uses some measure of the spread of the heatmap as opposed to the mean value. The intuition is that one might expect the heatmap on OOD data to be less concentrated, given that there are no actual objects of interest present. Figure \ref{fig:varsaliency} shows an example use.
 
-\node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img1.png}};
-\node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img3.png}};
-
-\node[SIR] (idmean) [below=1.5cm of idsal] {Mean saliency = $0.152$};
-\node[SIR] (oodmean) [below=1.5cm of oodsal] {Mean saliency = $0.034$};
-
-\draw[->, very thick] (idimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (idsal.north);
-\draw[->, very thick] (oodimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (oodsal.north);
-
-\draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (idmean.north);
-\draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (oodmean.north);
-
-\node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
-\node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as OOD};
-
-\draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
-\draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
-
-\end{tikzpicture}
-
-\caption[Mean Saliency visual explanation]{Figure showing the functioning of the Mean Saliency OOD detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present}
-\label{fig:meansaliency}
-
-\end{center}
-\end{figure}
-
-\subsubsection{Variance of Saliency}
-
-A similarly simple method is the {\it Variance of Saliency OOD Detector}, which essentially functions identically to.
+Like the Mean Saliency OOD Detector, we imagine a model trained on dogs, which is fed two images, one which contains a dog and one which does not. In this case, we do not care about the magnitudes, but instead only the spread of the values in relation to each other, and thus the heatmap is normalized. As we can see, the heatmap is more spread out in the explanation where there is no dog present than for the image with a dog. By calculating a suitable metric, such as the Gini coefficient, entropy or another measure of spread, we can get a single number which represents how spread out the heatmap is, regardless of its magnitude. Using these values, we can define a threshold which is below most ID data and above most OOD data, allowing us to separate these distributions.
 
 \begin{figure}
-\begin{center}
+    \begin{center}
 
-\begin{tikzpicture}[
-SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
-]
+    \begin{tikzpicture}[
+    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    ]
 
-\node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"Golden Retriever"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/cat-img0.png}};
-\node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Dingo"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img2.png}};
+    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"Golden Retriever"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/cat-img0.png}};
+    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Dingo"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img2.png}};
 
-\node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img1.png}};
-\node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img3.png}};
+    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img1.png}};
+    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img3.png}};
 
-\node[SIR] (idmean) [below=1.5cm of idsal] {GINI = $0.6$};
-\node[SIR] (oodmean) [below=1.5cm of oodsal] {GINI = $0.2$};
+    \node[SIR] (idmean) [below=1.5cm of idsal] {GINI = $0.6$};
+    \node[SIR] (oodmean) [below=1.5cm of oodsal] {GINI = $0.2$};
 
-\draw[->, very thick] (idimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (idsal.north);
-\draw[->, very thick] (oodimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (oodsal.north);
+    \draw[->, very thick] (idimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (idsal.north);
+    \draw[->, very thick] (oodimg.south)  to node[midway, fill=white, align=center] {Generate XAI heatmap\\of model prediction} (oodsal.north);
 
-\draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of heatmap} (idmean.north);
-\draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of heatmap} (oodmean.north);
+    \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of heatmap} (idmean.north);
+    \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of heatmap} (oodmean.north);
 
-\node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
-\node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as OOD};
+    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
+    \node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as OOD};
 
-\draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
-\draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
+    \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
+    \draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
 
-\end{tikzpicture}
+    \end{tikzpicture}
 
-\caption[Mean Saliency visual explanation]{Figure showing the functioning of the Mean Saliency OOD detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present}
-\label{fig:varsaliency}
-
-\end{center}
+    \caption[Spred of Saliency visual explanation]{Figure showing the functioning of the Spread of Saliency OOD detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present}
+    \label{fig:varsaliency}
+    \end{center}
 \end{figure}
+
+Below (algorithm \ref{algo:varsaliency}), we see the pseudo-code for the Spread of Saliency OOD Detector, which is equivalent to the Mean Saliency method apart from the aggregation of each saliency map being a measure of spread as opposed to the mean.
+
+
+\begin{algorithm}
+    \caption{Spread of Saliency OOD Detector}
+    \label{algo:varsaliency}
+    \begin{algorithmic}
+    \Require Trained Neural Network $f$, Saliency Method $s$, Measure of Spread $\sigma$, Input Data Sample $x$
+    \Ensure ID Score
+
+    \Function{spread\_of\_saliency}{$f$, $s$, $\sigma$, $x$}
+        \State $pred \gets f(x)$
+        \State $class \gets \arg\max(pred)$
+        \State $saliency\_map \gets s(f, x, class)$
+        \State $id\_score \gets \sigma(saliency\_map)$
+        \State \Return $id\_score$
+    \EndFunction
+
+    \end{algorithmic}
+\end{algorithm}
+
+
+
 
 \subsubsection{Explanation Clustering}
 
