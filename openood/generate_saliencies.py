@@ -21,7 +21,6 @@ parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--batch_size', '-b', type=int, default=128)
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--early_stop', '-e', type=int, default=10000)
-parser.add_argument('--normalize', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument(
     '--just_mean', '-j', action=argparse.BooleanOptionalAction, default=False
@@ -43,7 +42,6 @@ generator_func = get_saliency_generator(
     net,
     args.repeats,
     just_mean=args.just_mean,
-    normalize=args.normalize,
 )
 
 saliency_dict = dict()

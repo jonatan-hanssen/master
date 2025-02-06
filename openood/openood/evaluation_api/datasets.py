@@ -305,10 +305,18 @@ DATA_INFO = {
                 },
             },
             'far': {
-                'datasets': ['texture'],
-                'texture': {
+                'datasets': ['inaturalist', 'textures', 'openimage_o'],
+                'inaturalist': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/imagenet/test_inaturalist.txt',
+                },
+                'textures': {
                     'data_dir': 'images_classic/',
-                    'imglist_path': 'benchmark_imglist/cifar10/test_texture.txt',
+                    'imglist_path': 'benchmark_imglist/imagenet/test_textures.txt',
+                },
+                'openimage_o': {
+                    'data_dir': 'images_largescale/',
+                    'imglist_path': 'benchmark_imglist/imagenet/test_openimage_o.txt',
                 },
             },
         },

@@ -182,10 +182,8 @@ def get_network(id_name: str):
 
 
 def get_palette():
-    palette = sns.color_palette('bright', 10)
-    palette[0], palette[2] = palette[2], palette[0]
-    palette[2], palette[3] = palette[3], palette[2]
-    palette[1], palette[8] = palette[8], palette[1]
+    palette = sns.color_palette('Set2', 10)
+    palette[1], palette[2] = palette[2], palette[1]
 
     return palette
 
@@ -394,16 +392,15 @@ def get_saliency_generator(
     repeats: int,
     just_mean: bool = False,
     do_relu: bool = False,
-    normalize: bool = False,
 ) -> Callable:
     if name == 'gradcam':
         if repeats == 4:
             cam_wrapper = GradCAMWrapper(
-                model=net, target_layer=net.layer4[-1], normalize=normalize
+                model=net, target_layer=net.layer4[-1], normalize=False
             )
         elif repeats == 3:
             cam_wrapper = GradCAMWrapper(
-                model=net, target_layer=net.layer3[-1], normalize=normalize
+                model=net, target_layer=net.layer3[-1], normalize=False
             )
         else:
             raise ValueError()

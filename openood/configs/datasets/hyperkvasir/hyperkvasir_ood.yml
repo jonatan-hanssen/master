@@ -25,7 +25,7 @@ ood_dataset:
       data_dir: ./data/images_largescale/
       imglist_pth: ./data/benchmark_imglist/imagenet/test_lower.txt
   farood:
-    datasets: [mnist, svhn, texture, place365]
+    datasets: [mnist, svhn, texture, places365]
     mnist:
       data_dir: ./data/images_classic/
       imglist_pth: ./data/benchmark_imglist/cifar10/test_mnist.txt
@@ -35,6 +35,6 @@ ood_dataset:
     texture:
       data_dir: ./data/images_classic/
       imglist_pth: ./data/benchmark_imglist/cifar10/test_texture.txt
-    place365:
+    places365:
       data_dir: ./data/images_classic/
       imglist_pth: ./data/benchmark_imglist/cifar10/test_places365.txt
