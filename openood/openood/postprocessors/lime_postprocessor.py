@@ -14,14 +14,14 @@ from .base_postprocessor import BasePostprocessor
 from typing import Callable, List, Tuple, Optional
 
 
-
-def lime_explanation(net, batch, perturbations=100, mask_prob=0.5, block_size=4, device='cuda'):
-
+def lime_explanation(
+    net, batch, perturbations=100, mask_prob=0.5, block_size=4, device='cuda'
+):
     preds = net(batch)
     max_pred_ind = torch.argmax(preds, dim=1)
 
     kernel_width = 0.25
-    kernel = lambda distances : torch.sqrt(torch.exp(-(distances**2)/kernel_width**2))
+    kernel = lambda distances: torch.sqrt(torch.exp(-(distances**2) / kernel_width**2))
 
     all_betas = list()
 
@@ -38,13 +38,18 @@ def lime_explanation(net, batch, perturbations=100, mask_prob=0.5, block_size=4,
         weights = kernel(distances)
         regressor = LinearRegression()
 
-        regressor.fit(numpify(masks), numpify(network_preds), sample_weight=numpify(weights))
+        regressor.fit(
+            numpify(masks), numpify(network_preds), sample_weight=numpify(weights)
+        )
 
         betas = torch.tensor(regressor.coef_).unsqueeze(0)
 
         all_betas.append(betas)
 
-    return torch.cat(all_betas, dim=0)
+    all_betas = torch.cat(all_betas, dim=0)
+    all_betas = torch.nn.functional.relu(all_betas)
+
+    return all_betas
 
 
 def numpify(tensor: torch.Tensor):
@@ -57,7 +62,7 @@ def mask_image(batch, block_size=4, mask_prob=0.5):
 
     repeats = h // block_size
 
-    masks = (torch.rand(batch_size, repeats ** 2) > mask_prob).to(int)
+    masks = (torch.rand(batch_size, repeats**2) > mask_prob).to(int)
 
     # Prepare the mask array
     mask_array = (
@@ -71,6 +76,7 @@ def mask_image(batch, block_size=4, mask_prob=0.5):
     masked_images = batch * mask_array.to(batch.device)
 
     return masked_images, masks
+
 
 class LimeVIMPostprocessor(BasePostprocessor):
     def __init__(self, config):

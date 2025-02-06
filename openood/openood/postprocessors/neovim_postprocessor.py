@@ -30,7 +30,7 @@ class NeoVIMPostprocessor(BasePostprocessor):
             target_layers = [net.layer4[-1]]
             # cam = GradCAMNoRescale(model=net, target_layers=target_layers)
             cam = GradCAMWrapper(
-                model=net, target_layer=target_layers[0], normalize=True
+                model=net, target_layer=target_layers[0], normalize=False
             )
 
             self.w, self.b = net.get_fc()
@@ -89,7 +89,7 @@ class NeoVIMPostprocessor(BasePostprocessor):
 
         target_layers = [net.layer4[-1]]
         # cam = GradCAMNoRescale(model=net, target_layers=target_layers)
-        cam = GradCAMWrapper(model=net, target_layer=target_layers[0], normalize=True)
+        cam = GradCAMWrapper(model=net, target_layer=target_layers[0], normalize=False)
         # grayscale_cam = cam(input_tensor=data)
         grayscale_cam, feature_ood = cam(data, return_feature=True)
         feature_ood = feature_ood.cpu()

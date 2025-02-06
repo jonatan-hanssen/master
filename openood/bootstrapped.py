@@ -36,6 +36,10 @@ print(better_metric.mean(axis=0))
 print(args.worse_postprocessor)
 print(worse_metric.mean(axis=0))
 
+print(
+    f'\n{args.worse_postprocessor} has higher AUROC than {args.better_postprocessor} with the following probabilities (null hypothesis)'
+)
+
 for i in range(8):
     better = better_metric[:, i, 1]
     worse = worse_metric[:, i, 1]

@@ -21,22 +21,20 @@ parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--batch_size', '-b', type=int, default=128)
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--early_stop', '-e', type=int, default=10000)
-parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
-parser.add_argument('--normalize', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument('--normalize', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument(
     '--just_mean', '-j', action=argparse.BooleanOptionalAction, default=False
 )
 
 args = parser.parse_args(sys.argv[1:])
+print(args)
 
 id_name = args.dataset
 device = 'cuda'
 batch_size = args.batch_size
 
-dataloaders = get_dataloaders(
-    id_name, batch_size=batch_size, full=args.full, shuffle=True
-)
+dataloaders = get_dataloaders(id_name, batch_size=batch_size, full=True, shuffle=True)
 
 # load the model
 net = get_network(id_name)

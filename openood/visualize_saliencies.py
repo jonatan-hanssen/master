@@ -5,19 +5,23 @@ import matplotlib
 import seaborn as sns
 import sys, argparse
 import torch
-from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
-from utils import calculate_auc
+from utils import calculate_auc, get_palette
+import utils
+import matplotlib
 
-plt.rcParams.update({'font.size': 22})
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
+parser.add_argument('--auc', action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument('--pgf', action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument('--smoothing', type=float, default=0.3)
+parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument(
     '--normalize', '-n', action=argparse.BooleanOptionalAction, default=False
 )
@@ -26,11 +30,26 @@ parser.add_argument(
 )
 
 args = parser.parse_args(sys.argv[1:])
+if args.pgf:
+    matplotlib.use('pgf')
+    matplotlib.rcParams.update(
+        {
+            'pgf.texsystem': 'pdflatex',
+            'font.family': 'serif',
+            'text.usetex': True,
+            'pgf.rcfonts': False,
+        }
+    )
 
-smoothing = 0.3
+else:
+    plt.rcParams.update({'font.size': 22})
+
 plot = lambda data, label: sns.kdeplot(
-    data, bw_method=smoothing, label=label, linewidth=3
+    data, bw_method=args.smoothing, label=label, linewidth=1.5
 )
+
+sns.set_palette(get_palette())
+
 
 filename = f'saved_saliencies/{args.dataset}_{args.generator}_{args.repeats}.pkl'
 with open(filename, 'rb') as file:
@@ -44,6 +63,7 @@ if not args.full:
             saliency_dict[key][second_key] for second_key in saliency_dict[key]
         ]
         saliencies = torch.cat(saliencies, dim=0)
+        print(saliencies.shape)
         second_key = ', '.join(saliency_dict[key].keys())
         new_saliency_dict[key][second_key] = saliencies
 
@@ -57,7 +77,7 @@ if args.show_scores:
     for key in saliency_dict:
         for second_key in saliency_dict[key]:
             score = score_dict[key][second_key]
-            score = torch.max(torch.nn.functional.softmax(score, dim=-1), dim=-1)[0]
+            score = torch.max(score, dim=-1)[0]
             saliency = saliency_dict[key][second_key]
             b, h, w = saliency.shape
             saliency = saliency.reshape((b, h * w))
@@ -93,92 +113,15 @@ if args.show_scores:
     exit()
 
 
-def entropy(saliencies, dim=-1):
-    entropy = saliencies - saliencies.min(-1)[0].unsqueeze(1)
-    entropy = entropy / entropy.sum(-1).unsqueeze(1)
-
-    entropy = -1 * entropy * torch.log(entropy + 1e-10)
-    entropy = entropy.sum(-1)
-    return entropy
-
-
-def gini(saliencies, dim=-1):
-    """Calculate the Gini coefficient of a numpy array."""
-    # based on bottom eq: http://www.statsdirect.com/help/content/image/stat0206_wmf.gif
-    # from: http://www.statsdirect.com/help/default.htm#nonparametric_methods/gini.htm
-
-    ginies = list()
-
-    for row in saliencies:
-        array = row.numpy()
-        array = array.flatten()  # all values are treated equally, arrays must be 1d
-        if np.amin(array) < 0:
-            array -= np.amin(array)  # values cannot be negative
-        array += 0.0000001  # values cannot be 0
-        array = np.sort(array)  # values must be sorted
-        index = np.arange(1, array.shape[0] + 1)  # index per array element
-        n = array.shape[0]  # number of array elements
-        gini = (np.sum((2 * index - n - 1) * array)) / (
-            n * np.sum(array)
-        )  # Gini coefficient
-        ginies.append(gini)
-
-    return torch.tensor(ginies)
-
-
-def norm_std(saliencies, dim=-1):
-    saliencies = saliencies / saliencies.mean(dim=-1).unsqueeze(1)
-
-    return saliencies.std(dim=-1)
-
-
-pca = PCA(n_components=1)
-did_pca = False
-
-
-class pca_wrapper:
-    def __init__(self):
-        self.pca = None
-
-    def __call__(self, saliencies, dim=-1):
-        # saliencies = saliencies - torch.min(saliencies, dim=0)[0]
-        # saliencies = saliencies / torch.max(saliencies, dim=0)[0]
-        if self.pca is None:
-            self.pca = PCA(n_components=1)
-            return self.pca.fit_transform(saliencies).squeeze()
-        else:
-            return self.pca.transform(saliencies).squeeze()
-
-
-class pca_recon_loss:
-    def __init__(self):
-        self.pca = None
-
-    def __call__(self, saliencies, dim=-1):
-        # saliencies = saliencies - torch.min(saliencies, dim=0)[0]
-        # saliencies = saliencies / torch.max(saliencies, dim=0)[0]
-        if self.pca is None:
-            self.pca = PCA(n_components=1)
-            self.pca.fit(saliencies)
-
-        recon = self.pca.inverse_transform(self.pca.transform(saliencies))
-        recon = torch.tensor(recon)
-
-        recon_loss = torch.mean((saliencies - recon) ** 2, dim=1)
-
-        return recon_loss
-
-
-# print(score_dict)
-
 functions = (
     ('Mean', torch.mean),
-    ('Recon', pca_recon_loss()),
-    ('Gini', gini),
-    ('Std', torch.std),
-    ('PCA', pca_wrapper()),
+    ('Spread', utils.spread),
+    ('Variance', utils.norm_std),
+    ('Recon', utils.pca_recon_loss()),
+    ('Gini', utils.gini),
+    ('PCA', utils.pca_wrapper()),
     ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
-    ('Entropy', norm_std),
+    ('Entropy', utils.norm_std),
 )
 
 
@@ -199,6 +142,9 @@ for name, function in functions:
                     b, h, w = saliency.shape
                     saliency = saliency.reshape((b, h * w))
 
+                    if args.relu:
+                        saliency = torch.nn.functional.relu(saliency)
+
                     if args.normalize:
                         saliency -= torch.mean(saliency, dim=0)
                         # saliency /= torch.std(saliency, dim=0)[0]
@@ -214,7 +160,7 @@ for name, function in functions:
 
                 if key == 'id':
                     id_aggregate = aggregate
-                    plot(aggregate, f'{key}: {second_key}')
+                    plot(aggregate, f'{key}: {second_key}'.upper())
 
                     if args.show_scores:
                         id_score = score
@@ -224,7 +170,17 @@ for name, function in functions:
                     auc = calculate_auc(id_aggregate, aggregate)
                     near_aucs.append(auc)
 
-                    plot(aggregate, f'{key}: {second_key}. AUC: {auc:.2f}')
+                    if args.auc:
+                        plot(
+                            aggregate,
+                            f'{key}: {second_key}, {auc=:.2f}'.upper().replace(
+                                '_', '\_'
+                            ),
+                        )
+                    else:
+                        plot(
+                            aggregate, f'{key}: {second_key}'.upper().replace('_', '\_')
+                        )
 
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
@@ -233,7 +189,18 @@ for name, function in functions:
                 elif key == 'far':
                     auc = calculate_auc(id_aggregate, aggregate)
                     far_aucs.append(auc)
-                    plot(aggregate, f'{key}: {second_key}. AUC: {auc:.2f}')
+
+                    if args.auc:
+                        plot(
+                            aggregate,
+                            f'{key}: {second_key}, {auc=:.2f}'.upper().replace(
+                                '_', '\_'
+                            ),
+                        )
+                    else:
+                        plot(
+                            aggregate, f'{key}: {second_key}'.upper().replace('_', '\_')
+                        )
 
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
@@ -242,9 +209,22 @@ for name, function in functions:
     near_auc = np.array(near_aucs).mean()
     far_auc = np.array(far_aucs).mean()
 
-    plt.title(
-        f'{name} for {args.generator} saliencies on {args.dataset}.\nNear AUC {near_auc:.2f}, far AUC {far_auc:.2f}'
-    )
+    if args.auc:
+        plt.title(
+            f'{name.capitalize()} for {args.generator.capitalize()} saliencies on {args.dataset.capitalize()}.\nNear AUC {near_auc:.2f}, Far AUC {far_auc:.2f}'
+        )
+    else:
+        plt.title(
+            f'{name.capitalize()} for {args.generator.capitalize()} saliencies on {args.dataset.capitalize()}.'
+        )
     plt.xlabel(name)
+    plt.grid()
     plt.legend()
-    plt.show()
+
+    if args.pgf:
+        plt.savefig(
+            f'../master/figure/{args.dataset}_{args.generator}_{name.lower()}.pgf'
+        )
+        plt.clf()
+    else:
+        plt.show()
