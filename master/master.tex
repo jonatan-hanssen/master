@@ -13,15 +13,18 @@
 \usepackage[hidelinks, hypertexnames=false]{hyperref}
 
 \usetikzlibrary{positioning}
+\usetikzlibrary{backgrounds}
 
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\R}{\mathbb{R}}
 
 \providecommand{\mathdefault}[1]{#1}
 
-\definecolor{id}{rgb}{0.10196078431372549, 0.788235294117647, 0.2196078431372549}
-\definecolor{near}{rgb}{1.0, 0.7686274509803922, 0.0}
-\definecolor{far}{rgb}{0.9098039215686274, 0.0, 0.043137254901960784}
+
+\definecolor{id}{rgb}{0.4, 0.7607843137254902, 0.6470588235294118}
+\definecolor{near}{rgb}{0.5529411764705883, 0.6274509803921569, 0.796078431372549}
+\definecolor{far}{rgb}{0.9882352941176471, 0.5529411764705883, 0.3843137254901961}
 
 \title{Explainable Artificial Intelligence for Out-of-Distribution detection}
 \subtitle{Using irregularities in machine learning explanations to detect when a model is faced with unusual data}
@@ -89,7 +92,7 @@ To answer this question, I introduce 3 objectives:
   \item Develop theoretically sound proof of concept OOD detection methods that are inspired by insights gained from the field of XAI, and compare these methods on a variety of different benchmarks against existing OOD detection methods
 \end{enumerate}
 
-\section{Scope}
+\section{Scope} \label{section:scope}
 
 As we will see in chapter \ref{chapter:background}, both the fields of XAI and OOD detection are very large, which make it impossible to explore all the possible ways one might combine XAI and OOD detection. Thus, it is necessary to restrict the scope of both the XAI and OOD detection methods used. In this section, I will describe the choices I've made and give a short explanation. In later chapters, the choices will be justified more thoroughly.
 
@@ -174,7 +177,7 @@ Convolutional Neural Networks solve both these issues by using small kernels of 
 
 \section{Explainable AI} \label{chapter:xai}
 
-Below follows a thorough introduction to XAI, as well as detailed look at some important methods for explainability for neural networks applied to images.
+Below follows a thorough introduction to XAI, as well as detailed look at some important methods for explainability for neural networks applied to images. Specifically, saliency methods will be explained in detail, as they constitute a core part of my thesis.
 
 \subsection{The motivation for XAI}
 
@@ -211,7 +214,8 @@ Global explanations provide general relationships between the input features and
 
 Local explanations do not describe general trends, but focus only on a single data point. These methods give insight into how the features influenced the prediction of a single data point, but these relationships may not hold for other data points, and as such these methods do not give the same insight into the general behaviour of the model.
 
-\subsection{XAI methods adapted to images: Saliency maps}
+
+
 
 \subsection{Benchmarking}
 
@@ -219,8 +223,10 @@ In general, it is difficult to evaluate an AI explanations, and there is no clea
 
 \subsection{Specific methods}
 
+
 The following section goes through several specific XAI methods. This serves two purposes: Firstly, it aids the first objective mentioned in section \ref{section:problemstatement}, by explaining how commonly used XAI methods function in practice, and by elucidating exactly how one is able to go from gradients, counterfactuals and other model outputs to human interpretable explanations. Secondly, this section also covers the specific methods that will be analyzed and evaluated as part of the rest of the objectives. By thoroughly detailing the functions of these methods in this chapter, it becomes easier to analyse and explain the results in chapter \ref{chapter:experiments}
 \\
+
 
 \subsection{Shapley values}
 
@@ -232,9 +238,9 @@ Shapley values are values that are basically Shapley.
 
 LIME \cite{lime} is built on the idea that while the decision function of a large neural network (or any other large model) might be far too complex to easily interpret, it can most likely be approximated quite well by a simpler function, as long as we only look at the feature space around a single data point. For example, we could approximate a large feed forward neural network with a simple linear regression model, which can be intrinsically explained due to its low complexity.
 
-To create a locally interpretable model, we need a neighbourhood of data points around our point of interest. To do this, we can sample a number of points from our dataset and weigh them by their distance to our original point. This sampling can be done in many ways, for example by calculating a mean and variance for each feature and sampling from a normal distribution. For image data, we can create new points similar to the image by masking out different regions of the image \cite{molnar}. The distance measure depends on the type of data we are dealing with, but is usually based on a smoothing kernel which can be tuned to adjust the size of the "neighbourhood".
+To create a locally interpretable model, we need a neighbourhood of data points around our point of interest. To do this, we can sample a number of points from our dataset and weigh them by their distance to our original point. This sampling can be done in many ways, for example by calculating a mean and variance for each feature and sampling from a normal distribution. For image data, we can create new points similar to the image by masking out different regions of the image \cite{molnar}. The distance measure depends on the type of data we are dealing with. Regardless, the distance values are passed through a smoothing kernel which can be tuned to adjust the size of the "neighbourhood".
 
-With these new data points, we can generate new predictions using the original, complex model. Thus, we now have a series of points, each with a weighting based on their distance to our original point, and each with a predicted score from our original model. With such a dataset, we can train a simpler model, which will then approximate the complex model around the point of interest. By inspecting this simple model (for example the betas of a linear regression model, or the structure of a decision tree), we can learn approximately how the complex model functions in a region around this single data point.
+With these new data points, we can generate new predictions using the original, complex model. Thus, we now have a series of points, each with a weighting based on their distance to our original point, and each with a predicted score from our original model. With such a dataset, we can train a simpler model, which will then approximate the complex model around the point of interest. By inspecting this simple model (for example the learned weights of a linear regression model, or the structure of a decision tree), we can learn approximately how the complex model functions in a region around this single data point.
 
 \subsubsection{Class Activation Mapping (CAM)}
 
@@ -290,6 +296,20 @@ To distribute relevance between the nodes in a way which obeys the constraints d
 Occlusion methods are a family of post-hoc model independent XAI methods. They function by masking different parts of the image and inspecting the change in output score. If an area leads to a large drop in softmax score for the predicted class when masked, this area must have been important for the network when making the prediction. The mask can be as simple as replacing all masked pixels with a single color, such as gray \cite{occlusion}, or they could use more advanced inpainting methods using generative models, for example by replacing a masked tumor with generated healthy tissue. 
 
 Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image.
+
+\subsection{XAI methods adapted to images: Saliency maps}
+
+Before delving into specific XAI methods, I will take some time to explain how XAI methods are adapted to images. When explaining tabular data made up of categorical and numerical values, it is often common to explain each feature by associating it with some change in the output prediction. For example, one might say that increasing the number of rooms in a house by one increases the predicted sale price by 30 000 NOK, or that the absence of a balcony decreases it by 25 000 NOK. But, given that images are made up of tens of thousands of features (pixels), considering each feature individually poses a couple of problems.
+
+Firstly, many methods which are designed for data tabular data (which have may have 10-20 features at most) are far too slow when the number of features may be over a hundred thousand. Methods such as Lime, Occlusion or Shapley fall into this category, as they permute the input at a rate which scales with the number of inputs.
+
+The solution to this is to segment the image i
+
+Secondly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Instead we may be interested in how important pixels are relative to each other, or we may not be interested singular pixels at all.
+
+With these limitations in mind,
+
+
 
 \section{Out-of-Distribution (OOD) Detection} \label{ood_intro}
 
@@ -611,6 +631,10 @@ For more potential related work, we can look to OpenOOD (\cite{openood}), which 
 
 From the absence of any relevant method utilizing XAI in OpenOOD and from the poor results of \cite{martinez}, we can see that the potential for a truly effective OOD detection system using XAI has not been fully realized in any previous work.
 
+\section{Summary}
+
+In this chapter, I have given a thorough introduction.
+
 \chapter{Methodology}
 
 The core of this work is the 
@@ -624,27 +648,151 @@ As an example, let us consider GradCAM. As explained in section \ref{section:gra
 
 With a thorough introduction to both XAI and OOD detection as well as methods which combine the two, I shall present the datasets that will be used to test the new method that I introduce in chapter \ref{chapter:newmethod}. The two datasets used are OpenOOD (\cite{openood}) and HyperKvasir (\cite{hyperkvasir}). OpenOOD is a comprehensive benchmark which can test the new method's performance in a wide range of OOD scenarios, while HyperKvasir is a medicinal dataset which can be used to test the method in the specific use case of gastrointestinal OOD detection.
 
-\subsection{ImageWoof}
 
 \subsection{OpenOOD} \label{chapter:openood}
 
 As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an attempt to unify the performance metrics of the field, such that accurate comparisons of different methods could be made. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures, and with other externalities which inhibited effective comparison between methods \cite{openood}.
 
-OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for OOD detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding OOD datasets, separated into near-OOD and far-OOD.
+OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for OOD detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding OOD datasets, separated into Near-OOD and Far-OOD.
 
 \subsubsection{CIFAR10}
 
-\subsubsection{ImagNet200}
+\begin{figure}[H]
+    \begin{center}
+
+    \begin{tikzpicture}[
+    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    ]
+
+
+    % Define the size of each image cell
+    \def\cellwidth{2.3cm}
+    \def\cellheight{2.3cm}
+    \def\rowpadding{0.8cm}
+
+    \pgfmathtruncatemacro{\offset}{\cellheight + \rowpadding}
+
+    % Loop through the grid
+    \foreach \row in {0, 1, 2, 3, 4, 5, 6} {
+        \foreach \col in {0, 1, 2} {
+            % Calculate the image number
+            \pgfmathtruncatemacro{\imagenumber}{\row * 3 + \col}
+            % Draw the image
+            \node[inner sep=0] (\imagenumber) at (\col * \cellwidth, -\row * \offset - \cellheight) 
+                {\includegraphics[width=\cellwidth, height=\cellheight]{figure/cifar10_examples/image-img\imagenumber.png}};
+        }
+    }
+    \node [above=0.1cm of 1] {ID: CIFAR10};
+    \node [above=0.1cm of 4] {Near-OOD: CIFAR100};
+    \node [above=0.1cm of 7] {Near-OOD: TinyImageNet};
+    \node [above=0.1cm of 10] {Far-OOD: MNIST};
+    \node [above=0.1cm of 13] {Far-OOD: SVHN};
+    \node [above=0.1cm of 16] {Far-OOD: Texture};
+    \node [above=0.1cm of 19] {Far-OOD: Places365};
+
+    \begin{scope}[on background layer={color=id!50}]
+        \fill (-1.5,-0.4) rectangle (6.2,-3.6);
+    \end{scope}
+
+    \begin{scope}[on background layer={color=near!50}]
+        \fill (-1.5,-3.6) rectangle (6.2,-9.8);
+    \end{scope}
+
+    \begin{scope}[on background layer={color=far!50}]
+        \fill (-1.5,-9.8) rectangle (6.2,-22.3);
+    \end{scope}
+
+    \end{tikzpicture}
+
+    \caption[CIFAR10 dataset example images]{Figure showing three example images from CIFAR10 and from the corresponding OOD datasets}
+    \label{fig:meansaliency}
+
+    \end{center}
+\end{figure}
+
+\subsubsection{ImageNet200}
+
+\begin{figure}[H]
+    \begin{center}
+
+    \begin{tikzpicture}[
+    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    ]
+
+
+    % Define the size of each image cell
+    \def\cellwidth{2.3cm}
+    \def\cellheight{2.3cm}
+    \def\rowpadding{0.8cm}
+
+    \pgfmathtruncatemacro{\offset}{\cellheight + \rowpadding}
+
+    % Loop through the grid
+    \foreach \row in {0, 1, 2, 3, 4, 5} {
+        \foreach \col in {0, 1, 2} {
+            % Calculate the image number
+            \pgfmathtruncatemacro{\imagenumber}{\row * 3 + \col}
+            % Draw the image
+            \node[inner sep=0] (\imagenumber) at (\col * \cellwidth, -\row * \offset - \cellheight) 
+                {\includegraphics[width=\cellwidth, height=\cellheight]{figure/imagenet200_examples/image-img\imagenumber.png}};
+        }
+    }
+    \node [above=0.1cm of 1] {ID: ImageNet200};
+    \node [above=0.1cm of 4] {Near-OOD: SSB-Hard};
+    \node [above=0.1cm of 7] {Near-OOD: NINCO};
+    \node [above=0.1cm of 10] {Far-OOD: iNaturalist};
+    \node [above=0.1cm of 13] {Far-OOD: Texture};
+    \node [above=0.1cm of 16] {Far-OOD: OpenImage-O};
+
+    \begin{scope}[on background layer={color=id!50}]
+        \fill (-1.5,-0.4) rectangle (6.2,-3.6);
+    \end{scope}
+
+    \begin{scope}[on background layer={color=near!50}]
+        \fill (-1.5,-3.6) rectangle (6.2,-9.8);
+    \end{scope}
+
+    \begin{scope}[on background layer={color=far!50}]
+        \fill (-1.5,-9.8) rectangle (6.2,-19.1);
+    \end{scope}
+
+    \end{tikzpicture}
+
+    \caption[ImageNet200 dataset example images]{Figure showing three example images from ImageNet200 and from the corresponding OOD datasets}
+    \label{fig:imagenet200}
+
+    \end{center}
+\end{figure}
 
 \subsection{HyperKvasir} \label{chapter:hyperkvasir}
 
 HyperKvasir is the largest gastrointestinal (GI) machine learning datasets, containing $110 \,079$ images and $374$ videos collected during gastro- and colonoscopy examinations \cite{hyperkvasir}. It is of utmost importance to detect and correctly classify disease found in the GI-tract, as the different diseases can range from minor annoyances to highly deadly diseases such as GI-cancer, which has a mortality rate of $63 \%$ \cite{hyperkvasir}. Furthermore, the effectiveness of endoscopy in locating these diseases is highly dependent on the skill and knowledge of the human operator, with polyps in the colon having a $20 \%$ miss rate \cite{kaminski2010quality}. Thus, this is a field which could benefit greatly from computer aided diagnosis, but such an integration requires robust and trustworthy AI-systems which do not make erroneous decisions with high confidence. This makes HyperKvasir an ideal dataset to test a new OOD detection method in a more practical real-world scenario.
 
-Of the $100 \, 079$ images, $10 \, 662$ have been labeled, with a total of 23 classes. HyperKvasir also contains segmentations and labeled video, however, I shall limit myself to the labeled images and to the task of classification, as this is the task which OOD detection is most commonly applied to.
+Of the $100 \, 079$ images, $10 \, 662$ have been labeled, with a total of 23 classes. HyperKvasir also contains segmentations and labeled video, however, I shall limit myself to the labeled images and to the task of classification, as per the scope of this thesis as outlined in section \ref{section:scope}.
+
+\section{Hypothetical OOD Detection Problem: Dog Breed Classification Neural Network}
+
+Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical OOD detection task, which will be used as the context whenever I illustrate a method with an example. This OOD detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-OOD dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-OOD dataset called {\it NoDogs}, which contain images where no dog is present.
 
 \section{Data Analysis of Explanations}
 
 As part of my effort to integrate XAI methods into OOD detection, I plan to perform detailed data analysis on the properties of explanations generated by different XAI methods. The core of this analysis will be comparisons between explanations generated on ID and OOD data.
+
+\subsection{Data Generation}
+
+As explained previously, I limit myself to the study of saliency mapping XAI methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the XAI method used. By iterating over the entire ID dataset, as well as all associated OOD datasets, we thus have explanations corresponding to all data points, both ID and OOD.
+
+Specifically, given a trained model $f$, an XAI saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
+
+{\large
+\begin{equation}
+    D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
+\end{equation}
+}
+
+In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as GradCAM, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
+
+
 
 \section{XAI methods for OOD detection}
 
@@ -669,11 +817,11 @@ To give a further justification for why using mean saliency values could differe
     SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
     ]
 
-    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"English Foxhound"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/dog-img0.png}};
-    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Samyoed"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img2.png}};
+    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"English Foxhound"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/meansaliency/meansaliency0.png}};
+    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Samyoed"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/meansaliency/meansaliency2.png}};
 
-    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img1.png}};
-    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/dog-img3.png}};
+    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/meansaliency/meansaliency1.png}};
+    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/meansaliency/meansaliency3.png}};
 
     \node[SIR] (idmean) [below=1.5cm of idsal] {Mean saliency = $0.152$};
     \node[SIR] (oodmean) [below=1.5cm of oodsal] {Mean saliency = $0.034$};
@@ -735,11 +883,11 @@ Like the Mean Saliency OOD Detector, we imagine a model trained on dogs, which i
     SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
     ]
 
-    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"Golden Retriever"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/cat-img0.png}};
-    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Dingo"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img2.png}};
+    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"Golden Retriever"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/varsaliency/varsaliency0.png}};
+    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Dingo"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/varsaliency/varsaliency2.png}};
 
-    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img1.png}};
-    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/cat-img3.png}};
+    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/varsaliency/varsaliency1.png}};
+    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/varsaliency/varsaliency3.png}};
 
     \node[SIR] (idmean) [below=1.5cm of idsal] {GINI = $0.6$};
     \node[SIR] (oodmean) [below=1.5cm of oodsal] {GINI = $0.2$};
