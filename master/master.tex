@@ -27,7 +27,7 @@
 \definecolor{near}{rgb}{0.5529411764705883, 0.6274509803921569, 0.796078431372549}
 \definecolor{far}{rgb}{0.9882352941176471, 0.5529411764705883, 0.3843137254901961}
 
-\title{Explainable Artificial Intelligence for Out-of-Distribution detection}
+\title{Explainable Artificial Intelligence for Out-of-Distribution Detection}
 \subtitle{Using irregularities in machine learning explanations to detect when a model is faced with unusual data}
 \author{Jonatan Hoffmann Hanssen}
 
@@ -63,10 +63,8 @@ Here comes the abstract in a different language.
     \acro  {id} [ID] {In-Distribution}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
-    \acrodefplural{cnn}[CNNs]{Convolutional Neural Networks}
 
     \acro  {ffnn}[FFNN]{Feed Forward Neural Network}
-    \acrodefplural{ffnn}[FFNNs]{Feed Forward Neural Networks}
 
     \acro  {ml}   [ML]   {Machine Learning}
     \acro  {xai}   [XAI]   {Explainable Artificial Intelligence}
@@ -130,12 +128,14 @@ The field of \ac{ood} detection is primarily concerned with image classification
 
 Use ACM
 
+\section{Ethical Considerations}
+
 
 \section{Main Contributions}
 
 Objective 1 is accomplished in chapter \ref{chapter:background}. Here, the fields of \ac{xai} and \ac{ood} detection are introduced, their respective taxonomies are explained and a selection of specific methods are explained in more detail. This chapter provides a good entry for machine learning researchers who wish a decent introduction to the two fields.
 
-\section{Outline}
+\section{Thesis Outline}
 
 Chapter \ref{chapter:background} gives a short introduction to machine learning, followed by a deeper look at the fields of \ac{xai} and \ac{ood} detection. Chapter \ref{chapter:methodology} introduces my methodology; the methods I will use to compare and contrast \ac{xai} explanations on ID and \ac{ood} data, as well as a handful of \ac{ood} detection methods which integrate explanations into their functioning. Furthermore, I introduce the different datasets which will be used in chapter \ref{chapter:experiments}, among them the HyperKvasir gastrointestinal dataset \cite{hyperkvasir}. \ref{chapter:experiments} will first go into the results of the comparison between ID and \ac{ood} explanations, detailing the differences between different methods. Then, I will report the performance of the different \ac{ood} detection algorithms I have developed, on a handful of datasets, including HyperKvasir, CIFAR10 and ImageNet. After the experiments follow a discussion (chapter \ref{chapter:discussion}), where I reflect on the benefits and drawbacks of using \ac{xai} methods for \ac{ood} detection, and summarize the results from \ref{chapter:experiments}. Finally, the conclusion (chapter \ref{chapter:conclusion}) concludes.
 
@@ -321,13 +321,13 @@ The following section goes through several specific \ac{xai} methods. This serve
 \\
 
 
-\subsection{Shapley values}
+\subsubsection{Shapley values}
 
 Shapley values are values that are basically Shapley.
 
 
 
-\subsection{Local Interpretable Model-Agnostic Explanations (LIME)}
+\subsubsection{Local Interpretable Model-Agnostic Explanations (LIME)}
 
 LIME \cite{lime} is built on the idea that while the decision function of a large neural network (or any other large model) might be far too complex to easily interpret, it can most likely be approximated quite well by a simpler function, as long as we only look at the feature space around a single data point. For example, we could approximate a large feed forward neural network with a simple linear regression model, which can be intrinsically explained due to its low complexity.
 
@@ -909,7 +909,7 @@ Given the poor results of \cite{martinez}, one might expect that saliency maps o
 \subsubsection{Virtual Logit Matching with Saliencies}
 
 
-\section{Datasets}
+\section{Datasets} \label{section:datasets}
 
 With a thorough introduction to both \ac{xai} and \ac{ood} detection as well as methods which combine the two, I shall present the datasets that will be used to test the new method that I introduce in chapter \ref{chapter:newmethod}. The two datasets used are OpenOOD (\cite{openood}) and HyperKvasir (\cite{hyperkvasir}). OpenOOD is a comprehensive benchmark which can test the new method's performance in a wide range of \ac{ood} scenarios, while HyperKvasir is a medicinal dataset which can be used to test the method in the specific use case of gastrointestinal \ac{ood} detection.
 
@@ -1063,9 +1063,17 @@ In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. F
 
 \subsubsection{Metrics}
 
-\ac{auroc} and \ac{fpr} are the most common metrics used for \ac{ood} Detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} Detection methods to date, I will follow their methodology and use \ac{auroc} when evaluating my methods, while also calculating \ac{fpr} as a secondary metric.
+\ac{auroc} and \ac{fpr} are the most common metrics used for \ac{ood} Detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} Detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr} as a secondary metric.
 
-\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} Detection. Thus, I will also follow this convention and consider \ac{ood} samples as positive.
+\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} Detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative.
+
+\subsubsection{Development and Test Sets}
+
+Given the scope of my thesis, which focuses on post-hoc \ac{ood} methods which do not use outlier exposure or require any form of training, there is no need for a training dataset. Despite this, there is still a chance of overfitting, due to the exploratory nature of developing an entirely new class of methods. By trying out different methods and by tuning different parameters to find out how one might best separate \ac{id} and \ac{ood} data using XAI, I am also biasing the results. Therefore, it may be possible that potential improvements in performance are not due to the increased quality of the method, but instead because of peculiarities in the specific datasets that the method is used on.
+
+Thus, I have split all the datasets mentioned in \ref{section:datasets} into development and test sets, and have performed all development of the methods exclusively on the development set. Only when calculating the final metrics have I used the test set, to remove any bias associated with performing multiple experiments on the same data. Due to the large amount of data available in the CIFAR10 and ImageNet200 datasets I have...
+
+\subsubsection{Bootstrapping}
 
 \section{Implementation}
 
