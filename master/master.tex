@@ -9,12 +9,39 @@
 \usepackage{acronym}
 \usepackage{mathtools}
 \usepackage{algorithm}
+\usepackage{listofitems}
 \usepackage{algpseudocode}
 \usepackage[backend=biber,style=numeric-comp, sorting=none]{biblatex}
 \usepackage[hidelinks, hypertexnames=false]{hyperref}
 
-\usetikzlibrary{positioning}
-\usetikzlibrary{backgrounds}
+\usetikzlibrary{arrows.meta} % for arrow size
+\usepackage[outline]{contour} % glow around text
+\contourlength{1.4pt}
+
+\usetikzlibrary{positioning, matrix, backgrounds}
+\usetikzlibrary{3d,decorations.text,shapes.arrows,fit}
+
+\tikzset{pics/fake box/.style args={% #1=color, #2=x dimension, #3=y dimension, #4=z dimension
+#1 with dimensions #2 and #3 and #4}{
+code={
+\draw[thin]  (0,0,0) coordinate(-front-bottom-left) to
+++ (0,#3,0) coordinate(-front-top-right) --++
+(#2,0,0) coordinate(-front-top-right) --++ (0,-#3,0) 
+coordinate(-front-bottom-right) -- cycle;
+\draw[thin] (0,#3,0)  --++ 
+ (0,0,#4) coordinate(-back-top-left) --++ (#2,0,0) 
+ coordinate(-back-top-right) --++ (0,0,-#4)  -- cycle;
+\draw[thin] (#2,0,0) --++ (0,0,#4) coordinate(-back-bottom-right)
+--++ (0,#3,0) --++ (0,0,-#4) -- cycle;
+\path[decorate,decoration={text effects along path,text={Conv}}] (#2/2,{2+(#3-2)/2},0) -- (#2/2,0,0);
+}
+}}
+% from https://tex.stackexchange.com/a/52856/121799
+\tikzset{circle dotted/.style={dash pattern=on .05mm off 2mm,
+                                         line cap=round}}
+
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background, main, foreground}
 
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
@@ -26,6 +53,30 @@
 \definecolor{id}{rgb}{0.4, 0.7607843137254902, 0.6470588235294118}
 \definecolor{near}{rgb}{0.5529411764705883, 0.6274509803921569, 0.796078431372549}
 \definecolor{far}{rgb}{0.9882352941176471, 0.5529411764705883, 0.3843137254901961}
+
+\colorlet{myred}{red!80!black}
+\colorlet{myblue}{blue!80!black}
+\colorlet{mygreen}{green!60!black}
+\colorlet{myorange}{orange!70!red!60!black}
+\colorlet{mydarkred}{red!30!black}
+\colorlet{mydarkblue}{blue!40!black}
+\colorlet{mydarkgreen}{green!30!black}
+
+% STYLES
+\tikzset{
+  >=latex, % for default LaTeX arrow head
+  node/.style={thick,circle,draw=myblue,minimum size=22,inner sep=0.5,outer sep=0.6},
+  node in/.style={node,green!20!black,draw=mygreen!30!black,fill=mygreen!25},
+  node hidden/.style={node,blue!20!black,draw=myblue!30!black,fill=myblue!20},
+  node convol/.style={node,orange!20!black,draw=myorange!30!black,fill=myorange!20},
+  node out/.style={node,red!20!black,draw=myred!30!black,fill=myred!20},
+  connect/.style={thick,mydarkblue}, %,line cap=round
+  connect arrow/.style={-{Latex[length=4,width=3.5]},thick,mydarkblue,shorten <=0.5,shorten >=1},
+  node 1/.style={node in}, % node styles, numbered for easy mapping with \nstyle
+  node 2/.style={node hidden},
+  node 3/.style={node out}
+}
+\def\nstyle{int(\lay<\Nnodlen?min(2,\lay):3)} % map layer number onto 1, 2, or 3
 
 \title{Explainable Artificial Intelligence for Out-of-Distribution Detection}
 \subtitle{Using irregularities in machine learning explanations to detect when a model is faced with unusual data}
@@ -61,6 +112,8 @@ Here comes the abstract in a different language.
     \acro  {ood}   [OOD]   {Out-of-Distribution}
     \acro  {dl}   [DL]   {Deep Learning}
     \acro  {id} [ID] {In-Distribution}
+    \acro  {cam} [CAM] {Class Activation Mapping}
+    \acro  {gradcam} [GradCAM] {Gradient Class Activation Mapping}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
 
@@ -141,7 +194,7 @@ Chapter \ref{chapter:background} gives a short introduction to machine learning,
 
 \chapter{Background} \label{chapter:background}
 
-In this chapter I give a short introduction to important concepts in the field of machine learning generally, followed by a more in-depth look at the fields of \ac{ood} detection and \ac{xai}. Then, I give an overview of related works; papers which have attempted to use \ac{xai} for \ac{ood} Detection. Finally, the datasets used in chapter \ref{chapter:experiments} are covered. 
+In this chapter I give a short introduction to important concepts in the field of machine learning generally, followed by a more in-depth look at the fields of \ac{ood} detection and \ac{xai}. Then, I give an overview of related works; papers which have attempted to use \ac{xai} for \ac{ood} detection. Finally, the datasets used in chapter \ref{chapter:experiments} are covered. 
 
 \section{Machine Learning}
 
@@ -175,7 +228,54 @@ Neural Networks are a class of machine learning algorithms, which have become th
 
 \subsection{Feed Forward Neural Networks}
 
-The \ac{ffnn}, also known as a Multilayer Perceptron, traces its roots to the very beginning of machine learning, through the work of Frank Rosenblatt \cite{rosenblatt}. It forms the basic structure for neural networks which has been adapted and modified over the years to form more complex architectures such as convolutional, recurrent or residual neural networks. The basic structure of an \ac{ffnn} is that the input values are passed through an affine transformation (a matrix multiplication followed by the addition of a bias), and then passed through an activation function, which produces outputs. These outputs can then go through the same process again, which constitutes a single "layer". By stacking several of these layers, with non-linear activation functions, an \ac{ffnn} is able to learn arbitrarily complex mappings between inputs and outputs\footnote{In fact, by the Universal Approximation Theorem, only a single hidden layer between the input and output is necessary, although this theorem does not give a way to construct such a network for any given function}. Mathematically, a single layer can then be described as follows:
+The \ac{ffnn}, also known as a Multilayer Perceptron, traces its roots to the very beginning of machine learning, through the work of Frank Rosenblatt \cite{rosenblatt}. It forms the basic structure for neural networks which has been adapted and modified over the years to form more complex architectures such as convolutional, recurrent or residual neural networks. The basic structure of an \ac{ffnn} is that the input values are passed through an affine transformation (a matrix multiplication followed by the addition of a bias), and then passed through an activation function, which produces outputs. These outputs can then go through the same process again, which constitutes a single "layer". By stacking several of these layers, with non-linear activation functions, an \ac{ffnn} is able to learn arbitrarily complex mappings between inputs and outputs\footnote{In fact, by the Universal Approximation Theorem \cite{uat}, only a single hidden layer between the input and output is necessary, although this theorem does not give a way to construct such a network for any given function}. Figure \ref{fig:ffnn}\footnote{Figure by Izaak Neutelings, "Neural Network with coefficients, arrows", TikZ.net, licensed under CC BY-SA 4.0, [\url{https://tikz.net/neural\_networks/}].} shows a simple \ac{ffnn} architecture with three hidden layers. In this case, the bias has been omitted for brevity. Here, we can see how all nodes of a layer are connected to the following layer. By using an activation function on the nodes of the hidden layer, before their values are sent to the next layer, we achieve the non-linearity required to learn complex patterns.
+
+\begin{figure}[H]
+    \begin{center}
+
+    \begin{tikzpicture}[x=2.2cm,y=1.4cm]
+  \message{^^JNeural network with arrows}
+  \readlist\Nnod{4,5,5,5,3} % array of number of nodes per layer
+  
+  \message{^^J  Layer}
+  \foreachitem \N \in \Nnod{ % loop over layers
+    \edef\lay{\Ncnt} % alias of index of current layer
+    \message{\lay,}
+    \pgfmathsetmacro\prev{int(\Ncnt-1)} % number of previous layer
+    \foreach \i [evaluate={\y=\N/2-\i; \x=\lay; \n=\nstyle;}] in {1,...,\N}{ % loop over nodes
+      
+      % NODES
+      \node[node \n] (N\lay-\i) at (\x,\y) {$a_\i^{(\prev)}$};
+      %\node[circle,inner sep=2] (N\lay-\i') at (\x-0.15,\y) {}; % shifted node
+      %\draw[node] (N\lay-\i) circle (\R);
+      
+      % CONNECTIONS
+      \ifnum\lay>1 % connect to previous layer
+        \foreach \j in {1,...,\Nnod[\prev]}{ % loop over nodes in previous layer
+          \draw[connect arrow] (N\prev-\j) -- (N\lay-\i); % connect arrows directly
+          %\draw[connect arrow] (N\prev-\j) -- (N\lay-\i'); % connect arrows to shifted node
+        }
+      \fi % else: nothing to connect first layer
+      
+    }
+    
+  }
+  
+  % LABELS
+  \node[above=0,align=center,mygreen!60!black] at (N1-1.90) {input\\[-0.2em]layer};
+  \node[above=0,align=center,myblue!60!black] at (N3-1.90) {hidden layers};
+  \node[above=0,align=center,myred!60!black] at (N\Nnodlen-1.90) {output\\[-0.2em]layer};
+  
+
+    \end{tikzpicture}
+    \end{center}
+    \caption[Feed Forward Neural Network]{Figure showing a simple Feed Forward Neural Network, with nodes labeled. The number in parentheses indicates the layer number while the subscript indicates the node number within the layer.}
+    \label{fig:ffnn}
+\end{figure}
+
+
+
+Mathematically, a single layer can then be described as follows:
 
 \begin{equation}
 \bm{x_{i+1}} = \sigma_i (A_i \bm{x_i} + \bm{b_i})
@@ -189,13 +289,184 @@ Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix 
 
 \acp{ffnn} have some inherent flaws which make them unsuitable for working with high dimensional, spatially connected data, such as the pixels which make up an image. Firstly, each input of a \ac{ffnn} is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately. Consider a network attempting to detect the presence of a cat in an image. We would want the network to detect the cat regardless of whether it is in the middle, the right corner, or any other position in the image. In an \ac{ffnn}, the weights connected to any of these positions in the image would then have to encode a cat detector separately from all the others.
 
-\acp{cnn} solve both these issues by using small kernels of weights which are "slid" across the entire input. By using the same weights across all positions of the image, we do not need to train separate detectors for different positions, giving us translation invariance. By using several different kernels, we can detect many different patterns despite each kernel only detecting a single type. By using the outputs of all the kernels as inputs to a new set of kernels, we can use the same type layer structure as in an \ac{ffnn}, allowing us to extract information in a hierarchical manner. It is common to see that trained \acp{cnn} have early layers that detect edges and texture, later layers that use these edge and pattern detections to detect larger shapes, while the final layers combine the shapes to detect entire objects \cite{lenet5}.
+\acp{cnn} solve both these issues by using small kernels of weights which are "slid" across the entire input. By using the same weights across all positions of the image, we do not need to train separate detectors for different positions, giving us translation invariance. Figure \ref{fig:conv} shows the functioning of a convolutional kernel on a 3-channel image. Each value in the output is a weighted sum of a neighbourhood of values in the input image, where the weights are defined by the kernel. As we can see, the same weights are used on all positions, drastically reducing the number of parameters that need to be tuned. In a 2d-convolution, the kernel has the same number of channels as the input, and is only slid across the height and width dimension. The kernel in this figure is a {\it Sobel Operator}, and detects vertical edges. In a \ac{cnn}, the weights of each kernel are not specified manually, but rather learned through backpropagation.
 
-\section{Metrics}
+\begin{figure}[H]
+    \begin{center}
 
-\ac{ood} Detection is essentially simply a binary classification problem. Thus, the metrics I will use in this thesis are those used for such problems. In the field of \ac{ood} Detection, \ac{auroc} and \ac{fpr} are most commonly used. As such I shall focus on these metrics, as opposed to for example the \ac{aupr}.
+        \begin{tikzpicture}[
+    2d-arr/.style={minimum size=0.8cm, matrix of nodes, row sep=-\pgflinewidth, column sep=-\pgflinewidth, nodes={draw}}
+  ]
 
-\subsection{Accuracy}
+  \begin{pgfonlayer}{foreground}
+      \matrix (mtr) [2d-arr] {
+      |[fill=white]| 8 & |[fill=white]| 8 & |[fill=white]| 8 & |[fill=white]| 0 & |[fill=white]| 5 & |[fill=white]| 3\\
+      |[fill=white]| 2 & |[fill=white]| 2 & |[fill=white]| 8 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0 & |[fill=orange!30]| 2\\
+      |[fill=white]| 6 & |[fill=white]| 8 & |[fill=white]| 0 & |[fill=orange!30]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 1\\
+      |[fill=white]| 9 & |[fill=white]| 3 & |[fill=white]| 7 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0 & |[fill=orange!30]| 9\\
+      |[fill=white]| 1 & |[fill=white]| 3 & |[fill=white]| 6 & |[fill=white]| 5 & |[fill=white]| 2 & |[fill=white]| 8\\
+      |[fill=white]| 8 & |[fill=white]| 8 & |[fill=white]| 2 & |[fill=white]| 6 & |[fill=white]| 3 & |[fill=white]| 2\\
+      };
+  \end{pgfonlayer}
+
+  \begin{pgfonlayer}{main}
+      \matrix (mtr2) [2d-arr, above right=-7 cm of mtr] {
+          |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 1 & |[fill=white]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0 & |[fill=orange!30]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0 & |[fill=orange!30]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0\\
+          |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0\\
+      };
+    \end{pgfonlayer}
+
+  \begin{pgfonlayer}{background}
+      \matrix (mtr3) [2d-arr, above right=-7 cm of mtr2] {
+          |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 1 & |[fill=white]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0 & |[fill=orange!30]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 1 & |[fill=orange!30]| 1 & |[fill=orange!30]| 0 & |[fill=orange!30]| 0\\
+          |[fill=white]| 0 & |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0\\
+          |[fill=white]| 1 & |[fill=white]| 1 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0 & |[fill=white]| 0\\
+      };
+    \end{pgfonlayer}
+
+  \node[below=of mtr-5-3.south east] {Image};
+
+  \node[right=0.2em of mtr3] (str) {$*$};
+
+  \begin{pgfonlayer}{foreground}
+  \matrix (K) [2d-arr, right=0.2em of str, nodes={draw, fill=teal!30}] {
+    1 & 0 & -1 \\
+    2 & 0 & -2 \\
+    1 & 0 & -1 \\
+  };
+  \end{pgfonlayer}
+
+  \begin{pgfonlayer}{main}
+  \matrix (K2) [2d-arr, below left=-3.965cm of K, nodes={draw, fill=teal!30}] {
+    1 & 0 & 1 \\
+    0 & 1 & 0 \\
+    1 & 0 & 1 \\
+  };
+  \end{pgfonlayer}
+
+  \begin{pgfonlayer}{background}
+  \matrix (K3) [2d-arr, below left=-3.965cm of K2, nodes={draw, fill=teal!30}] {
+    1 & 0 & 1 \\
+    0 & 1 & 0 \\
+    1 & 0 & 1 \\
+  };
+  \end{pgfonlayer}
+
+  \node[below=of K-2-2] {Kernel};
+
+  \node[right=0.2em of K3] (eq) {$=$};
+
+  \matrix (ret) [2d-arr, right=0.2em of eq] {
+  4 & 8 & -4 & 2\\
+  2 & -2 & 12 & |[fill=blue!80!black!30]| 3\\
+  5 & 3 & 8 & 1\\
+  3 & 8 & -6 & 8\\
+  };
+  \node[below=of ret-3-3.south west] {Image $*$ Kernel};
+
+  \begin{pgfonlayer}{foreground}
+      \draw[teal] (mtr-4-6.south east) -- (K-3-1.south west);
+      \draw[teal] (mtr-2-6.north east) -- (K-1-1.north west);
+
+      \draw[blue!80!black] (K-1-3.north east) -- (ret-2-4.north west);
+      \draw[blue!80!black] (K-3-3.south east) -- (ret-2-4.south west);
+  \end{pgfonlayer}
+
+  \begin{pgfonlayer}{main}
+      \draw[teal] (mtr2-4-6.south east) -- (K2-3-1.south west);
+      \draw[teal] (mtr2-2-6.north east) -- (K2-1-1.north west);
+
+      \draw[blue!80!black] (K2-1-3.north east) -- (ret-2-4.north west);
+      \draw[blue!80!black] (K2-3-3.south east) -- (ret-2-4.south west);
+  \end{pgfonlayer}
+
+  \begin{pgfonlayer}{background}
+      \draw[teal] (mtr3-4-6.south east) -- (K3-3-1.south west);
+      \draw[teal] (mtr3-2-6.north east) -- (K3-1-1.north west);
+
+      \draw[blue!80!black] (K3-1-3.north east) -- (ret-2-4.north west);
+      \draw[blue!80!black] (K3-3-3.south east) -- (ret-2-4.south west);
+  \end{pgfonlayer}
+
+
+\end{tikzpicture}
+
+    \end{center}
+    \caption[Convolution example]{Figure showing a convolutional kernel applied to a 3-channel image.}
+    \label{fig:conv}
+\end{figure}
+
+By using several different kernels, we can detect many different patterns despite each kernel only detecting a single type. By using the outputs of all the kernels as inputs to a new set of kernels, we can use the same type layer structure as in an \ac{ffnn}, allowing us to extract information in a hierarchical manner. It is common to see that trained \acp{cnn} have early layers that detect edges and texture, later layers that use these edge and pattern detections to detect larger shapes, while the final layers combine the shapes to detect entire objects \cite{lenet5}.
+
+By not evaluating every possible position in the input image, \acp{cnn} downsample the image, and are able to reduce the number of operations considerably. Simultaneously, this downsampling enables each subsequent layer to consider a larger area of the input image than the previous (a larger field-of-view), which allows larger patterns to be discovered.
+
+After several such convolutions,
+
+\begin{figure}[H]
+    \begin{center}
+
+
+    \begin{tikzpicture}[x={(1,0)},y={(0,1)},z={({cos(60)},{sin(60)})}, scale=1.5]
+%
+% comment these out if you want to see where the axes point to
+% \draw[-latex] (0,0,0) -- (3,0,0) node[below]{$x$};
+% \draw[-latex] (0,0,0) -- (0,3,0) node[left]{$y$};
+% \draw[-latex] (0,0,0) -- (0,0,3) node[below]{$z$};
+% a plane
+\foreach \X [count=\Y] in {1.6,1.4,1.2,1.2,1}
+{
+    \draw pic (box1-\Y) at (\Y,-\X/2,0) {fake box=white!70!gray with dimensions {1/\X/\X} and {2*\X} and 1*\X};
+}
+
+\foreach \X/\Col in {6.5/blue,6.7/red,6.9/lightgray, 7.1/lightgray, 7.3/green}
+{\draw[canvas is yz plane at x = \X, transform shape, fill =
+\Col!50!white] (0,0.25) rectangle (1.5,-0.75);}
+% \draw[gray!60,thick] (6.3,-0.1,-1.6) coordinate (1-1) -- (6.3,-0.1,0.6) coordinate (1-2) -- (6.3,2.,0.6) coordinate (1-3) -- (6.3,2.1,-1.6) coordinate (1-4) -- cycle;
+% \draw[gray!60,thick] (7.1,-0.1,-1.6) coordinate (2-1) -- (7.1,-0.1,0.6) coordinate (2-2) -- (7.1,2.,0.6) coordinate (2-3) -- (7.1,2.1,-1.6) coordinate (2-4) -- cycle;
+% \foreach \X in {4,1,3}
+% {\draw[gray!60,thick] (1-\X) -- (2-\X);}
+%
+\node[draw,single arrow, fill=orange!30] at (8,0.5,0) {GAP};
+\node[circle,draw,blue,fill=blue!30] (A1) at (9,1,0) {~~~};
+\node[circle,draw,red,fill=red!30,below=4pt of A1] (A2) {~~~};
+\node[circle,draw,green,fill=green!30,below=18pt of A2] (A3) {~~~};
+\draw[circle dotted, line width=2pt,shorten <=3pt] (A2) -- (A3);
+\node[circle,draw,gray,fill=gray!20] (B1) at (10,1,0) {~~~};
+\node[circle,draw,fill=gray!60,below=4pt of B1] (B2) {~~~};
+\node[circle,draw,gray,fill=gray!20,below=18pt of B2] (B3) {~~~};
+\draw[circle dotted, line width=2pt,shorten <=3pt] (B2) -- (B3);
+\begin{scope}[on background layer]
+\node[orange,thick,rounded corners,fill=orange!30,fit=(A1) (A3)]{};
+\node[gray,thick,rounded corners,fill=gray!10,fit=(B1) (B3)]{};
+\end{scope}
+\foreach \X in {1,2,3}
+{\draw[-latex] (A\X) -- (B2);}
+\end{tikzpicture}
+
+    \end{center}
+    \caption[Convolution example]{Figure showing a convolutional kernel applied to a simple 1-channel image.}
+    \label{fig:conv}
+\end{figure}
+
+
+\subsection{Neural Networks in Practice: Classification and Regression}
+
+Now that we have a basic understanding of the inner workings of Neural Networks, we can consider how they are applied in practice.
+
+\section{Model evaluation}
+
+\subsection{Metrics}
+
+\ac{ood} detection is essentially simply a binary classification problem. Thus, the metrics I will use in this thesis are those used for such problems. In the field of \ac{ood} detection, \ac{auroc} and \ac{fpr} are most commonly used. As such I shall focus on these metrics, as opposed to for example the \ac{aupr}.
+
+\subsubsection{Accuracy}
 
 Accuracy is the simplest metric used in binary classification. It is simply the ratio of correct predictions over all instances in the data set. %, as seen in equation \ref{accuracy} below.
 
@@ -208,7 +479,7 @@ Accuracy has the advantage of being simple to understand and calculate, but it i
 
 For the purposes of \ac{ood} detection, accuracy is thus insufficient, as we have no guarantees that ID and OOD will be balanced. In fact, we expect OOD data to be relatively rare, given that the goal of developing an \ac{ai} model is to ensure high performance during deployment, which necessitates having training data which covers as much as possible of the data seen during inference.
 
-\subsection{Metrics utilizing the binary classification confusion matrix}
+\subsubsection{Metrics utilizing the binary classification confusion matrix}
 
 Instead of simply considering whether a prediction was correct or not, we should take into account the different combinations of prediction and ground truth, considering positive and negative classes separately. Figure \ref{fig:confusion} shows the possible four possible combinations given a ground truth class and a predicted class.
 
@@ -242,19 +513,21 @@ Instead of simply considering whether a prediction was correct or not, we should
 
 With these possibilities defined, we can begin to gain a clearer picture of the performance of a model.
 
-\subsubsection{Precision and Recall}
+{\it Precision and Recall}
 
-Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} Detection setting, a model which flags many ID samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
+Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} detection setting, a model which flags many ID samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
 
 Precision and Recall give us a more precise understanding of 
 
-\subsubsection{Sensitivity and Precision}
+{\it Sensitivity and Precision}
 
-\subsection{Threshold Independent Metrics}
+\subsubsection{Threshold Independent Metrics}
 
-\subsubsection{Area under Receiver Operating Characteristic}
+The previous metrics are a clear improvement over simply using accuracy. However, they still have the problem that they are all dependent on what threshold one sets when predicting something to be a negative or positive class. Thus, it becomes harder to compare different models by using these metrics. Indeed, by simply increasing the threshold of any classifier, we can increase the precision. Similarly, by decreasing the threshold, we can increase the recall.
 
-\subsubsection{False Positive Rate at 95\% Recall}
+{\it Area under Receiver Operating Characteristic}:
+
+{\it False Positive Rate at 95\% Recall}
 
 
 
@@ -337,9 +610,9 @@ With these new data points, we can generate new predictions using the original, 
 
 \subsubsection{Class Activation Mapping (CAM)}
 
-CAM \cite{cam} is a model dependent, post hoc \ac{xai} method, which is used on Convolutional Neural Nets (\ac{cnn}s). For a specific output node of a model (for example, the one denoting the presence of a specific class, such as "cat"), CAM outputs a heat map showing which areas of the input image contributed to this node. In this way, CAM gives a visual explanation to which parts of an image the model focused on when making a decision to classify an image to a specific class. This method is model dependent, because it requires a specific architecture in the final layers of the network to work.
+\ac{cam} \cite{cam} is a model dependent, post hoc \ac{xai} method, which is used on Convolutional Neural Nets (\ac{cnn}s). For a specific output node of a model (for example, the one denoting the presence of a specific class, such as "cat"), \ac{cam} outputs a heat map showing which areas of the input image contributed to this node. In this way, \ac{cam} gives a visual explanation to which parts of an image the model focused on when making a decision to classify an image to a specific class. This method is model dependent, because it requires a specific architecture in the final layers of the network to work.
 
-CAM is a relatively simple method to understand. It exploits the fact that various convolutional layers of \ac{cnn}s actually behave as object detectors, even when the training objective is classification \cite{cam}. As \cite{lenet5} explains, the earlier layers "extract elementary visual features such as oriented edges, end-points [or] corners", which can be used by subsequent layers to detect higher-order features. In this manner, the final convolutional layer will detect very high level visual features, combining the extracted information from all the previous layers. This layer is composed of several feature maps, where each map can be thought of as denoting the presence of some specific feature across the original image. The authors perform global average pooling (GAP) on these feature maps, giving a single value for each map, which is followed by a single dense layer and the Softmax activation function. In this way, each output node in the final layer is a weighted sum of all the global average pooled feature maps from the final convolutional layer. This means that we can represent the areas of the image which were used to perform the classification by performing the same weighted sum on the actual feature maps instead, which gives us a heat map which we can overlay on the original image (after upsampling the feature maps).
+\ac{cam} is a relatively simple method to understand. It exploits the fact that various convolutional layers of \ac{cnn}s actually behave as object detectors, even when the training objective is classification \cite{cam}. As \cite{lenet5} explains, the earlier layers "extract elementary visual features such as oriented edges, end-points [or] corners", which can be used by subsequent layers to detect higher-order features. In this manner, the final convolutional layer will detect very high level visual features, combining the extracted information from all the previous layers. This layer is composed of several feature maps, where each map can be thought of as denoting the presence of some specific feature across the original image. The authors perform global average pooling (GAP) on these feature maps, giving a single value for each map, which is followed by a single dense layer and the Softmax activation function. In this way, each output node in the final layer is a weighted sum of all the global average pooled feature maps from the final convolutional layer. This means that we can represent the areas of the image which were used to perform the classification by performing the same weighted sum on the actual feature maps instead, which gives us a heat map which we can overlay on the original image (after upsampling the feature maps).
 
 Figure \ref{camimg} shows the process visually. From this we can see that the resulting Class Activation Map (bottom right) gives an intuitive explanation for why the image in the top left gives a high score for the presence of the class "Australian Terrier".
 
@@ -349,14 +622,14 @@ Figure \ref{camimg} shows the process visually. From this we can see that the re
 \label{camimg}
 \end{figure}
 
-Although CAM is an intuitive and effective method of visualizing the inner workings of a \ac{cnn}, it has some downsides. Firstly, it is highly model dependent, requiring that the model only have a single dense layer after the convolutions. Although there are some state of the art models which only use a single dense layer, this still places a limit on what models can be used, or requires the simplification of models that use more than a single dense layer. \cite[4]{cam} notes a 1-2\% drop in classification performance when performing this simplification. Secondly, the output of CAM is simply a weighted sum of all the feature maps after the final convolutional layer. As we move deeper in a \ac{cnn}, we reduce the spatial resolution by downsampling, while increasing the number of channels (increasing the depth of the output while reducing the height and width). Because of this, the CAM will have a drastically lower resolution than the original image, often less than $10 \, x \, 10$, while the input image may be hundreds of pixels in both dimensions. Because of this, CAM can only show general areas, as opposed to pixel wise explanations.
+Although \ac{cam} is an intuitive and effective method of visualizing the inner workings of a \ac{cnn}, it has some downsides. Firstly, it is highly model dependent, requiring that the model only have a single dense layer after the convolutions. Although there are some state of the art models which only use a single dense layer, this still places a limit on what models can be used, or requires the simplification of models that use more than a single dense layer. \cite[4]{cam} notes a 1-2\% drop in classification performance when performing this simplification. Secondly, the output of \ac{cam} is simply a weighted sum of all the feature maps after the final convolutional layer. As we move deeper in a \ac{cnn}, we reduce the spatial resolution by downsampling, while increasing the number of channels (increasing the depth of the output while reducing the height and width). Because of this, the \ac{cam} will have a drastically lower resolution than the original image, often less than $10 \, x \, 10$, while the input image may be hundreds of pixels in both dimensions. Because of this, \ac{cam} can only show general areas, as opposed to pixel wise explanations.
 \\
 
 \subsubsection{Gradient Class Activation Mapping (GradCAM)} \label{section:gradcam}
 
-GradCAM \cite{gradcam} is an improvement on CAM, which generalizes the method to function with any \ac{cnn} architecture, thus making the method much less model dependent and avoiding the performance drop incurred when simplifying the model with CAM. Instead of using the weights of a final layer to calculate a weighted sum of feature maps in the last convolutional layer, Grad-CAM uses gradients flowing from the relevant output node to the activation maps to calculate the weights for each feature map. Furthermore, the authors prove that this method is a strict generalization of CAM \cite[5]{gradcam}, so that no information is lost by using gradients instead of weights.
+\ac{gradcam} \cite{gradcam} is an improvement on \ac{cam}, which generalizes the method to function with any \ac{cnn} architecture, thus making the method much less model dependent and avoiding the performance drop incurred when simplifying the model with \ac{cam}. Instead of using the weights of a final layer to calculate a weighted sum of feature maps in the last convolutional layer, \ac{gradcam} uses gradients flowing from the relevant output node to the activation maps to calculate the weights for each feature map. Furthermore, the authors prove that this method is a strict generalization of \ac{cam} \cite[5]{gradcam}, so that no information is lost by using gradients instead of weights.
 
-Like the simplicity of the CAM method, the calculation of the weights using the gradients is also quite simple, as seen in Equation \ref{gradcameq}.
+Like the simplicity of the \ac{cam} method, the calculation of the weights using the gradients is also quite simple, as seen in Equation \ref{gradcameq}.
 
 \begin{equation}
 \alpha^c_k = \frac{1}{Z} \sum_i \sum_j \frac{\delta y^c}{\delta A^k_{ij}}
@@ -365,13 +638,13 @@ Like the simplicity of the CAM method, the calculation of the weights using the 
 
 Here, $c$ represents the index of the class we are interested in, $k$ the index of the feature map, and $i$ and $j$ the width and height of the image. $y^c$ is the element of the output vector $y$ which corresponds to the class $c$, while $A^k$ is the $k$'th feature map. $Z$ is equal to $i * j$, and simply normalizes the sum. Thus, we are actually just performing global average pooling of the gradients of $A^k$ with respect to $y^c$, which gives us a single value we can use as the weight for this feature map. Doing this for all feature maps for a specific class gives us all the weights we need to calculate a weighted sum, which we can upsample and visualize to get an explanation for the decision of the \ac{cnn}.
 
-Thus, Grad-CAM improves upon CAM by making the method less model dependent. However, the explanations are still the same low resolution, which may not be ideal in all cases.
+Thus, \ac{gradcam} improves upon \ac{cam} by making the method less model dependent. However, the explanations are still the same low resolution, which may not be ideal in all cases.
 \\
 
 
 \subsubsection{Layer-Wise Relevance Propagation (LRP)}
 
-LRP is another \ac{xai} method which generates a visual explanation of the areas of an image which lead to a classification decision. Unlike CAM and Grad-CAM, LRP outputs a map which describes the relevance of every single pixel in the input image, and is thus produces a much more fine grained explanation than these other methods. LRP also differs in that \cite{lrp} does not define it as a specific method, but rather as a concept defined by a certain set of constraints which can be satisfied by different implementations depending on the type of model.
+LRP is another \ac{xai} method which generates a visual explanation of the areas of an image which lead to a classification decision. Unlike \ac{cam} and \ac{gradcam} LRP outputs a map which describes the relevance of every single pixel in the input image, and is thus produces a much more fine grained explanation than these other methods. LRP also differs in that \cite{lrp} does not define it as a specific method, but rather as a concept defined by a certain set of constraints which can be satisfied by different implementations depending on the type of model.
 
 LRP assumes that we can model the relevance $R_i$ for any node $i$ in a neural network, and aims to find the relevance for all the input nodes (the pixels in an image). Relevance is the contribution of any node to the final prediction $f(x)$ of a network, and the idea is to take the relevance of the output layer (simply defined as the output $f(x)$), and iteratively propagate this backwards through the network. Relevance scores are subject to a conservation property, which means that the sum of relevances must be equal for all layers (Equation \ref{lrpeq}). Furthermore, nodes must also conserve relevance, such that the sum of relevances a node receives from the previous layer is equal to the amount it distributes to the next layer. Once the relevance scores have been propagated from the output to the input layer in accordance with these constraints, we have a measure for how each input pixel contributed to the final output.
 
@@ -727,7 +1000,7 @@ This now takes part in the computation of the softmax values, and thus is affect
 
 While the combination of \ac{xai} and \ac{ood} detection has been explored in many previous works, the majority of them focus on explaining why a data point was marked as \ac{ood}, as opposed to using \ac{xai} to aid the detection itself. Works like \cite{uncertainty}, \cite{generalxaiforood} and \cite{tallon2020explainable} are papers which combine \ac{xai} and \ac{ood} for this purpose. Within network security, \ac{xai} has been as part of anomaly detection systems to detect malicious or faulty network traffic. Here, it has been used to explain detections (\cite{idsxai}, \cite{mahbooba}), but also to aid in detection itself by inspecting the explanations of the detection system (\cite{tcydenova2021detection}, \cite{dnsxai}). These methods thus use \ac{xai} to aid \ac{ood} detection in a similar manner to my work, however they are strictly focused on sequential network traffic data as opposed to images, and are mostly concerned with detection "unnatural" data samples such as intentionally malicious traffic or that generated by faulty equipment, as opposed to natural \ac{ood} data caused by semantic or covariate shift occurring when a model is deployed.
 
-\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use \ac{xai} to improve \ac{ood} detection on images. They do this by looking at saliency maps produced by a GradCAM-based \ac{xai} method (section \ref{section:gradcam}) during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class. Using these heatmaps, they perform distance-based \ac{ood} detection (section \ref{section:distancebasedood}): By collecting all explanations for each image in the ID dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform \ac{ood} detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as \ac{ood} if it has a distance which is over a certain threshold.
+\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use \ac{xai} to improve \ac{ood} detection on images. They do this by looking at saliency maps produced by a \ac{gradcam}-based \ac{xai} method (section \ref{section:gradcam}) during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class. Using these heatmaps, they perform distance-based \ac{ood} detection (section \ref{section:distancebasedood}): By collecting all explanations for each image in the ID dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform \ac{ood} detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as \ac{ood} if it has a distance which is over a certain threshold.
 
 This method performs decently on toy datasets, achieving scores similar to State-of-the-Art methods when using {\it Fashin MNIST} as ID and {\it MNIST} as \ac{ood}. However, this method fails catastrophically in more complicated scenarios, achieving an AUROC score of only $52\%$ on {\it CIFAR10} vs {\it SVHN}, which is only marginally better than pure guessing and far below any other method. The paper thus ends with the authors concluding that "OoD detection approaches that are specifically designed for the purpose achieve in general better detection scores at the cost of an additional computational burden in the model’s construction" \cite{martinez}.
 
@@ -745,7 +1018,7 @@ The core of this work is the
 
 As shown in the preceding chapter, there exists a plethora of \ac{xai} methods, which exploit gradient information, differences in output scores when altering model inputs, marginal contributions of input features, as well as many other intricacies of deep learning models. The core idea of this master thesis is that these methods, in their attempt to explain a model decision, may also inadvertently extract information which is valuable for \ac{ood} detection. Thus, there may be an unexplored potential in these methods to function not just as explanations, but also as classifiers which allow us to separate ID and \ac{ood} data. Intuitively, we might expect the explanations to be more spread out on \ac{ood} images, given that there are (by definition) no objects of interest in the image that the model can definitely be said to focus on. In contrast, we might expect an explanation on an ID image to be more focused on a specific area, which contains an object of interest. Furthermore, given that saliency methods give a numerical value to each region of the image, we might be able to extract information about the "\ac{ood}-ness" of an image by inspecting the magnitudes of these values. Intuitively, it makes sense that such values should be lower for \ac{ood} than ID, reflecting the higher uncertainty present in \ac{ood} data.
 
-As an example, let us consider GradCAM. As explained in section \ref{section:gradcam}, GradCAM uses the gradients of the weights within the final convolutional layer with regard to the output prediction, along with the final feature maps, to generate an explanation.
+As an example, let us consider \ac{gradcam}. As explained in section \ref{section:gradcam}, \ac{gradcam} uses the gradients of the weights within the final convolutional layer with regard to the output prediction, along with the final feature maps, to generate an explanation.
 
 \section{Proposed \ac{xai} methods for \ac{ood} detection}
 
@@ -918,7 +1191,7 @@ With a thorough introduction to both \ac{xai} and \ac{ood} detection as well as 
 
 As mentioned previously, OpenOOD was introduced in 2023 by \cite{openood} as an attempt to unify the performance metrics of the field, such that accurate comparisons of different methods could be made. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures, and with other externalities which inhibited effective comparison between methods \cite{openood}.
 
-OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and Out of Distribution detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for \ac{ood} detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding \ac{ood} datasets, separated into Near-\ac{ood} and Far-\ac{ood}.
+OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and \ac{ood} detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for \ac{ood} detection. Each benchmark is defined by an ID dataset, with 6 or more corresponding \ac{ood} datasets, separated into Near-\ac{ood} and Far-\ac{ood}.
 
 \subsubsection{CIFAR10}
 
@@ -1057,23 +1330,25 @@ Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$
 \end{equation}
 }
 
-In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as GradCAM, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
+In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
 
 \subsection{Evaluation}
 
 \subsubsection{Metrics}
 
-\ac{auroc} and \ac{fpr} are the most common metrics used for \ac{ood} Detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} Detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr} as a secondary metric.
+\ac{auroc} and \ac{fpr} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr} as a secondary metric.
 
-\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} Detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative.
+\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative.
 
 \subsubsection{Development and Test Sets}
 
 Given the scope of my thesis, which focuses on post-hoc \ac{ood} methods which do not use outlier exposure or require any form of training, there is no need for a training dataset. Despite this, there is still a chance of overfitting, due to the exploratory nature of developing an entirely new class of methods. By trying out different methods and by tuning different parameters to find out how one might best separate \ac{id} and \ac{ood} data using XAI, I am also biasing the results. Therefore, it may be possible that potential improvements in performance are not due to the increased quality of the method, but instead because of peculiarities in the specific datasets that the method is used on.
 
-Thus, I have split all the datasets mentioned in \ref{section:datasets} into development and test sets, and have performed all development of the methods exclusively on the development set. Only when calculating the final metrics have I used the test set, to remove any bias associated with performing multiple experiments on the same data. Due to the large amount of data available in the CIFAR10 and ImageNet200 datasets I have...
+Thus, I have split all the datasets mentioned in \ref{section:datasets} into development and test sets, and have performed all development of the methods exclusively on the development set. Only when calculating the final metrics have I used the test set, to remove any bias associated with performing multiple experiments on the same data. Due to the large amount of data available in the CIFAR10 and ImageNet200 datasets, and their associated \ac{ood} datasets, I have simply split all datasets into two equally large parts.
 
 \subsubsection{Bootstrapping}
+
+When evaluating a new method, it is not enough to simply report the results from a single experiment. Instead one should run the same experiment multiple times and perform statistical analysis to ensure that the results are robust. Therefore, I have.
 
 \section{Implementation}
 
@@ -1131,7 +1406,7 @@ Thus, I have split all the datasets mentioned in \ref{section:datasets} into dev
 \end{figure}
 
 
-Figure \ref{fig:imagewoof_norm} shows an example of a case which corresponds to the intuition mentioned in chapter \ref{chapter:tempmotivation}. Here, we see how the spatial extent of explanations generated for a data point in the ImageWoof dataset (ID) differ from the explanations generated for a data point in the Places365 dataset (Far-\ac{ood}). In the first instance, the correct class is predicted, and we see that both GradCAM, LIME and Occlusion \ac{xai} methods highlight only a small, localized area of the image, corresponding roughly to the face of the dog. In the second instance, the prediction is much less localized, due to the fact that there is no single location corresponding to the predicted class (which is this case was Samoyed).
+Figure \ref{fig:imagewoof_norm} shows an example of a case which corresponds to the intuition mentioned in chapter \ref{chapter:tempmotivation}. Here, we see how the spatial extent of explanations generated for a data point in the ImageWoof dataset (ID) differ from the explanations generated for a data point in the Places365 dataset (Far-\ac{ood}). In the first instance, the correct class is predicted, and we see that both \ac{gradcam}, LIME and Occlusion \ac{xai} methods highlight only a small, localized area of the image, corresponding roughly to the face of the dog. In the second instance, the prediction is much less localized, due to the fact that there is no single location corresponding to the predicted class (which is this case was Samoyed).
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=5.25in]{figure/imagewoof_normalized_sal.pdf}}
@@ -1206,15 +1481,15 @@ Given the poor results of \cite{martinez} in their attempt to perform \ac{ood} d
 
 As a first choice of \ac{ood} method, I choose ViM. The reasoning is that ViM already is a method which attempts to use multiple sources of information from a network at once to determine an \ac{ood}-score. The baseline ViM uses the logits, features and softmax probabilities to determine \ac{ood}-ness. I propose to adapt this method to also include saliency values, which can come from different \ac{xai} methods.
 
-The methods I choose are LIME, Occlusion and GradCAM. The values are appended to the logit values for each sample. In this way, we gain some positional information along with the strictly semantic information of the logits of ResNet model.
+The methods I choose are LIME, Occlusion and \ac{gradcam}. The values are appended to the logit values for each sample. In this way, we gain some positional information along with the strictly semantic information of the logits of ResNet model.
 
 \section{Implemented method}
 
-Although there exists many libraries for \ac{xai} methods such as LIME, Occlusion and GradCAM, I have implemented them all from scratch. Given that I am using \ac{xai}-methods for an entirely different purpose than the libraries are designed for (\ac{ood} detection versus explainability), this is not so surprising.
+Although there exists many libraries for \ac{xai} methods such as LIME, Occlusion and \ac{gradcam}, I have implemented them all from scratch. Given that I am using \ac{xai}-methods for an entirely different purpose than the libraries are designed for (\ac{ood} detection versus explainability), this is not so surprising.
 
 Lime and Occlusion have been implemented from scratch to work best in the context of \ac{ood} detection. Specifically, they have been implemented in such a way that the calculations can be batched, to take advantage of large 
 
-GradCAM has been implemented from scratch to allow for certain
+\ac{gradcam} has been implemented from scratch to allow for certain
 
 \section{Analysis of \ac{xai} methods}
 
@@ -1270,7 +1545,7 @@ When inspecting the generated saliency heatmaps, we can either normalize the val
 
 For each method, I will 
 
-\subsection{GradCAM}
+\subsection{\ac{gradcam}}
 
 
 
