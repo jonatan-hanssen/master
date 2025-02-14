@@ -405,9 +405,9 @@ Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix 
 
 By using several different kernels, we can detect many different patterns despite each kernel only detecting a single type. By using the outputs of all the kernels as inputs to a new set of kernels, we can use the same type layer structure as in an \ac{ffnn}, allowing us to extract information in a hierarchical manner. It is common to see that trained \acp{cnn} have early layers that detect edges and texture, later layers that use these edge and pattern detections to detect larger shapes, while the final layers combine the shapes to detect entire objects \cite{lenet5}.
 
-By not evaluating every possible position in the input image, \acp{cnn} downsample the image, and are able to reduce the number of operations considerably. Simultaneously, this downsampling enables each subsequent layer to consider a larger area of the input image than the previous (a larger field-of-view), which allows larger patterns to be discovered.
+By not evaluating every possible position in the input image, \acp{cnn} downsample the image, and are able to reduce the number of operations considerably. Simultaneously, this downsampling enables each subsequent layer to consider a larger area of the input image than the previous (a larger field-of-view), which allows larger patterns to be discovered. Simultaneously, it is common to use a larger and larger amounts of kernels on the new input, thus increasing the channel depth while the spatial dimensions are reduced. Between each layer, we use non-linear activation functions, similarly to how the are used in \acp{ffnn}.
 
-After several such convolutions,
+After several such convolutions, we can flatten the output, either by aggregating each channel using \ac{gap} or a similar method, or we can simply flatten all dimensions and consider the three dimensional feature map as a long vector of shape $C \times H \times W$. By doing this, we can pass the output.
 
 \begin{figure}[H]
     \begin{center}
@@ -433,7 +433,7 @@ After several such convolutions,
 % \foreach \X in {4,1,3}
 % {\draw[gray!60,thick] (1-\X) -- (2-\X);}
 %
-\node[draw,single arrow, fill=orange!30] at (8,0.5,0) {GAP};
+\node[draw,single arrow, fill=blue!10] at (8,0.5,0) {GAP};
 \node[circle,draw,blue,fill=blue!30] (A1) at (9,1,0) {~~~};
 \node[circle,draw,red,fill=red!30,below=4pt of A1] (A2) {~~~};
 \node[circle,draw,green,fill=green!30,below=18pt of A2] (A3) {~~~};
@@ -443,7 +443,7 @@ After several such convolutions,
 \node[circle,draw,gray,fill=gray!20,below=18pt of B2] (B3) {~~~};
 \draw[circle dotted, line width=2pt,shorten <=3pt] (B2) -- (B3);
 \begin{scope}[on background layer]
-\node[orange,thick,rounded corners,fill=orange!30,fit=(A1) (A3)]{};
+\node[orange,thick,rounded corners,fill=blue!10,fit=(A1) (A3)]{};
 \node[gray,thick,rounded corners,fill=gray!10,fit=(B1) (B3)]{};
 \end{scope}
 \foreach \X in {1,2,3}
