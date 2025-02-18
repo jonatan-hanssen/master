@@ -11,8 +11,10 @@
 \usepackage{algorithm}
 \usepackage{listofitems}
 \usepackage{algpseudocode}
+\usepackage{tikzlings}
 \usepackage[backend=biber,style=numeric-comp, sorting=none]{biblatex}
 \usepackage[hidelinks, hypertexnames=false]{hyperref}
+
 
 \usetikzlibrary{arrows.meta} % for arrow size
 \usepackage[outline]{contour} % glow around text
@@ -22,7 +24,7 @@
 \usetikzlibrary{3d,decorations.text,shapes.arrows,fit}
 
 \tikzset{pics/fake box/.style args={% #1=color, #2=x dimension, #3=y dimension, #4=z dimension
-#1 with dimensions #2 and #3 and #4}{
+#1 with dimensions #2 and #3 and #4 and #5}{
 code={
 \draw[thin]  (0,0,0) coordinate(-front-bottom-left) to
 ++ (0,#3,0) coordinate(-front-top-right) --++
@@ -33,7 +35,7 @@ coordinate(-front-bottom-right) -- cycle;
  coordinate(-back-top-right) --++ (0,0,-#4)  -- cycle;
 \draw[thin] (#2,0,0) --++ (0,0,#4) coordinate(-back-bottom-right)
 --++ (0,#3,0) --++ (0,0,-#4) -- cycle;
-\path[decorate,decoration={text effects along path,text={Conv}}] (#2/2,{2+(#3-2)/2},0) -- (#2/2,0,0);
+\path[decorate,decoration={text effects along path, text={#5}}] (#2/2,{2+(#3-2)/2},0) -- (#2/2,0,0);
 }
 }}
 % from https://tex.stackexchange.com/a/52856/121799
@@ -54,6 +56,8 @@ coordinate(-front-bottom-right) -- cycle;
 \definecolor{near}{rgb}{0.5529411764705883, 0.6274509803921569, 0.796078431372549}
 \definecolor{far}{rgb}{0.9882352941176471, 0.5529411764705883, 0.3843137254901961}
 
+\definecolor{ca0a0a0}{RGB}{160,160,160}
+\definecolor{ce0e0e0}{RGB}{224,224,224}
 \colorlet{myred}{red!80!black}
 \colorlet{myblue}{blue!80!black}
 \colorlet{mygreen}{green!60!black}
@@ -92,7 +96,7 @@ coordinate(-front-bottom-right) -- cycle;
 
 \uiomasterfp[dept={Department of Informatics},
 program={Robotics and Intelligent Systems},
-supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette},
+supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette}, image={/home/jona/cat.jpg},
 long]
 
 \frontmatter{}
@@ -114,18 +118,22 @@ Here comes the abstract in a different language.
     \acro  {id} [ID] {In-Distribution}
     \acro  {cam} [CAM] {Class Activation Mapping}
     \acro  {gradcam} [GradCAM] {Gradient Class Activation Mapping}
+    \acro  {gap}   [GAP]   {Global Average Pooling}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
 
     \acro  {ffnn}[FFNN]{Feed Forward Neural Network}
 
     \acro  {ml}   [ML]   {Machine Learning}
+    \acro  {lrp}   [LRP]   {Layer Relevance Propagation}
     \acro  {xai}   [XAI]   {Explainable Artificial Intelligence}
     \acro  {ai}   [AI]   {Artificial Intelligence}
     \acro  {auroc}   [AUROC]   {Area Under Receiver Operating Characteristic}
     \acro  {aupr}   [AUPR]   {Area Under Precision Recall Curve}
     \acro  {roc}   [ROC]   {Receiver Operating Characteristic}
-    \acro  {fpr}   [FPR95]   {False Positive Rate at 95\% Recall}
+    \acro  {fpr}   [FPR]   {False Positive Rate}
+    \acro  {tpr}   [TPR]   {True Positive Rate}
+    \acro  {fpr95}   [FPR95]   {False Positive Rate at 95\% Recall}
 \end{acronym}
 
 \begin{preface}
@@ -282,7 +290,7 @@ Mathematically, a single layer can then be described as follows:
 \label{ffnn}
 \end{equation}
 
-Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix $A_i$ from the input space to the output space, then each value of the new vector in the output space is adjusted by an addition of a bias term, and finally an activation function ($\sigma_i$) is applied to each value. 
+Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix $A_i$ from the input space to the output space, then each value of the new vector in the output space is adjusted by an addition of a bias term, and finally an activation function ($\sigma_i$) is applied to each value. The size of the input and output layers is determined by the number of input and output features, respectively. Furthermore, the activation function of the output layer is also determined by the application, most commonly {\it sigmoid} for binary classification, {\it softmax} for multi-class classification and simply identity for regression.
 
 
 \subsection{Convolutional Neural Networks}
@@ -407,58 +415,164 @@ By using several different kernels, we can detect many different patterns despit
 
 By not evaluating every possible position in the input image, \acp{cnn} downsample the image, and are able to reduce the number of operations considerably. Simultaneously, this downsampling enables each subsequent layer to consider a larger area of the input image than the previous (a larger field-of-view), which allows larger patterns to be discovered. Simultaneously, it is common to use a larger and larger amounts of kernels on the new input, thus increasing the channel depth while the spatial dimensions are reduced. Between each layer, we use non-linear activation functions, similarly to how the are used in \acp{ffnn}.
 
-After several such convolutions, we can flatten the output, either by aggregating each channel using \ac{gap} or a similar method, or we can simply flatten all dimensions and consider the three dimensional feature map as a long vector of shape $C \times H \times W$. By doing this, we can pass the output.
+After several such convolutions, we can flatten the output, either by aggregating each channel using \ac{gap} or a similar method, or we can simply flatten all dimensions and consider the three dimensional feature map as a long vector of shape $C \times H \times W$. By doing this, we can pass the output to one or more linear layers, which can perform classification or regression on the extracted features and give us a final prediction. Figure \ref{fig:cnn2} shows a high level overview of this process. Here, the input, which has only 3 channels, has its spatial dimensions reduced while its channel depth increases through consecutive convolutions. Finally, we have a certain number of channels in our final feature map, which are flattened (in this case with \ac{gap}) and processed through a linear layer to give a final prediction.
+
 
 \begin{figure}[H]
     \begin{center}
+    \end{center}
 
 
-    \begin{tikzpicture}[x={(1,0)},y={(0,1)},z={({cos(60)},{sin(60)})}, scale=1.5]
-%
-% comment these out if you want to see where the axes point to
-% \draw[-latex] (0,0,0) -- (3,0,0) node[below]{$x$};
-% \draw[-latex] (0,0,0) -- (0,3,0) node[left]{$y$};
-% \draw[-latex] (0,0,0) -- (0,0,3) node[below]{$z$};
-% a plane
-\foreach \X [count=\Y] in {1.6,1.4,1.2,1.2,1}
-{
-    \draw pic (box1-\Y) at (\Y,-\X/2,0) {fake box=white!70!gray with dimensions {1/\X/\X} and {2*\X} and 1*\X};
+    \newcommand{\drawRectangles}[5]{
+    % #1: Starting x-coordinate
+    % #2: Starting y-coordinate (top)
+    % #3: Rectangle size
+    % #4: Spacing between rectangles
+    % #5: Number of rectangles
+
+
+    % Loop to draw rectangles
+    \foreach \i in {0, 1, ..., \the\numexpr#5-1} {
+        % Calculate x-coordinate for the current rectangle
+        \pgfmathsetmacro{\x}{#1 + \i * #4)}
+        \pgfmathsetmacro{\y}{#2 - \i * #4)}
+        
+        \pgfmathsetmacro{\fillColor}{mod(\i, 2) ? "ce0e0e0" : "ca0a0a0"}
+        
+        % Draw the rectangle
+        \path[draw=black, fill=\fillColor, opacity=1, line width=0.0cm] 
+            (\x, \y) rectangle (\x + #3, \y - #3);
+    }
 }
 
-\foreach \X/\Col in {6.5/blue,6.7/red,6.9/lightgray, 7.1/lightgray, 7.3/green}
-{\draw[canvas is yz plane at x = \X, transform shape, fill =
-\Col!50!white] (0,0.25) rectangle (1.5,-0.75);}
-% \draw[gray!60,thick] (6.3,-0.1,-1.6) coordinate (1-1) -- (6.3,-0.1,0.6) coordinate (1-2) -- (6.3,2.,0.6) coordinate (1-3) -- (6.3,2.1,-1.6) coordinate (1-4) -- cycle;
-% \draw[gray!60,thick] (7.1,-0.1,-1.6) coordinate (2-1) -- (7.1,-0.1,0.6) coordinate (2-2) -- (7.1,2.,0.6) coordinate (2-3) -- (7.1,2.1,-1.6) coordinate (2-4) -- cycle;
-% \foreach \X in {4,1,3}
-% {\draw[gray!60,thick] (1-\X) -- (2-\X);}
-%
-\node[draw,single arrow, fill=blue!10] at (8,0.5,0) {GAP};
-\node[circle,draw,blue,fill=blue!30] (A1) at (9,1,0) {~~~};
-\node[circle,draw,red,fill=red!30,below=4pt of A1] (A2) {~~~};
-\node[circle,draw,green,fill=green!30,below=18pt of A2] (A3) {~~~};
-\draw[circle dotted, line width=2pt,shorten <=3pt] (A2) -- (A3);
-\node[circle,draw,gray,fill=gray!20] (B1) at (10,1,0) {~~~};
-\node[circle,draw,fill=gray!60,below=4pt of B1] (B2) {~~~};
-\node[circle,draw,gray,fill=gray!20,below=18pt of B2] (B3) {~~~};
-\draw[circle dotted, line width=2pt,shorten <=3pt] (B2) -- (B3);
-\begin{scope}[on background layer]
-\node[orange,thick,rounded corners,fill=blue!10,fit=(A1) (A3)]{};
-\node[gray,thick,rounded corners,fill=gray!10,fit=(B1) (B3)]{};
-\end{scope}
-\foreach \X in {1,2,3}
-{\draw[-latex] (A\X) -- (B2);}
+
+\def \globalscale {0.7}
+\begin{tikzpicture}[y=1cm, x=1cm, yscale=\globalscale,xscale=\globalscale, every node/.append, inner sep=0pt, outer sep=0pt]
+  \begin{scope}[shift={(3.5, 0.3)}]
+    \path[draw=black,fill=red!20,opacity=1, line width=0.0cm] (12.6, 16.2) 
+  rectangle (18.6, 10.3);
+    \path[draw=black,fill=green!20,opacity=1, line width=0.0cm] (12.7, 16.1) 
+  rectangle (18.7, 10.2);
+    \path[draw=black,fill=blue!20,opacity=1, line width=0.0cm] (12.8, 16) 
+  rectangle (18.8, 10.1);
+
+    \begin{scope}[shift={(14, 11)}]
+        \marmot[scale=1.3, body=blue]
+        \bear[xshift=2.4cm, yshift=2.5cm, body=blue]
+        \coati[rotatehead=-15, xshift=2.6cm, yshift=-0.5cm, body=blue]
+    \end{scope}
+
+    \drawRectangles{19.9}{15.0}{3.0}{0.1}{8}
+
+    \drawRectangles{23.9}{14.8}{1.5}{0.12}{16}
+
+    \drawRectangles{26.9}{15.3}{0.4}{0.133}{32}
+
+
+
+    \path[draw=black,fill,fill opacity=0.0,draw opacity=1, line width=0.2mm] 
+  (16.4, 14.3) rectangle (16.6, 14.1);
+    \path[draw=black,fill,fill opacity=0.0,draw opacity=1, line width=0.2mm] 
+  (21.3, 12.4) rectangle (21.7, 12.0);
+    \path[draw=black,fill,fill opacity=0.0,draw opacity=1, line width=0.2mm] 
+  (26.2, 11.9) rectangle (26.4, 11.7);
+
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (16.6, 14.1) -- 
+  (22.6, 13.3);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (16.6, 14.3) -- 
+  (22.6, 13.3);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (21.7, 12.0) -- 
+  (26.2, 11.8);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (21.7, 12.4) -- 
+  (26.2, 11.8);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (26.4, 11.7) -- 
+  (31.1, 11.0);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (26.4, 11.9) -- 
+  (31.1, 11.0);
+
+    \path[draw=black,fill=ce0e0e0,opacity=1, line width=0.0mm] (30.8, 13.5) -- 
+  (31.1, 13.5) -- (32.0, 12.6) -- (31.7, 12.6) -- (30.8, 13.5)-- cycle;;
+    \path[draw=black,fill=ce0e0e0,opacity=1, line width=0.0mm] (32.0, 13.2) -- 
+  (32.3, 13.2) -- (32.6, 12.9) -- (32.3, 12.9) -- (32.0, 13.2)-- cycle;;
+
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (31.41, 11.15) -- 
+  (31.7, 12.6);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (27.3, 15.3) -- 
+  (30.8, 13.5);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (32.0, 12.6) -- 
+  (32.3, 12.9);
+    \path[draw=black,fill,draw opacity=1, line width=0.2mm] (31.1, 13.5) -- 
+  (32.0, 13.2);
+
+
+    \node[anchor=south west] (text10) at (19.9, 10.0){Conv};
+    \node[anchor=south west] (text11) at (24.3, 10.0){Conv};
+    \node[anchor=south west] (text12) at (27.9, 10.0){Conv};
+    \node[anchor=south west] (text13) at (31.9, 11.0){GAP};
+    \node[anchor=south west, align=left] (text14) at (12.6, 16.5){Input RGB Image:\\3@224x224};
+    \node[anchor=south west] (text15) at (19.9, 15.4){8@112x112};
+    \node[anchor=south west] (text16) at (23.9, 15.2){16@56x56};
+    \node[anchor=south west] (text17) at (26.9, 15.7){32@14x14};
+    \node[anchor=south west] (text18) at (30.8, 13.9){1x32};
+    \node[anchor=south west] (text19) at (32.0, 13.6){1x10};
+  \end{scope}
+
+
+
 \end{tikzpicture}
 
-    \end{center}
-    \caption[Convolution example]{Figure showing a convolutional kernel applied to a simple 1-channel image.}
-    \label{fig:conv}
+    \caption[CNN example]{Figure showing a high level overview of how a CNN functions}
+    \label{fig:cnn2}
 \end{figure}
 
 
-\subsection{Neural Networks in Practice: Classification and Regression}
-
-Now that we have a basic understanding of the inner workings of Neural Networks, we can consider how they are applied in practice.
+% \begin{figure}[H]
+%     \begin{center}
+%
+%
+%     \begin{tikzpicture}[x={(1,0)},y={(0,1)},z={({cos(60)},{sin(60)})}, scale=1.5]
+% %
+% % comment these out if you want to see where the axes point to
+% % \draw[-latex] (0,0,0) -- (3,0,0) node[below]{$x$};
+% % \draw[-latex] (0,0,0) -- (0,3,0) node[left]{$y$};
+% % \draw[-latex] (0,0,0) -- (0,0,3) node[below]{$z$};
+% % a plane
+% \draw pic (box1-1) at (1,-1.6/2,0) {fake box=white!70!gray with dimensions {1/1.6/1.6} and {2*1.6} and {1*1.6} and Input};
+%
+% \foreach \X [count=\Y] in {1.4,1.2,1.2,1}
+% {
+%     \draw pic (box1-\Y) at (\Y+1,-\X/2,0) {fake box=white!70!gray with dimensions {1/\X/\X} and {2*\X} and {1*\X} and Conv};
+% }
+%
+% \foreach \X/\Col in {6.5/blue,6.7/red,6.9/lightgray, 7.1/lightgray, 7.3/green}
+% {\draw[canvas is yz plane at x = \X, transform shape, fill =
+% \Col!50!white] (0,0.10) rectangle (1,-0.5);}
+% % \draw[gray!60,thick] (6.3,-0.1,-1.6) coordinate (1-1) -- (6.3,-0.1,0.6) coordinate (1-2) -- (6.3,2.,0.6) coordinate (1-3) -- (6.3,2.1,-1.6) coordinate (1-4) -- cycle;
+% % \draw[gray!60,thick] (7.1,-0.1,-1.6) coordinate (2-1) -- (7.1,-0.1,0.6) coordinate (2-2) -- (7.1,2.,0.6) coordinate (2-3) -- (7.1,2.1,-1.6) coordinate (2-4) -- cycle;
+% % \foreach \X in {4,1,3}
+% % {\draw[gray!60,thick] (1-\X) -- (2-\X);}
+% %
+% \node[draw,single arrow, fill=blue!10] at (8,0.5,0) {GAP};
+% \node[circle,draw,blue,fill=blue!30] (A1) at (9,1,0) {~~~};
+% \node[circle,draw,red,fill=red!30,below=4pt of A1] (A2) {~~~};
+% \node[circle,draw,green,fill=green!30,below=18pt of A2] (A3) {~~~};
+% \draw[circle dotted, line width=2pt,shorten <=3pt] (A2) -- (A3);
+% \node[circle,draw,gray,fill=gray!20] (B1) at (10,1,0) {~~~};
+% \node[circle,draw,fill=gray!60,below=4pt of B1] (B2) {~~~};
+% \node[circle,draw,gray,fill=gray!20,below=18pt of B2] (B3) {~~~};
+% \draw[circle dotted, line width=2pt,shorten <=3pt] (B2) -- (B3);
+% \begin{scope}[on background layer]
+% \node[orange,thick,rounded corners,fill=blue!10,fit=(A1) (A3)]{};
+% \node[gray,thick,rounded corners,fill=gray!10,fit=(B1) (B3)]{};
+% \end{scope}
+% \foreach \X in {1,2,3}
+% {\draw[-latex] (A\X) -- (B2);}
+% \end{tikzpicture}
+%
+%     \end{center}
+%     \caption[CNN example]{Figure showing a high level overview of how a CNN functions}
+%     \label{fig:cnn2}
+% \end{figure}
 
 \section{Model evaluation}
 
@@ -513,39 +627,50 @@ Instead of simply considering whether a prediction was correct or not, we should
 
 With these possibilities defined, we can begin to gain a clearer picture of the performance of a model.
 
-{\it Precision and Recall}
+\noindent \textbf{Precision and Recall}
 
-Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} detection setting, a model which flags many ID samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
+\noindent Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} detection setting, a model which flags many ID samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
 
-Precision and Recall give us a more precise understanding of 
+Recall is the share of actual positive samples that were predicted positive. Recall tells us how many of positive samples we missed. In and \ac{odd} detection context, a model which lets many \ac{ood} samples slip by undetected will have a low recall score.
 
-{\it Sensitivity and Precision}
+Precision and recall are often used together because evaluate the model in different ways that complement each other. If a model has both high precision and high recall, it does not erroneously flag many negative classes as positive, nor does it miss many positive classes.
+
+\noindent \textbf{Sensitivity and Specificity}
+
+\noindent Sensitivity and specificity is another pair of metrics that is commonly used for evaluating binary classification. Sensitivity is equivalent to recall; the share of positive samples that were correctly predicted as positive. Specificity is the share of the negative samples that were correctly predicted as negative. Sensitivity and specificity are also known as \ac{tpr} and {\it True Negative Rate}.
 
 \subsubsection{Threshold Independent Metrics}
 
-The previous metrics are a clear improvement over simply using accuracy. However, they still have the problem that they are all dependent on what threshold one sets when predicting something to be a negative or positive class. Thus, it becomes harder to compare different models by using these metrics. Indeed, by simply increasing the threshold of any classifier, we can increase the precision. Similarly, by decreasing the threshold, we can increase the recall.
+The previous metrics are a clear improvement over simply using accuracy. However, they still have the problem that they are all dependent on what threshold one sets when predicting something to be a negative or positive class. Thus, it becomes harder to compare different models by using these metrics. Indeed, by simply increasing the threshold of any classifier, we can increase the true negative rate. Similarly, by decreasing the threshold, we can increase the true positive rate.\\
 
-{\it Area under Receiver Operating Characteristic}:
+\noindent \textbf{Area under Receiver Operating Characteristic}:
 
-{\it False Positive Rate at 95\% Recall}
+\noindent \ac{auroc} remedies this problem by looking at all possible thresholds, and calculating the \ac{tpr} (equivalent to sensitivity, recall), and the \ac{fpr} (equivalent to $1 -$ specificity) for each possible threshold. With these values calculated, we can plot each point on a graph, giving us an \ac{roc} plot. Figure \ref{fig:auroc} shows this plot, for three different models.
 
-
-
-
-
-\begin{figure}
-    \label{fig:auroc}
+\begin{figure}[H]
     \begin{center}
         \input{figure/auroc.pgf}
     \end{center}
     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+    \label{fig:auroc}
 \end{figure}
+
+Once we have done this, we can calculate the integral under this curve, giving us the \ac{auroc}. If a binary classification model can perfectly separate the two classes, then all possible thresholds will either have 100\% \ac{tpr} or 0\% \ac{fpr}, giving an area under the curve of 1. If instead a model has no discriminative power, then the predicted values of positive and negative classes are entirely random, and all changes to the threshold will increase one of the metrics at the expense of the other. Such a model would have \acp{tpr} and \acp{fpr} making a straight line of points, and an \ac{auroc} of 0.5. In between these extremes, we can evaluate different models, without having to consider different thresholds. \ref{fig:auroc} shows what the \ac{roc}-curve of a model with either 0.97 or 0.80 \ac{auroc} looks like, as well as that of a random classifier with \ac{auroc} = 0.50.\\
+
+\noindent \textbf{False Positive Rate at 95\% Recall}
+
+\noindent \ac{fpr95} is another way of comparing models without having to consider specific thresholds. Instead, we simply select the threshold which gives a recall (equivalent to \ac{tpr}) of 0.95, and calculate the \ac{fpr} at this threshold. The drawback to this metric as opposed to \ac{auroc} is that we do not get a general view of how the model performs. However, if we have a requirement that the model has a very high true positive rate, we may not care about how the model performs at any other threshold, and thus this metric is suitable. It is of course also possible to calculate this metric at any other recall value, depending on the application. However, in the field of \ac{ood} detection, \ac{fpr95} is the metric that is used in the vast majority of cases \cite{oodbaseline, odin, oodoverview, openood, vim}.
+
+\subsection{Statistics: Bootstrapping and T-tests}
+
+Bootstrapping \cite{bootstrap} is a way to get a better estimation of the true generalization error of a model, by performing the same experiments several times on resampled versions of the original dataset.
+
 
 \section{Explainable Artificial Intelligence} \label{chapter:xai}
 
 Below follows a thorough introduction to \ac{xai}, as well as detailed look at some important methods for explainability for neural networks applied to images. Specifically, saliency methods will be explained in detail, as they constitute a core part of my thesis.
 
-\subsection{The motivation for \ac{xai}}
+\subsection{The motivation for Explainable Artificial Intelligence}
 
 Given the impressive performance of \ac{dl} methods, one might be convinced that these models do not need to be explainable or interpretable, and that we instead should just place our faith in the model without knowing exactly how it came to a decision. However, as \cite{doshivelez} points out, "a single metric, such as classification accuracy, is an incomplete description of most real-world tasks". Small differences between the data distribution when the test data was collected and when the model is deployed may have a large impact on the model's performance, or the model may have learned artifacts or specificities in the training dataset which were also present in the test dataset, leading to a false belief that the model has gained generalizable knowledge when it has not. By using explainable methods, we may reveal these shortcomings.
 
@@ -553,7 +678,7 @@ Given the impressive performance of \ac{dl} methods, one might be convinced that
 
 \subsection{The Properties of an Explanation}
 
-\subsection{Taxonomy of \ac{xai}}
+\subsection{Taxonomy of Explainable Artificial Intelligence}
 
 This section goes through three axes which define an \ac{xai} method:
 
@@ -622,6 +747,52 @@ Figure \ref{camimg} shows the process visually. From this we can see that the re
 \label{camimg}
 \end{figure}
 
+\begin{figure}[H]
+    \begin{center}
+    \begin{tikzpicture}[x={(1,0)},y={(0,1)},z={({cos(60)},{sin(60)})}, scale=1.5]
+%
+% comment these out if you want to see where the axes point to
+% \draw[-latex] (0,0,0) -- (3,0,0) node[below]{$x$};
+% \draw[-latex] (0,0,0) -- (0,3,0) node[left]{$y$};
+% \draw[-latex] (0,0,0) -- (0,0,3) node[below]{$z$};
+% a plane
+\draw pic (box1-1) at (1,-1.6/2,0) {fake box=white!70!gray with dimensions {1/1.6/1.6} and {2*1.6} and {1*1.6} and Input};
+
+\foreach \X [count=\Y] in {1.4,1.2,1.2,1}
+{
+    \draw pic (box1-\Y) at (\Y+1,-\X/2,0) {fake box=white!70!gray with dimensions {1/\X/\X} and {2*\X} and {1*\X} and Conv};
+}
+
+\foreach \X/\Col in {6.5/blue,6.7/red,6.9/lightgray, 7.1/lightgray, 7.3/green}
+{\draw[canvas is yz plane at x = \X, transform shape, fill =
+\Col!50!white] (0,0.10) rectangle (1,-0.5);}
+% \draw[gray!60,thick] (6.3,-0.1,-1.6) coordinate (1-1) -- (6.3,-0.1,0.6) coordinate (1-2) -- (6.3,2.,0.6) coordinate (1-3) -- (6.3,2.1,-1.6) coordinate (1-4) -- cycle;
+% \draw[gray!60,thick] (7.1,-0.1,-1.6) coordinate (2-1) -- (7.1,-0.1,0.6) coordinate (2-2) -- (7.1,2.,0.6) coordinate (2-3) -- (7.1,2.1,-1.6) coordinate (2-4) -- cycle;
+% \foreach \X in {4,1,3}
+% {\draw[gray!60,thick] (1-\X) -- (2-\X);}
+%
+\node[draw,single arrow, fill=blue!10] at (8,0.5,0) {GAP};
+\node[circle,draw,blue,fill=blue!30] (A1) at (9,1,0) {~~~};
+\node[circle,draw,red,fill=red!30,below=4pt of A1] (A2) {~~~};
+\node[circle,draw,green,fill=green!30,below=18pt of A2] (A3) {~~~};
+\draw[circle dotted, line width=2pt,shorten <=3pt] (A2) -- (A3);
+\node[circle,draw,gray,fill=gray!20] (B1) at (10,1,0) {~~~};
+\node[circle,draw,fill=gray!60,below=4pt of B1] (B2) {~~~};
+\node[circle,draw,gray,fill=gray!20,below=18pt of B2] (B3) {~~~};
+\draw[circle dotted, line width=2pt,shorten <=3pt] (B2) -- (B3);
+\begin{scope}[on background layer]
+\node[orange,thick,rounded corners,fill=blue!10,fit=(A1) (A3)]{};
+\node[gray,thick,rounded corners,fill=gray!10,fit=(B1) (B3)]{};
+\end{scope}
+\foreach \X in {1,2,3}
+{\draw[-latex] (A\X) -- (B2);}
+\end{tikzpicture}
+
+    \end{center}
+    \caption[CNN example]{Figure showing a high level overview of how a CNN functions}
+    \label{fig:cam2}
+\end{figure}
+
 Although \ac{cam} is an intuitive and effective method of visualizing the inner workings of a \ac{cnn}, it has some downsides. Firstly, it is highly model dependent, requiring that the model only have a single dense layer after the convolutions. Although there are some state of the art models which only use a single dense layer, this still places a limit on what models can be used, or requires the simplification of models that use more than a single dense layer. \cite[4]{cam} notes a 1-2\% drop in classification performance when performing this simplification. Secondly, the output of \ac{cam} is simply a weighted sum of all the feature maps after the final convolutional layer. As we move deeper in a \ac{cnn}, we reduce the spatial resolution by downsampling, while increasing the number of channels (increasing the depth of the output while reducing the height and width). Because of this, the \ac{cam} will have a drastically lower resolution than the original image, often less than $10 \, x \, 10$, while the input image may be hundreds of pixels in both dimensions. Because of this, \ac{cam} can only show general areas, as opposed to pixel wise explanations.
 \\
 
@@ -677,11 +848,11 @@ With these limitations in mind,
 
 
 
-\section{Out-of-Distribution (\ac{ood}) Detection} \label{ood_intro}
+\section{Out-of-Distribution Detection} \label{ood_intro}
 
 This section discusses \ac{ood} detection, the field which attempts to tackle the second problem discussed in the introduction; that \ac{ml} models have significantly worse performance on \ac{ood} data points and will often "fail silently", making completely wrong predictions with apparent high confidence \cite{adversarial}. \ac{ood} detection is a developing field, and still in an initial stage \cite{ooddl}. In 2017, \cite{oodbaseline} proposed a baseline \ac{ood} detection method. This section will discuss this method and the methods which follow it.
 
-\subsection{Motivation for \ac{ood} Detection}
+\subsection{Motivation for Out-of-Distribution Detection}
 
 When training a model using supervised learning, we implicitly use the "closed-world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without \ac{ood} detection, the model will behave in the exact same way when encountering \ac{ood} samples or in distribution (ID) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a model to claim high confidence when predicting if a woman has lung cancer if the model has only been trained on men, nor do we want a model to attempt to classify a rare disease that was not part of the training data. Thus, \ac{ood} detection methods are necessary, so that \ac{ood} samples can be caught before the model makes a prediction and dealt with correctly.
 
@@ -1078,7 +1249,7 @@ Apart from aggregations which convey information about the magnitude of the sali
 
 Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating the spread could be beneficial in \ac{ood} detection. Like in the previous case, we imagine a model trained on dogs, which is fed two images, one which contains a dog and one which does not. In this case, we do not care about the magnitudes, but instead only the spread of the values in relation to each other, and thus the heatmap is normalized. As we can see, the heatmap is more spread out in the explanation where there is no dog present than for the image with a dog. By calculating a suitable metric, such as the Gini coefficient, entropy or another measure of spread, we can get a single number which represents how spread out the heatmap is, regardless of its magnitude. Using these values, we can define a threshold which is below most ID data and above most \ac{ood} data, allowing us to separate these distributions.
 
-\begin{figure}
+\begin{figure}[H]
     \begin{center}
 
     \begin{tikzpicture}[
@@ -1113,7 +1284,7 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \end{center}
 \end{figure}
 
-With the intuition explained, we may now formalize the method. To define this detector mathematically, let us first define the necessary components. As in chapter \ref{chapter:background}, we assume we have a model $f: \bm{x} \to \R^C$. In this case, $\bm{x} \in \R^{D \times H \times W}$, i.e a $D$ channel image of height $H$ and width $W$. In addition, we define a \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$. This function takes the model $f$ and an input $\bm{x}$ and returns a $H_s$ by $W_s$ saliency map for the predicted class; the class corresponding to the highest logit. Finally, we define an aggregation function $A: \R^* \rightarrow \R$, where $\R^*$ denotes that the input dimension can be of any shape.
+With the intuition explained, we may now formalize the method. To define this detector mathematically, let us first define the necessary components. As in chapter \ref{chapter:background}, we assume we have a model $f: \bm{x} \to \R^C$. In this case, $\bm{x} \in \R^{D \times H \times W}$, i.e a $D$ channel image of height $H$ and width $W$. In addition, we define a \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$. This function takes the model $f$ and an input $\bm{x}$ and returns a $H_s$ by $W_s$ saliency map for the predicted class; the class corresponding to the highest logit. Finally, we define an aggregation function $A: \bm{x} \rightarrow \R$, where $\bm{x}$ can be of any shape.
 
 Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
 
@@ -1121,7 +1292,7 @@ Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
     g(\bm{x}; s, A, \delta)=\begin{cases} 
         \text{in } & A(s(\bm{x}, f)) \ge \delta \\
         \text{out} & A(s(\bm{x}, f)) < \delta 
-   \end{cases},
+   \end{cases}
 \label{eq:aggregate}
 \end{align}
 
@@ -1310,27 +1481,33 @@ Of the $100 \, 079$ images, $10 \, 662$ have been labeled, with a total of 23 cl
 
 \section{Networks}
 
-\section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
+While it may be interesting to see how these new methods function on different network architectures, the combination of several different novel \ac{ood} detection algorithms and three different datasets already presents a considerable amount of evaluation. Thus, to focus the thesis on comparing different \ac{ood} detection methods against each other, I believe it is best to fix other parameters such as network architecture. With this in mind, I choose to limit myself to the ResNet \cite{resnet} family of neural networks. In particular, I use ResNet18 for all tests, either one trained on $32 \times 32$ images (for Cifar10), or one trained on $224 \times 224$ images (for ImageNet200, HyperKvasir).
 
-Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
+Aside from \acp{cnn}, Vision Transformers also perform exceptionally on computer vision tasks, and achieve state-of-the-art results in many settings \cite{vit}. On ImageNet, they are even dominant, and the top 10 models when considering (top-1) accuracy are all based on vision transformers, as opposed to \acp{cnn}.\footnote{https://paperswithcode.com/sota/image-classification-on-imagenet} As such one might question the choice of a \ac{cnn} model, when newer and better models have been developed.
 
-\section{Data Analysis of Explanations}
+However, given that a large part of the \ac{xai} methods have been developed in the \ac{cnn} paradigm, they are not easily adapted to vision transformers. Methods such as \ac{gradcam} and \ac{lrp} exploit specific parts of \ac{cnn} architectures when generating explanations \cite{legrad}, and are thus difficult to use with different architectures. To be able to use a broad section of the representative \ac{xai} methods in use today, it is thus preferable to use \acp{cnn} as opposed to vision transformers.
 
-As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
-
-\subsection{Data Generation}
-
-As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
-
-Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
-
-{\large
-\begin{equation}
-    D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
-\end{equation}
-}
-
-In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
+% \section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
+%
+% Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
+%
+% \section{Data Analysis of Explanations}
+%
+% As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
+%
+% \subsection{Data Generation}
+%
+% As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
+%
+% Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
+%
+% {\large
+% \begin{equation}
+%     D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
+% \end{equation}
+% }
+%
+% In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
 
 \subsection{Evaluation}
 
@@ -1352,7 +1529,39 @@ When evaluating a new method, it is not enough to simply report the results from
 
 \section{Implementation}
 
+This section goes over the implementation details of my thesis.
+
+\subsection{Basic hardware and software}
+
+Python is the most popular programming language for data science and \ac{ml} research \cite{nguyen2019machine}, and as such it is my language of choice as well. Key libraries that I have used are {\it PyTorch}, {\it SciKitLearn}, {\it Matplotlib}, {\it NumPy} and others. Below is a table of the key libraries and their version numbers.
+
+\begin{center}
+    \begin{tabular}{ |c|c| } 
+    \hline
+    Library & Version number \\
+    \hline
+    PyTorch & 1.1 \\ 
+    Scikit-Learn & 1.2 \\ 
+    NumPy & 1.3 \\ 
+    NumPy & 1.3 \\ 
+    OpenOOD & 1.5 \\ 
+    \hline
+    \end{tabular}
+\end{center}
+
+All development and computation was done on a single computer with an \texttt{Intel i7-8700K} CPU and an \texttt{Nvidia GeForce RTX 3090} GPU.
+
+\subsection{OpenOOD}
+
+As explained previously, OpenOOD \cite{openood} represents the most comprehensive benchmark for \ac{ood} detection methods. It is also a framework which easily allows for development and benchmarking of new methods, and is thus the ideal framework for my purposes.
+
+In particular, OpenOOD includes a "unified, easy to use evaluator" \cite{openood15} that makes evaluating new methods very simple. All that is required is that new methods inherit from a base class, and override 
+
 \chapter{Experiments and Results} \label{chapter:experiments}
+
+This chapter contains my findings. In the first section, I show how different forms of aggregation over saliency maps separate \ac{id} and \ac{ood} data points. This step is important, because it informs the choice of aggregation used in the Aggregation-of-Saliency \ac{ood} detection method. I report \ac{auroc} for different forms of aggregation over the three datasets. This is done on the validation sets, to avoid biasing the final results.
+
+In the second section, perform \ac{ood} detection on the test sets, and report the \ac{auroc} and \ac{fpr95} for each method on each dataset. In addition, I perform statistical analyses to investigate whether my \ac{xai} \ac{ood} detection methods outperform baseline methods.
 
 \section{Data Analysis of Explanations}
 
