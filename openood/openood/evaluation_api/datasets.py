@@ -610,15 +610,16 @@ def get_id_ood_dataloader(
 
                 if data_split == 'val':
                     dataset = val_set
-                    if bootstrap_seed is not None:
-                        generator = Generator().manual_seed(bootstrap_seed)
-                        sampler = RandomSampler(
-                            dataset, replacement=True, generator=generator
-                        )
                 elif data_split == 'test':
                     dataset = test_set
                 else:
                     raise ValueError("data_split only accepts 'val' or 'test'")
+
+                if bootstrap_seed is not None:
+                    generator = Generator().manual_seed(bootstrap_seed)
+                    sampler = RandomSampler(
+                        dataset, replacement=True, generator=generator
+                    )
         dataloader = DataLoader(dataset, sampler=sampler, **loader_kwargs)
         sub_dataloader_dict[split] = dataloader
     dataloader_dict['id'] = sub_dataloader_dict
@@ -683,15 +684,15 @@ def get_id_ood_dataloader(
 
                     if data_split == 'val':
                         dataset = val_set
-                        if bootstrap_seed is not None:
-                            generator = Generator().manual_seed(bootstrap_seed)
-                            sampler = RandomSampler(
-                                dataset, replacement=True, generator=generator
-                            )
                     elif data_split == 'test':
                         dataset = test_set
                     else:
                         raise ValueError("data_split only accepts 'val' or 'test'")
+                    if bootstrap_seed is not None:
+                        generator = Generator().manual_seed(bootstrap_seed)
+                        sampler = RandomSampler(
+                            dataset, replacement=True, generator=generator
+                        )
                 dataloader = DataLoader(dataset, sampler=sampler, **loader_kwargs)
                 sub_dataloader_dict[dataset_name] = dataloader
             dataloader_dict['ood'][split] = sub_dataloader_dict

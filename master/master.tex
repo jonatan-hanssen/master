@@ -9,6 +9,8 @@
 \usepackage{acronym}
 \usepackage{mathtools}
 \usepackage{algorithm}
+\usepackage{listings}
+\usepackage[table]{xcolor}
 \usepackage{listofitems}
 \usepackage{algpseudocode}
 \usepackage{tikzlings}
@@ -22,6 +24,60 @@
 
 \usetikzlibrary{positioning, matrix, backgrounds}
 \usetikzlibrary{3d,decorations.text,shapes.arrows,fit}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    language=Python,
+    backgroundcolor=\color{white},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    escapeinside=||,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    frame=single,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    morekeywords={self},
+}
+
+\lstset{
+	breaklines=true,
+	style=mystyle,
+}
+
+
+\let\origthelstnumber\thelstnumber
+\makeatletter
+\newcommand*\Suppressnumber{%
+  \lst@AddToHook{OnNewLine}{%
+    \let\thelstnumber\relax%
+     \advance\c@lstnumber-\@ne\relax%
+    }%
+}
+
+\newcommand*\Reactivatenumber[1]{%
+  \setcounter{lstnumber}{\numexpr#1-1\relax}
+  \lst@AddToHook{OnNewLine}{%
+   \let\thelstnumber\origthelstnumber%
+   \refstepcounter{lstnumber}
+  }%
+}
+
+
+\makeatother
+
 
 \tikzset{pics/fake box/.style args={% #1=color, #2=x dimension, #3=y dimension, #4=z dimension
 #1 with dimensions #2 and #3 and #4 and #5}{
@@ -119,6 +175,7 @@ Here comes the abstract in a different language.
     \acro  {cam} [CAM] {Class Activation Mapping}
     \acro  {gradcam} [GradCAM] {Gradient Class Activation Mapping}
     \acro  {gap}   [GAP]   {Global Average Pooling}
+    \acro  {msp}   [MSP]   {Maximum Softmax Probability}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
 
@@ -1201,7 +1258,7 @@ As we have seen from section \ref{section:relatedwork}, there has been little re
 
 \subsubsection{Aggregate of Saliency}
 
-As mentioned previously, the field of \ac{ood} detection started with the simple baseline introduced by \cite{oodbaseline}, which simply uses the Maximum Softmax Probability (i.e the confidence score of the predicted class) as a way to measure \ac{ood}. As such, I propose a similarly simple baseline when using explanations for \ac{ood} detection. The analogue of the maximum logit in an \ac{xai} context can reasonably be said to be the explanation generated of the predicted class (the class corresponding to the maximum logit). As explained previously, this explanation will take the form of an $n \times m$ saliency map. This saliency map is not a single scalar value, and does thus not make a suitable \ac{ood} score by itself. Instead, we may perform some form of aggregation on the saliency map (such as taking the mean, the max, the variance or some other form), and use this as the \ac{ood} score.
+As mentioned previously, the field of \ac{ood} detection started with the simple baseline introduced by \cite{oodbaseline}, which simply uses the \ac{msp} (i.e the confidence score of the predicted class) as a way to measure \ac{ood}. As such, I propose a similarly simple baseline when using explanations for \ac{ood} detection. The analogue of the maximum logit in an \ac{xai} context can reasonably be said to be the explanation generated of the predicted class (the class corresponding to the maximum logit). As explained previously, this explanation will take the form of an $n \times m$ saliency map. This saliency map is not a single scalar value, and does thus not make a suitable \ac{ood} score by itself. Instead, we may perform some form of aggregation on the saliency map (such as taking the mean, the max, the variance or some other form), and use this as the \ac{ood} score.
 
 The intuition for this method is informed by the fact that there are many forms of aggregation over saliencies which one might reasonably expect to be different for ID and \ac{ood} data. As an example, let us consider the implications of aggregating in some way which captures the magnitude of the saliencies, such as the {\it mean}, the {\it norm}, or the {\it max value}. When we generate a saliency map using the predicted class, the \ac{xai} saliency method attempts to calculate a measure of importance for each region of the input image, with regard to this class. For ID data, as long as the model predicted correctly, we know that there really are regions of the input image which contain the predicted class. If we instead are looking at semantically shifted \ac{ood} data, we know that no input image contains any of the ID classes. Thus, when a neural network makes a prediction on such a data point, it will always be wrong, because it will always predict one of the ID classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to a false decision. Given that there are no objects of the predicted class, in any region, we should expect the saliency values to be lower than in an ID case, where such objects actually are present.
 
@@ -1366,6 +1423,9 @@ OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Reco
 
 \subsubsection{CIFAR10}
 
+CIFAR10 \cite{cifar} is a 10-class dataset for general object recognition \cite{openood}. This dataset is commonly used in \ac{ai} research \cite{pouyanfar2018survey}. Each image is $32 \times 32$, and there are 50 000 training images and 10 000 test images. The ten classes are as follows: airplanes, cars, birds, cats, deer, dogs, frogs, horses, ships, and trucks. OpenOOD presents a series of Near-\ac{ood} and Far-\ac{ood} datasets which are used in conjunction with this dataset. A sample of images from CIFAR10 and the corresponding \ac{ood} datasets are shown in figure \ref{fig:cifar10}.
+
+
 \begin{figure}[H]
     \begin{center}
 
@@ -1414,10 +1474,41 @@ OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Reco
     \end{tikzpicture}
 
     \caption[CIFAR10 dataset example images]{Figure showing three example images from CIFAR10 and from the corresponding \ac{ood} datasets}
-    \label{fig:meansaliency}
+    \label{fig:cifar10}
 
     \end{center}
 \end{figure}
+
+In addition, table \ref{table:cifar10} shows a short description of each dataset.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+    \hline
+    Dataset & Size & Description \\
+    \hline
+    \rowcolor{id!50}
+    CIFAR10 & 10 000 & General objects \\ 
+    \hline
+    \rowcolor{near!50}
+    CIFAR100 & 10 000 & General objects \\ 
+    \rowcolor{near!50}
+    TinyImageNet & 10 000 & General objects \\ 
+    \hline
+    \rowcolor{far!50}
+    MNIST & 10 000 & Handwritten digits from 0 to 9 \\ 
+    \rowcolor{far!50}
+    SVHN & 10 000 & Street view house numbers \\ 
+    \rowcolor{far!50}
+    Texture & 10 000 & Street view house numbers \\ 
+    \rowcolor{far!50}
+    Places365 & 10 000 & Places, scenes, locations \\ 
+    \hline
+    \end{tabular}
+    \caption{Hello}
+    \label{table:cifar10}
+\end{center}
+\end{table}
 
 \subsubsection{ImageNet200}
 
@@ -1472,6 +1563,33 @@ OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Reco
 
     \end{center}
 \end{figure}
+\begin{table}
+
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+    \hline
+    Dataset & Size & Description \\
+    \hline
+    \rowcolor{id!50}
+    ImageNet200 & 10 000 & General objects \\ 
+    \hline
+    \rowcolor{near!50}
+    SSB-Hard & 10 000 & General objects \\ 
+    \rowcolor{near!50}
+    NINCO & 10 000 & General objects \\ 
+    \hline
+    \rowcolor{far!50}
+    iNaturalist & 10 000 & Handwritten digits from 0 to 9 \\ 
+    \rowcolor{far!50}
+    Texture & 10 000 & Street view house numbers \\ 
+    \rowcolor{far!50}
+    OpenImage-O & 10 000 & Street view house numbers \\ 
+    \hline
+    \end{tabular}
+    \caption{Hello}
+    \label{table:imagenet200}
+\end{center}
+\end{table}
 
 \subsection{HyperKvasir} \label{chapter:hyperkvasir}
 
@@ -1487,43 +1605,24 @@ Aside from \acp{cnn}, Vision Transformers also perform exceptionally on computer
 
 However, given that a large part of the \ac{xai} methods have been developed in the \ac{cnn} paradigm, they are not easily adapted to vision transformers. Methods such as \ac{gradcam} and \ac{lrp} exploit specific parts of \ac{cnn} architectures when generating explanations \cite{legrad}, and are thus difficult to use with different architectures. To be able to use a broad section of the representative \ac{xai} methods in use today, it is thus preferable to use \acp{cnn} as opposed to vision transformers.
 
-% \section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
-%
-% Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
-%
-% \section{Data Analysis of Explanations}
-%
-% As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
-%
-% \subsection{Data Generation}
-%
-% As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
-%
-% Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
-%
-% {\large
-% \begin{equation}
-%     D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
-% \end{equation}
-% }
-%
-% In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
+\section{\ac{xai} Saliency Methods}
 
-\subsection{Evaluation}
 
-\subsubsection{Metrics}
+\section{Evaluation}
+
+\subsection{Metrics}
 
 \ac{auroc} and \ac{fpr} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr} as a secondary metric.
 
 \ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative.
 
-\subsubsection{Development and Test Sets}
+\subsection{Development and Test Sets}
 
 Given the scope of my thesis, which focuses on post-hoc \ac{ood} methods which do not use outlier exposure or require any form of training, there is no need for a training dataset. Despite this, there is still a chance of overfitting, due to the exploratory nature of developing an entirely new class of methods. By trying out different methods and by tuning different parameters to find out how one might best separate \ac{id} and \ac{ood} data using XAI, I am also biasing the results. Therefore, it may be possible that potential improvements in performance are not due to the increased quality of the method, but instead because of peculiarities in the specific datasets that the method is used on.
 
 Thus, I have split all the datasets mentioned in \ref{section:datasets} into development and test sets, and have performed all development of the methods exclusively on the development set. Only when calculating the final metrics have I used the test set, to remove any bias associated with performing multiple experiments on the same data. Due to the large amount of data available in the CIFAR10 and ImageNet200 datasets, and their associated \ac{ood} datasets, I have simply split all datasets into two equally large parts.
 
-\subsubsection{Bootstrapping}
+\subsection{Bootstrapping}
 
 When evaluating a new method, it is not enough to simply report the results from a single experiment. Instead one should run the same experiment multiple times and perform statistical analysis to ensure that the results are robust. Therefore, I have.
 
@@ -1534,6 +1633,7 @@ This section goes over the implementation details of my thesis.
 \subsection{Basic hardware and software}
 
 Python is the most popular programming language for data science and \ac{ml} research \cite{nguyen2019machine}, and as such it is my language of choice as well. Key libraries that I have used are {\it PyTorch}, {\it SciKitLearn}, {\it Matplotlib}, {\it NumPy} and others. Below is a table of the key libraries and their version numbers.
+
 
 \begin{center}
     \begin{tabular}{ |c|c| } 
@@ -1551,11 +1651,101 @@ Python is the most popular programming language for data science and \ac{ml} res
 
 All development and computation was done on a single computer with an \texttt{Intel i7-8700K} CPU and an \texttt{Nvidia GeForce RTX 3090} GPU.
 
-\subsection{OpenOOD}
+\subsection{Method Evaluation: OpenOOD}
 
 As explained previously, OpenOOD \cite{openood} represents the most comprehensive benchmark for \ac{ood} detection methods. It is also a framework which easily allows for development and benchmarking of new methods, and is thus the ideal framework for my purposes.
 
-In particular, OpenOOD includes a "unified, easy to use evaluator" \cite{openood15} that makes evaluating new methods very simple. All that is required is that new methods inherit from a base class, and override 
+In particular, OpenOOD includes a "unified, easy to use evaluator" \cite{openood15} that makes evaluating new methods very simple. All that is required is that new methods inherit from a base class (\texttt{BasePostprocessor}\footnote{In OpenOOD, \texttt{Postprocessor}s are the \ac{ood} detection algorithms that generate an \ac{ood} score during inference}), and override the calculation of \ac{ood} scores. Code listing \ref{code:aggregate} shows all the code required to create the Aggregate of Saliency \ac{ood} detector.
+
+\begin{lstlisting}[style=mystyle, caption={Source code listing for the Aggregate of Saliency \ac{ood} detector}, captionpos=b, label={code:aggregate}]
+class SaliencyAggregatorPostprocessor(BasePostprocessor):
+    def __init__(self, config, saliency_generator, aggregator):
+        super().__init__(config)
+
+        self.saliency_generator = saliency_generator
+        self.aggregator = aggregator
+
+    def postprocess(self, net: nn.Module, data: Any):
+        predictions = torch.argmax(net(data), dim=-1)
+
+        saliencies = self.saliency_generator(net, data)
+        score_ood = self.aggregator(saliencies, dim=-1)
+
+        return predictions, score_ood
+\end{lstlisting}
+
+With this \texttt{postprocessor} defined, evaluating it on a specific dataset is similarly simple (listing \ref{code:eval}):
+
+\begin{lstlisting}[style=mystyle, caption={Source code listing for evaluating methods within the OpenOOD framework}, captionpos=b, label={code:eval}]
+resnet18_pretrained = get_network('cifar10')
+
+ood_detector = SaliencyAggregatorPostprocessor(None, GradCAM, torch.mean)
+
+evaluator = Evaluator(
+    net=resnet18_pretrained,
+    id_name='cifar10',
+    postprocessor=ood_detector,
+)
+
+metrics = evaluator.eval_ood()
+
+print(metrics)
+\end{lstlisting}
+
+This code will calculate the \ac{ood} scores for all data samples in both the \ac{id} and \ac{ood} datasets, and subsequently calculate the \ac{auroc} and \ac{fpr95} for all the \ac{ood} datasets when comparing their \ac{ood} values to the values of the \ac{id} datasets. Code listing \ref{code:msp} shows this output when using the baseline \ac{msp} method.
+
+\begin{lstlisting}[style=mystyle, caption={Output of calling \texttt{evaluator.eval\_ood} with CIFAR10 as the dataset and \ac{msp} as the detector}, captionpos=b, label={code:msp}]
+           FPR@95  AUROC  AUPR_IN  AUPR_OUT   ACC
+cifar100    61.36  86.51    84.20     85.05 95.56
+tin         42.02  88.88    88.81     85.57 95.56
+nearood     51.69  87.69    86.51     85.31 95.56
+mnist       19.38  93.86    79.72     98.89 95.56
+svhn        24.78  91.38    84.26     95.49 95.56
+texture     43.31  88.68    91.01     80.97 95.56
+places365   41.62  89.21    68.49     96.28 95.56
+farood      32.27  90.78    80.87     92.91 95.56
+\end{lstlisting}
+
+As we can see, OpenOOD allows for very easy evaluation of new methods. Furthermore, it allows for easy comparisons between methods, one of the stated goals of the framework \cite{openood}. This makes it an ideal framework for this thesis.
+
+
+\subsubsection{Modifications to the OpenOOD}
+
+As explained previously, continually testing new methods on the same datasets will bias the final results. As of the writing of this thesis, there are no functionalities in OpenOOD which allow for creating development or test sets, all evaluations are done with entire datasets. For my purposes, which involve continuous exploration of different methods and careful inspection of the datasets, this is inadequate. Thus, I have made modifications to the \texttt{Evaluator} class such that it takes a \texttt{data\_split} parameter during initialization, and have also modified the function \texttt{get\_id\_ood\_dataloader} to accept this parameter and return the correct split accordingly.
+
+Furthermore, there is no functionality for sampling from the datasets as opposed to using them as they are, which is necessary to perform bootstrapping and calculate the statistical significance of the results. I have done this by passing a seed to the \texttt{Evaluator} class, which, if defined, will be used to seed a random sampling operation on the datasets. By instantiating several \texttt{Evaluator} classes with different seeds, we can bootstrap the evaluation and perform statistical analysis on the results.
+
+Listing \ref{code:split} shows the relevant snippet of code from  \texttt{get\_id\_ood\_dataloader} which enables both dataset splitting and bootstrapping:
+
+\begin{lstlisting}[style=mystyle, caption={Code snippet from \texttt{get\_id\_ood\_dataloader} which contains the modifications necessary for splitting and bootstrapping the datasets}, captionpos=b, label={code:split}]
+sampler = None
+if data_split is not None:
+    generator = Generator().manual_seed(0)
+    val_set, test_set = random_split(
+        dataset, [0.5, 0.5], generator=generator
+    )
+
+    if data_split == 'val':
+        dataset = val_set
+    elif data_split == 'test':
+        dataset = test_set
+    else:
+        raise ValueError("data_split only accepts 'val' or 'test'")
+
+    if bootstrap_seed is not None:
+        generator = Generator().manual_seed(bootstrap_seed)
+        sampler = RandomSampler(
+            dataset, replacement=True, generator=generator)
+dataloader = DataLoader(dataset, sampler=sampler, **loader_kwargs)
+\end{lstlisting}
+
+\subsection{Implementation of Saliency Methods}
+
+This section details my implementations of the saliency methods described in section method
+
+
+
+
 
 \chapter{Experiments and Results} \label{chapter:experiments}
 
@@ -1657,6 +1847,39 @@ Furthermore, when looking at the average standard deviation for each saliency ma
 \chapter{Conclusion} \label{chapter:conclusion}
 
 \section{Future work}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \chapter{Temporary chapter} \label{chapter:newmethod}
 
@@ -1761,6 +1984,27 @@ For each method, I will
 
 \chapter{\ac{xai} for \ac{ood} Detection: Integration of Select \ac{xai} Methods}
 
+% \section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
+%
+% Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
+%
+% \section{Data Analysis of Explanations}
+%
+% As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
+%
+% \subsection{Data Generation}
+%
+% As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
+%
+% Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
+%
+% {\large
+% \begin{equation}
+%     D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
+% \end{equation}
+% }
+%
+% In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
 
 
 

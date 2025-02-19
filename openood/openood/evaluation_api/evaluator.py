@@ -32,8 +32,8 @@ class Evaluator:
         batch_size: int = 200,
         shuffle: bool = False,
         num_workers: int = 4,
-        data_split=None,
-        bootstrap_seed=None,
+        data_split: str = None,
+        bootstrap_seed: int = None,
     ) -> None:
         """A unified, easy-to-use API for evaluating (most) discriminative OOD
         detection methods.
@@ -261,7 +261,7 @@ class Evaluator:
                     if self.scores['csid'][dataset_name] is None:
                         print(
                             f'Performing inference on {self.id_name} '
-                            f'(cs) test set [{i+1}]: {dataset_name}...',
+                            f'(cs) test set [{i + 1}]: {dataset_name}...',
                             flush=True,
                         )
                         temp_pred, temp_conf, temp_gt = self.postprocessor.inference(
@@ -347,7 +347,7 @@ class Evaluator:
                 ]
             else:
                 print(
-                    'Inference has been performed on ' f'{dataset_name} dataset...',
+                    f'Inference has been performed on {dataset_name} dataset...',
                     flush=True,
                 )
                 [ood_pred, ood_conf, ood_gt] = self.scores['ood'][ood_split][
