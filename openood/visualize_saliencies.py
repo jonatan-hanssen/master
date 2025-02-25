@@ -14,20 +14,24 @@ import matplotlib
 
 functions = (
     ('Mean', torch.mean),
-    ('Skew', lambda data, dim: scipy.stats.skew(data, axis=-1)),
+    # ('Skew', lambda data, dim: scipy.stats.skew(data, axis=-1)),
     ('Norm', torch.linalg.vector_norm),
+    ('Std', torch.std),
     ('Norm3', lambda data, dim: torch.linalg.vector_norm(data, ord=3, dim=dim)),
     (
         'Norminf',
         lambda data, dim: torch.linalg.vector_norm(data, ord=float('inf'), dim=dim),
     ),
     ('Median', lambda data, dim: torch.median(data, dim=-1)[0]),
-    # ('Variance', utils.norm_std),
-    # ('Recon', utils.pca_recon_loss()),
+    (
+        'Range',
+        lambda data, dim: torch.max(data, dim=-1)[0] - torch.min(data, dim=-1)[0],
+    ),
+    # ('Product', torch.prod),
     ('Gini', utils.gini),
-    # ('PCA', utils.pca_wrapper()),
-    # ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
-    # ('Entropy', utils.norm_std),
+    ('PCA', utils.pca_wrapper()),
+    ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
+    # ('NormStd', utils.norm_std),
 )
 
 
@@ -37,7 +41,8 @@ parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--auc', action=argparse.BooleanOptionalAction, default=True)
-parser.add_argument('--plot', action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument('--dont_plot', action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument('--negate', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--linewidth', type=float, default=1.5)
 parser.add_argument(
     '--full', '-f', action=argparse.BooleanOptionalAction, default=False
@@ -92,11 +97,13 @@ if not args.full:
 
     saliency_dict = new_saliency_dict
 
+print()
+
 score_filename = f'saved_scores/{args.dataset}.pkl'
 with open(score_filename, 'rb') as file:
     score_dict = pickle.load(file)
 
-if args.show_scores and args.plot:
+if args.show_scores and not args.dont_plot:
     for key in saliency_dict:
         for second_key in saliency_dict[key]:
             score = score_dict[key][second_key]
@@ -167,6 +174,9 @@ for name, function in functions:
 
                     aggregate = function(saliency, dim=-1)
 
+                if args.negate:
+                    aggregate = -1 * aggregate
+
                 if isinstance(aggregate, np.ndarray):
                     aggregate = torch.tensor(aggregate)
 
@@ -176,7 +186,7 @@ for name, function in functions:
 
                 if key == 'id':
                     id_aggregate = aggregate
-                    if args.plot:
+                    if not args.dont_plot:
                         plot(aggregate, f'{key}: {second_key}'.upper())
 
                     if args.show_scores:
@@ -187,7 +197,7 @@ for name, function in functions:
                     auc = calculate_auc(id_aggregate, aggregate)
                     near_aucs.append(auc)
 
-                    if args.plot:
+                    if not args.dont_plot:
                         if args.auc:
                             plot(
                                 aggregate,
@@ -204,14 +214,14 @@ for name, function in functions:
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
                         near_score_aucs.append(score_auc)
-                        if args.plot:
+                        if not args.dont_plot:
                             plot(score, f'{key}: {second_key} scores {score_auc:.2f}')
 
                 elif key == 'far':
                     auc = calculate_auc(id_aggregate, aggregate)
                     far_aucs.append(auc)
 
-                    if args.plot:
+                    if not args.dont_plot:
                         if args.auc:
                             plot(
                                 aggregate,
@@ -228,22 +238,23 @@ for name, function in functions:
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
                         far_score_aucs.append(score_auc)
-                        if args.plot:
+                        if not args.dont_plot:
                             plot(score, f'{key}: {second_key} scores {score_auc:.2f}')
 
     near_auc = np.array(near_aucs).mean()
     far_auc = np.array(far_aucs).mean()
 
-    if not args.plot:
+    if args.dont_plot:
+        spaces = 9 - len(name)
         if args.show_scores:
             near_auc_scores = np.array(near_score_aucs).mean()
             far_auc_scores = np.array(far_score_aucs).mean()
             if bogo:
                 print(
-                    f'Max Logit: Near-AUC {near_auc_scores:.2f}, Far-AUC {far_auc_scores:.2f}'
+                    f'Max Logit: Near-AUC {near_auc_scores:.3f}   Far-AUC {far_auc_scores:.3f}\n'
                 )
                 bogo = False
-        print(f'{name}: Near-AUC {near_auc:.2f}, Far-AUC {far_auc:.2f}')
+        print(f'{name}:{" "*spaces} Near-AUC {near_auc:.3f}   Far-AUC {far_auc:.3f}')
         continue
 
     if not args.pgf:

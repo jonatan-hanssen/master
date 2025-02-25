@@ -21,42 +21,85 @@ from utils import (
     overlay_saliency,
     get_network,
     get_saliency_generator,
-    fontsize,
+    set_fontsize,
 )
+import matplotlib
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
-parser.add_argument('--id', '-i', type=str, default='ImageWoof')
-parser.add_argument('--near', '-n', type=str, default='Stanford Dogs')
-parser.add_argument('--far', '-f', type=str, default='Places365')
 parser.add_argument('--fontsize', '-s', type=int, default=22)
+parser.add_argument('--num_images', '-n', type=int, default=3)
+parser.add_argument('--skips', type=int, default=0)
+parser.add_argument('--pgf', action=argparse.BooleanOptionalAction, default=False)
 
 args = parser.parse_args(sys.argv[1:])
 
-fontsize(args.fontsize)
+if args.pgf:
+    matplotlib.use('pgf')
+    matplotlib.rcParams.update(
+        {
+            'pgf.texsystem': 'pdflatex',
+            'font.family': 'serif',
+            'text.usetex': True,
+            'pgf.rcfonts': False,
+        }
+    )
 
-id_name = args.dataset
+# set_fontsize(args.fontsize)
 
-dataloaders = get_dataloaders(id_name, batch_size=8, full=False, shuffle=True)
+dataloaders = get_dataloaders(
+    args.dataset, batch_size=args.num_images, full=True, shuffle=False
+)
 
-while True:
-    id_images = next(dataloaders['id'][0])['data']
-    near_images = next(dataloaders['near'][0])['data']
-    far_images = next(dataloaders['far'][0])['data']
+keypairs = list()
 
-    cols = 5
+for key in dataloaders:
+    for second_key in dataloaders[key]:
+        keypairs.append((key, second_key))
 
-    fig, axes = plt.subplots(nrows=3, ncols=cols)
+print(keypairs)
 
-    for i, images in enumerate([id_images, near_images, far_images]):
-        for j in range(cols):
-            ax = axes[i][j]
-            display_pytorch_image(images[j], ax=ax)
+rows = len(keypairs)
+cols = args.num_images
+print(rows)
 
-    axes[0][cols // 2].set_title(f'ID: {args.id}')
-    axes[1][cols // 2].set_title(f'Near-OOD: {args.near}')
-    axes[2][cols // 2].set_title(f'Far-OOD: {args.far}')
 
-    plt.tight_layout()
+fig, axes = plt.subplots(nrows=len(keypairs), ncols=args.num_images)
+
+
+for i, keypair in enumerate(keypairs):
+    key, second_key = keypair
+
+    iterator = iter(dataloaders[key][second_key])
+
+    for _ in range(args.skips):
+        next(iterator)
+
+    images = next(iterator)['data']
+    for j in range(cols):
+        ax = axes[i][j]
+        display_pytorch_image(images[j], ax=ax)
+        if args.pgf:
+            file_path = (
+                f'../master/figure/{args.dataset}_examples/image-img{i * cols + j}.png'
+            )
+            display_pytorch_image(images[j], save_path=file_path)
+
+    Key, Second_key = key.capitalize(), second_key.capitalize()
+
+    if key == 'near' or key == 'far':
+        axes[i][cols // 2].set_title(f'{Key}-OOD: {Second_key}')
+    else:
+        axes[i][cols // 2].set_title(f'{Key}: {Second_key}')
+
+plt.tight_layout()
+
+if args.pgf:
+    exit()
+    directory = f'../master/figure/{args.dataset}_examples'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    plt.savefig(f'{directory}/image.pgf')
+else:
     plt.show()

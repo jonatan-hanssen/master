@@ -18,7 +18,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
+parser.add_argument('--opacity', type=float, default=1.6)
 parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument('--shuffle', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--pgf', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument('--ood', '-o', type=str, default='near')
@@ -54,7 +56,7 @@ id_name = args.dataset
 device = 'cuda'
 
 dataloaders = get_dataloaders(
-    id_name, batch_size=args.batch_size, full=False, shuffle=True
+    id_name, batch_size=args.batch_size, full=False, shuffle=args.shuffle
 )
 labels = get_labels(id_name)
 
@@ -88,7 +90,7 @@ while True:
 
     normalize = args.normalize
     interpolation = args.interpolation
-    opacity = 1.6
+    opacity = args.opacity
 
     for i in range(args.batch_size):
         plt.subplot(4, args.batch_size, i * 2 + 1)
@@ -96,9 +98,9 @@ while True:
         display_pytorch_image(id_images[i])
         plt.subplot(4, args.batch_size, i * 2 + 2)
         if labels is not None:
-            plt.title(f'{labels[id_labels[i]]}, {torch.mean(id_saliencies[i]):.3f}')
+            plt.title(f'{labels[id_labels[i]]}, {torch.std(id_saliencies[i]):.3f}')
         else:
-            plt.title(f'{torch.mean(id_saliencies[i]):.3f}')
+            plt.title(f'{torch.std(id_saliencies[i]):.3f}')
         overlay_saliency(
             id_images[i],
             id_saliencies[i],
@@ -113,9 +115,9 @@ while True:
         display_pytorch_image(ood_images[i])
         plt.subplot(4, args.batch_size, i * 2 + args.batch_size * 2 + 2)
         if labels is not None:
-            plt.title(f'{labels[ood_labels[i]]}, {torch.mean(ood_saliencies[i]):.3f}')
+            plt.title(f'{labels[ood_labels[i]]}, {torch.std(ood_saliencies[i]):.3f}')
         else:
-            plt.title(f'{torch.mean(ood_saliencies[i]):.3f}')
+            plt.title(f'{torch.std(ood_saliencies[i]):.3f}')
         overlay_saliency(
             ood_images[i],
             ood_saliencies[i],
