@@ -152,7 +152,7 @@ coordinate(-front-bottom-right) -- cycle;
 
 \uiomasterfp[dept={Department of Informatics},
 program={Robotics and Intelligent Systems},
-supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette}, image={/home/jona/cat.jpg},
+supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette}, image={/home/jona/.config/zsh/cat.jpg},
 long]
 
 \frontmatter{}
@@ -176,6 +176,7 @@ Here comes the abstract in a different language.
     \acro  {gradcam} [GradCAM] {Gradient Class Activation Mapping}
     \acro  {gap}   [GAP]   {Global Average Pooling}
     \acro  {msp}   [MSP]   {Maximum Softmax Probability}
+    \acro  {lime}   [LIME]   {Local Interpretable Model-Agnostic Explanations}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
 
@@ -688,7 +689,7 @@ With these possibilities defined, we can begin to gain a clearer picture of the 
 
 \noindent Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} detection setting, a model which flags many ID samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
 
-Recall is the share of actual positive samples that were predicted positive. Recall tells us how many of positive samples we missed. In and \ac{odd} detection context, a model which lets many \ac{ood} samples slip by undetected will have a low recall score.
+Recall is the share of actual positive samples that were predicted positive. Recall tells us how many of positive samples we missed. In and \ac{ood} detection context, a model which lets many \ac{ood} samples slip by undetected will have a low recall score.
 
 Precision and recall are often used together because evaluate the model in different ways that complement each other. If a model has both high precision and high recall, it does not erroneously flag many negative classes as positive, nor does it miss many positive classes.
 
@@ -776,15 +777,9 @@ The following section goes through several specific \ac{xai} methods. This serve
 \\
 
 
-\subsubsection{Shapley values}
-
-Shapley values are values that are basically Shapley.
-
-
-
 \subsubsection{Local Interpretable Model-Agnostic Explanations (LIME)}
 
-LIME \cite{lime} is built on the idea that while the decision function of a large neural network (or any other large model) might be far too complex to easily interpret, it can most likely be approximated quite well by a simpler function, as long as we only look at the feature space around a single data point. For example, we could approximate a large feed forward neural network with a simple linear regression model, which can be intrinsically explained due to its low complexity.
+\ac{lime} \cite{lime} is built on the idea that while the decision function of a large neural network (or any other large model) might be far too complex to easily interpret, it can most likely be approximated quite well by a simpler function, as long as we only look at the feature space around a single data point. For example, we could approximate a large feed forward neural network with a simple linear regression model, which can be intrinsically explained due to its low complexity.
 
 To create a locally interpretable model, we need a neighbourhood of data points around our point of interest. To do this, we can sample a number of points from our dataset and weigh them by their distance to our original point. This sampling can be done in many ways, for example by calculating a mean and variance for each feature and sampling from a normal distribution. For image data, we can create new points similar to the image by masking out different regions of the image \cite{molnar}. The distance measure depends on the type of data we are dealing with. Regardless, the distance values are passed through a smoothing kernel which can be tuned to adjust the size of the "neighbourhood".
 
@@ -869,6 +864,8 @@ Here, $c$ represents the index of the class we are interested in, $k$ the index 
 Thus, \ac{gradcam} improves upon \ac{cam} by making the method less model dependent. However, the explanations are still the same low resolution, which may not be ideal in all cases.
 \\
 
+\subsubsection{Integrated Gradients}
+
 
 \subsubsection{Layer-Wise Relevance Propagation (LRP)}
 
@@ -889,7 +886,9 @@ To distribute relevance between the nodes in a way which obeys the constraints d
 
 Occlusion methods are a family of post-hoc model independent \ac{xai} methods. They function by masking different parts of the image and inspecting the change in output score. If an area leads to a large drop in softmax score for the predicted class when masked, this area must have been important for the network when making the prediction. The mask can be as simple as replacing all masked pixels with a single color, such as gray \cite{occlusion}, or they could use more advanced inpainting methods using generative models, for example by replacing a masked tumor with generated healthy tissue. 
 
-Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image.
+Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image. Figure \ref{fig:occlusion} shows the process visually.
+
+% TODO: Make a picture
 
 \subsection{\ac{xai} methods adapted to images: Saliency maps}
 
@@ -897,7 +896,7 @@ Before delving into specific \ac{xai} methods, I will take some time to explain 
 
 Firstly, many methods which are designed for data tabular data (which have may have 10-20 features at most) are far too slow when the number of features may be over a hundred thousand. Methods such as Lime, Occlusion or Shapley fall into this category, as they permute the input at a rate which scales with the number of inputs.
 
-The solution to this is to segment the image i
+The solution to this is to segment the image into larger regions which
 
 Secondly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Instead we may be interested in how important pixels are relative to each other, or we may not be interested singular pixels at all.
 
@@ -1423,8 +1422,38 @@ OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Reco
 
 \subsubsection{CIFAR10}
 
-CIFAR10 \cite{cifar} is a 10-class dataset for general object recognition \cite{openood}. This dataset is commonly used in \ac{ai} research \cite{pouyanfar2018survey}. Each image is $32 \times 32$, and there are 50 000 training images and 10 000 test images. The ten classes are as follows: airplanes, cars, birds, cats, deer, dogs, frogs, horses, ships, and trucks. OpenOOD presents a series of Near-\ac{ood} and Far-\ac{ood} datasets which are used in conjunction with this dataset. A sample of images from CIFAR10 and the corresponding \ac{ood} datasets are shown in figure \ref{fig:cifar10}.
+CIFAR10 \cite{cifar} is a 10-class dataset for general object recognition \cite{openood}. This dataset is commonly used in \ac{ai} research \cite{pouyanfar2018survey}. Each image is $32 \times 32$, and there are 50 000 training images and 10 000 test images. The ten classes are as follows: airplanes, cars, birds, cats, deer, dogs, frogs, horses, ships, and trucks. OpenOOD presents a series of Near-\ac{ood} and Far-\ac{ood} datasets which are used in conjunction with this dataset for evaluation. Table \ref{table:cifar10} presents a short description of each dataset and the number of samples.
 
+\begin{table}
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+    \hline
+    Dataset & Size & Description \\
+    \hline
+    \rowcolor{id!50}
+    CIFAR10 & 10 000 & General objects \\ 
+    \hline
+    \rowcolor{near!50}
+    CIFAR100 & 10 000 & General objects from same collection as CIFAR10 \\ 
+    \rowcolor{near!50}
+    TinyImageNet & 10 000 & General objects \\ 
+    \hline
+    \rowcolor{far!50}
+    MNIST & 10 000 & Handwritten digits from 0 to 9 \\ 
+    \rowcolor{far!50}
+    SVHN & 10 000 & Street view house numbers \\ 
+    \rowcolor{far!50}
+    Texture & 10 000 & Street view house numbers \\ 
+    \rowcolor{far!50}
+    Places365 & 10 000 & Places, scenes, locations \\ 
+    \hline
+    \end{tabular}
+    \caption{Hello}
+    \label{table:cifar10}
+\end{center}
+\end{table}
+
+In addition, a sample of images from CIFAR10 and the corresponding \ac{ood} datasets are shown in figure \ref{fig:cifar10}.
 
 \begin{figure}[H]
     \begin{center}
@@ -1479,36 +1508,7 @@ CIFAR10 \cite{cifar} is a 10-class dataset for general object recognition \cite{
     \end{center}
 \end{figure}
 
-In addition, table \ref{table:cifar10} shows a short description of each dataset.
 
-\begin{table}
-\begin{center}
-\begin{tabular}{ |c|c|c| } 
-    \hline
-    Dataset & Size & Description \\
-    \hline
-    \rowcolor{id!50}
-    CIFAR10 & 10 000 & General objects \\ 
-    \hline
-    \rowcolor{near!50}
-    CIFAR100 & 10 000 & General objects \\ 
-    \rowcolor{near!50}
-    TinyImageNet & 10 000 & General objects \\ 
-    \hline
-    \rowcolor{far!50}
-    MNIST & 10 000 & Handwritten digits from 0 to 9 \\ 
-    \rowcolor{far!50}
-    SVHN & 10 000 & Street view house numbers \\ 
-    \rowcolor{far!50}
-    Texture & 10 000 & Street view house numbers \\ 
-    \rowcolor{far!50}
-    Places365 & 10 000 & Places, scenes, locations \\ 
-    \hline
-    \end{tabular}
-    \caption{Hello}
-    \label{table:cifar10}
-\end{center}
-\end{table}
 
 \subsubsection{ImageNet200}
 
@@ -1583,7 +1583,7 @@ In addition, table \ref{table:cifar10} shows a short description of each dataset
     \rowcolor{far!50}
     Texture & 10 000 & Street view house numbers \\ 
     \rowcolor{far!50}
-    OpenImage-O & 10 000 & Street view house numbers \\ 
+    OpenImage-O & 10 000 & General objects \\ 
     \hline
     \end{tabular}
     \caption{Hello}
@@ -1607,14 +1607,29 @@ However, given that a large part of the \ac{xai} methods have been developed in 
 
 \section{\ac{xai} Saliency Methods}
 
+In the following section, I will describe the saliency methods I have chosen to use.
+
+\subsection{\ac{gradcam}}
+
+\ac{gradcam} is a natural choice of \ac{xai} method, given that is a seminal work which has inspired a large number of other methods \cite{gradcamplusplus, xgradcam, hirescam}.
+
+% TODO: move background here?
+
+\subsection{\ac{lime}}
+
+
+\subsection{Occlusion}
+
 
 \section{Evaluation}
 
 \subsection{Metrics}
 
-\ac{auroc} and \ac{fpr} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr} as a secondary metric.
+\ac{auroc} and \ac{fpr95} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr95} as a secondary metric.
 
-\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative.
+\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr95}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative. In this case, \ac{fpr95} has the following interpretation: When 95\% of \ac{ood} samples are correctly classified as \ac{ood}, what percentage of \ac{id} samples are incorrectly classified as \ac{ood}. In other words, \ac{fpr95} measures the rate of "false alarms" when 95\% of actual anomalies are caught.
+
+For both of these metrics, the calculations are done on each \ac{ood} dataset individually, as opposed to comparing all \ac{ood} samples to the \ac{id} dataset. Afterwards, the metrics of all Near-\ac{ood} and Far-\ac{ood} are averaged, giving us two general performance metrics which tell us how a method functions on either Near-\ac{ood} or Far-\ac{ood}.
 
 \subsection{Development and Test Sets}
 
@@ -1633,7 +1648,6 @@ This section goes over the implementation details of my thesis.
 \subsection{Basic hardware and software}
 
 Python is the most popular programming language for data science and \ac{ml} research \cite{nguyen2019machine}, and as such it is my language of choice as well. Key libraries that I have used are {\it PyTorch}, {\it SciKitLearn}, {\it Matplotlib}, {\it NumPy} and others. Below is a table of the key libraries and their version numbers.
-
 
 \begin{center}
     \begin{tabular}{ |c|c| } 
@@ -1698,18 +1712,18 @@ This code will calculate the \ac{ood} scores for all data samples in both the \a
            FPR@95  AUROC  AUPR_IN  AUPR_OUT   ACC
 cifar100    61.36  86.51    84.20     85.05 95.56
 tin         42.02  88.88    88.81     85.57 95.56
-nearood     51.69  87.69    86.51     85.31 95.56
+nearood     51.69  87.69    86.51     85.31 95.56 # average of two above
 mnist       19.38  93.86    79.72     98.89 95.56
 svhn        24.78  91.38    84.26     95.49 95.56
 texture     43.31  88.68    91.01     80.97 95.56
 places365   41.62  89.21    68.49     96.28 95.56
-farood      32.27  90.78    80.87     92.91 95.56
+farood      32.27  90.78    80.87     92.91 95.56 # average of four above
 \end{lstlisting}
 
 As we can see, OpenOOD allows for very easy evaluation of new methods. Furthermore, it allows for easy comparisons between methods, one of the stated goals of the framework \cite{openood}. This makes it an ideal framework for this thesis.
 
 
-\subsubsection{Modifications to the OpenOOD}
+\subsubsection{Modifications to OpenOOD}
 
 As explained previously, continually testing new methods on the same datasets will bias the final results. As of the writing of this thesis, there are no functionalities in OpenOOD which allow for creating development or test sets, all evaluations are done with entire datasets. For my purposes, which involve continuous exploration of different methods and careful inspection of the datasets, this is inadequate. Thus, I have made modifications to the \texttt{Evaluator} class such that it takes a \texttt{data\_split} parameter during initialization, and have also modified the function \texttt{get\_id\_ood\_dataloader} to accept this parameter and return the correct split accordingly.
 
@@ -1718,8 +1732,11 @@ Furthermore, there is no functionality for sampling from the datasets as opposed
 Listing \ref{code:split} shows the relevant snippet of code from  \texttt{get\_id\_ood\_dataloader} which enables both dataset splitting and bootstrapping:
 
 \begin{lstlisting}[style=mystyle, caption={Code snippet from \texttt{get\_id\_ood\_dataloader} which contains the modifications necessary for splitting and bootstrapping the datasets}, captionpos=b, label={code:split}]
+# This code is run once for the ID dataset and once for all OOD datasets
 sampler = None
 if data_split is not None:
+    # Always seed with the same value to ensure
+    # development and test sets always are the same
     generator = Generator().manual_seed(0)
     val_set, test_set = random_split(
         dataset, [0.5, 0.5], generator=generator
@@ -1732,18 +1749,113 @@ if data_split is not None:
     else:
         raise ValueError("data_split only accepts 'val' or 'test'")
 
+    # Create a sampler if bootstrap seed is set, otherwise it is None
     if bootstrap_seed is not None:
+        # Variable seed allows for new randomly sampled 
+        # datasets each time
         generator = Generator().manual_seed(bootstrap_seed)
         sampler = RandomSampler(
             dataset, replacement=True, generator=generator)
+# If sampler=None, this just makes a dataloader, if sampler 
+# is a RandomSampler the dataloader samples with replacement
+# from the original dataset
 dataloader = DataLoader(dataset, sampler=sampler, **loader_kwargs)
 \end{lstlisting}
 
 \subsection{Implementation of Saliency Methods}
 
-This section details my implementations of the saliency methods described in section method
+There are many libraries which implement \ac{xai} methods \cite{lime, captum, jacobgilpytorchcam}. When these implementations were suitable for my purposes, I used them. However, given I am not using these explanations for their original purpose (elucidating why a model came to a specific decision), there are many cases where the current implementations are inadequate. The two main problems are lack of access to the raw saliency values and slow speeds.
+
+\subsubsection{\ac{gradcam}}
+
+\ac{gradcam} has been implemented from scratch in \texttt{PyTorch}. There are several libraries which implement \ac{gradcam} \cite{jacobgilpytorchcam, captum}. However, given that these libraries are concerned with simply producing heatmaps that users can inspect, they do not output the raw saliency values, but upscale the saliencies to match the input image dimensions. As explained in \ref{section:gradcam}, \ac{gradcam} uses the final feature map to generate an explanation, which usually has a spatial dimension which is far smaller than the input image (e.g. $7 \times 7$ vs $224 \times 224$). When overlaying these values on the input image, it is common to use bilinear interpolation \cite{jacobgilpytorchcam}, which interpolates all $224 \times 224$ positions based on the original $7 \times 7$ saliency map. For visualizations, this is reasonable. When attempting to use this data to separate \ac{id} and \ac{ood} data however, this is undesirable. Bilinear interpolation introduces new values, which changes many statistical qualities of the saliency values. This may reduce the separability of different samples. Furthermore, given that these new values do not add any new information, it is inefficient to involve these upscaled saliency maps in any computational operation.
+
+Although it is relatively simple to modify the source code of these libraries to remove the interpolation, \ac{gradcam} is not very difficult to implement, and as such I have simply used my own implementation. Listing \ref{code:gradcam} shows the Python code.
 
 
+\begin{lstlisting}[style=mystyle, caption={Source code listing for my \ac{gradcam} implementation}, captionpos=b, label={code:gradcam}]
+class GradCAM(torch.nn.Module):
+    def __init__(self, model, target_layer):
+        super().__init__()
+        self.model = model
+        self.target_layer = target_layer
+        self.grads = None
+        self.acts = None
+
+        self.handles = list()
+        self.handles.append(
+            self.target_layer.register_full_backward_hook(self.grad_hook)
+        )
+        self.handles.append(
+            self.target_layer.register_forward_hook(self.act_hook)
+        )
+
+    def __del__(self):
+        for handle in self.handles:
+            handle.remove()
+
+    def grad_hook(self, module, grad_input, grad_output):
+        self.grads = grad_output[0]
+
+    def act_hook(self, module, input, output):
+        self.acts = output
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+
+        # self.act_hook is called here
+        preds = self.model(x)
+
+        self.model.zero_grad(set_to_none=True)
+
+        idxs = torch.argmax(preds, dim=1)
+
+        # backward pass, this gets gradients for each prediction
+        # self.grad_hook is called here
+        torch.sum(preds[torch.arange(batch_size), idxs]).backward()
+
+        # average last two dimensions so that we have Batch x Channel
+        average_gradients = self.grads.mean(-1).mean(-1)
+
+        # make shape Batch x Channel x 1 x 1 to allow for broadcasting
+        average_gradients = average_gradients.unsqueeze(-1).unsqueeze(-1)
+
+        saliency = self.acts * average_gradients
+        saliency = torch.sum(saliency, dim=1)
+        # remove negative saliencies in accordance with original paper
+        saliency = torch.nn.functional.relu(saliency)
+
+        return saliency
+\end{lstlisting}
+
+
+\subsubsection{\ac{lime}}
+
+\ac{lime} has an implementation for Python, written by the original authors \cite{lime}. However, this implementation is not suitable for my purposes. The main issue is that it is far too slow, being implemented with \texttt{NumPy} which restricts the computation to the CPU. Furthermore, \cite{lime} also returns full size heatmaps, although the actual number of saliency values used to create this heatmap is far smaller than the number of pixels in the image.
+
+Thus I have implemented \ac{lime} myself, using PyTorch whenever possible.
+
+\subsubsection{Occlusion}
+
+Captum \cite{captum} is a library of \ac{xai} methods implemented in PyTorch, and this library contains a suitable implementation of occlusion. As explained previously, occlusion occludes parts of the image and compares the prediction scores before and after the occlusion. By occluding all parts of the image, we can get a saliency value for all positions. Occlusion is usually done using a sliding window, similar to a convolutional kernel, which is slid over all parts of the image. Such a window is rarely a single pixel, because it is often not interesting to see how a single pixel contributes to a prediction, but rather a larger region. What this means is that the final heatmap, although it is the same size as the input image, actually contains far fewer unique values. To avoid performing computations on thousands of repeated values, I reduce the size of the heatmap by sampling one pixel from each of the positions the sliding window has been applied, which can be efficiently done using a $1 \times 1$ MaxPooling kernel in PyTorch. Listing \ref{code:occlusion} shows the code listing for this implementation.
+
+\begin{lstlisting}[style=mystyle, caption={Source code listing for the Captum occlusion implementation}, captionpos=b, label={code:occlusion}]
+def occlusion(data, model, block_size):
+    targets = torch.argmax(model(data), dim=-1)
+    lrp = captum.attr.Occlusion(model)
+
+    attributions = lrp.attribute(
+        data,
+        target=targets,
+        sliding_window_shapes=(3, block_size, block_size),
+        strides=(3, block_size, block_size),
+    )
+
+    attributions = attributions.sum(dim=1)
+    attributions = torch.nn.MaxPool2d(1, stride=block_size)(attributions)
+
+    return attributions
+\end{lstlisting}
 
 
 
@@ -1754,6 +1866,34 @@ This chapter contains my findings. In the first section, I show how different fo
 In the second section, perform \ac{ood} detection on the test sets, and report the \ac{auroc} and \ac{fpr95} for each method on each dataset. In addition, I perform statistical analyses to investigate whether my \ac{xai} \ac{ood} detection methods outperform baseline methods.
 
 \section{Data Analysis of Explanations}
+
+This section will detail how different \ac{xai} methods generate explanations which differ
+
+\subsection{\ac{gradcam}}
+
+\subsubsection{CIFAR10}
+
+\subsubsection{ImageNet200}
+
+\subsubsection{HyperKvasir}
+
+\subsection{\ac{lime}}
+
+\subsubsection{CIFAR10}
+
+\subsubsection{ImageNet200}
+
+\subsubsection{HyperKvasir}
+
+\subsection{Occlusion}
+
+\subsubsection{CIFAR10}
+
+\subsubsection{ImageNet200}
+
+\subsubsection{HyperKvasir}
+
+
 
 \begin{figure}
     \label{fig:lime}
@@ -1770,7 +1910,6 @@ In the second section, perform \ac{ood} detection on the test sets, and report t
     \end{center}
     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
 \end{figure}
-
 
 \begin{figure}
     \label{fig:gradcam}
