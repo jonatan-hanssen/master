@@ -12,6 +12,7 @@
 \usepackage{listings}
 \usepackage[table]{xcolor}
 \usepackage{listofitems}
+\usepackage{pgfplots}
 \usepackage{algpseudocode}
 \usepackage{tikzlings}
 \usepackage[backend=biber,style=numeric-comp, sorting=none]{biblatex}
@@ -78,6 +79,29 @@
 
 \makeatother
 
+
+\pgfplotsset{colormap={turbo}{
+   rgb=(0.19,0.07,0.23)
+   rgb=(0.24,0.22,0.58)
+   rgb=(0.27,0.37,0.82)
+   rgb=(0.28,0.50,0.97)
+   rgb=(0.23,0.64,0.99)
+   rgb=(0.14,0.76,0.89)
+   rgb=(0.09,0.87,0.76)
+   rgb=(0.17,0.94,0.62)
+   rgb=(0.36,0.99,0.45)
+   rgb=(0.56,1.00,0.29)
+   rgb=(0.71,0.97,0.21)
+   rgb=(0.84,0.90,0.21)
+   rgb=(0.94,0.80,0.23)
+   rgb=(0.99,0.69,0.21)
+   rgb=(0.99,0.54,0.15)
+   rgb=(0.95,0.38,0.08)
+   rgb=(0.88,0.26,0.04)
+   rgb=(0.78,0.16,0.01)
+   rgb=(0.65,0.08,0.00)
+   rgb=(0.48,0.02,0.01)
+}}
 
 \tikzset{pics/fake box/.style args={% #1=color, #2=x dimension, #3=y dimension, #4=z dimension
 #1 with dimensions #2 and #3 and #4 and #5}{
@@ -177,6 +201,8 @@ Here comes the abstract in a different language.
     \acro  {gap}   [GAP]   {Global Average Pooling}
     \acro  {msp}   [MSP]   {Maximum Softmax Probability}
     \acro  {lime}   [LIME]   {Local Interpretable Model-Agnostic Explanations}
+    \acro  {mls}   [MLS]   {Maximum Logit Score}
+    \acro  {msp}   [MSP]   {Maximum Softmax Probability}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
 
@@ -732,11 +758,11 @@ Below follows a thorough introduction to \ac{xai}, as well as detailed look at s
 
 \subsection{The motivation for Explainable Artificial Intelligence}
 
-Given the impressive performance of \ac{dl} methods, one might be convinced that these models do not need to be explainable or interpretable, and that we instead should just place our faith in the model without knowing exactly how it came to a decision. However, as \cite{doshivelez} points out, "a single metric, such as classification accuracy, is an incomplete description of most real-world tasks". Small differences between the data distribution when the test data was collected and when the model is deployed may have a large impact on the model's performance, or the model may have learned artifacts or specificities in the training dataset which were also present in the test dataset, leading to a false belief that the model has gained generalizable knowledge when it has not. By using explainable methods, we may reveal these shortcomings.
+Given the impressive performance of \ac{dl} methods, one might be convinced that these models do not need to be explainable or interpretable, and that we instead should just place our faith in the model without knowing exactly how it came to a decision. However, as \cite{doshivelez} points out, "a single metric, such as classification accuracy, is an incomplete description of most real-world tasks". Small differences between the data distribution when the test data was collected and when the model is deployed may have a large impact on the model's performance, or the model may have learned artifacts or specificities in the training dataset which were also present in the test dataset, leading to a false belief that the model has gained generalizable knowledge when it has not. By using explainable methods, we may reveal these shortcomings. In my case, this may also have the secondary effect of separating \ac{id} and \ac{ood} data points.
 
 \ac{xai} is also especially important whenever the model is used in settings where its decisions have a high impact. If a model is used by a hospital for disease detection, both the patient and doctor will probably want to be able to understand why the model has found that a disease is present. For them, high performance on a test set of different cases may not be enough. As \cite{xaisurvey} states, "for the regulated healthcare domain, it is utmost important to comprehend, justify, and explain the AI model predictions for a wider adoption of automated diagnosis". In other high impact areas, such as autonomous driving, the impact of wrong decisions by the network can have fatal consequences, and customers and regulators will want to be absolutely sure that the models used are robust and base their decisions on relevant factors as opposed to quirks in the training data. Furthermore, the right to an explanation of an automated decision affecting a person is included in the EU's General Data Protection Regulation, which states that "In any case, such processing should be subject to suitable safeguards, which should include specific information to the data subject and the right [...] to obtain an explanation of the decision reached after such assessment and to challenge the decision." \cite{gdpr}.
 
-\subsection{The Properties of an Explanation}
+% \subsection{The Properties of an Explanation}
 
 \subsection{Taxonomy of Explainable Artificial Intelligence}
 
@@ -765,18 +791,53 @@ Global explanations provide general relationships between the input features and
 
 Local explanations do not describe general trends, but focus only on a single data point. These methods give insight into how the features influenced the prediction of a single data point, but these relationships may not hold for other data points, and as such these methods do not give the same insight into the general behaviour of the model.
 
-\subsection{Benchmarking}
+% \subsection{Benchmarking}
+%
+% In general, it is difficult to evaluate an AI explanations, and there is no clear consensus in the field as to what metrics should be the standard \cite{molnar, evalxai}.
 
-In general, it is difficult to evaluate an AI explanations, and there is no clear consensus in the field as to what metrics should be the standard \cite{molnar, evalxai}.
-
-\subsection{\ac{xai} methods adapted to images: Saliency maps}
+\subsection{\ac{xai} methods adapted to images: Saliency maps and segmentation}
 
 
-As explained in section \ref{section:scope}, the field of \ac{ood} detection is primarily focused on image data, and as such this is the focus of this thesis as well. Thus, before delving into specific \ac{xai} methods, it is beneficial to elaborate on how \ac{xai} methods are adapted to images. When explaining tabular data made up of categorical and numerical values, it is often common to explain each feature by associating it with some change in the output prediction. For example, one might say that increasing the number of rooms in a house by one increases the predicted sale price by 30 000 NOK, or that the absence of a balcony decreases it by 25 000 NOK. But, given that images are made up of tens or hundreds of thousands of features (pixels), considering each feature individually poses a couple of problems.
+As explained in section \ref{section:scope}, the field of \ac{ood} detection is primarily focused on image data, and as such this is the focus of this thesis as well. Thus, before delving into specific \ac{xai} methods, it is beneficial to elaborate on how \ac{xai} methods are adapted to images. When explaining tabular data made up of categorical and numerical values, it is often common to explain each feature by associating it with some change in the output prediction. For example, one might say that increasing the number of rooms in a house by one increases the predicted sale price by 30 000 NOK, or that the absence of a balcony decreases it by 25 000 NOK. But, given that images are made up of tens or hundreds of thousands of features (pixels), such an approach may not be suitable.
 
-Firstly, many methods which are designed for data tabular data (which have may have 10-20 features) are far too slow when the number of features may be over a hundred thousand. Methods such as \ac{lime}, Occlusion or Shapley fall into this category, as they permute the input at a rate which scales with the number of inputs.
+Firstly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Furthermore, inspecting the contribution of each individual pixel, like one might do for tabular data, is not even realistically feasible, due the overwhelming number of features. Given that our input is in the form of an image, which is best understood visually, as opposed to numerically, it is then natural to instead present the explanation in the same way.
 
-A solution to this is to segment the image into larger regions, which are treated as one. As opposed to asking "how does the prediction change if we remove this pixel from the image", we instead ask "how does the prediction change if we remove this {\it region} from the image". All pixels in a region are then awarded the same amount of importance. This drastically reduces the dimensionality of the problem, and allows us to use a much larger range of methods.
+These visual explanations take the form of saliency maps, as shown in figure \ref{fig:saliency_ex}. Here, we display the saliency values of all pixels in a heatmap, as opposed to numerically. Instead of considering the absolute values, we instead display the saliencies in relation to each other, such that the most important and least important pixel has colors on opposite sides of the colormap. In this way, it is easy and intuitive to see where the important regions of the image are, and we do not need to consider the absolute values of each pixel.
+
+\begin{figure}[H]
+    \begin{center}
+
+    \begin{tikzpicture}[
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
+    ]
+
+    \node[SIR, label={[align=center]\textbf{Input image}}] (id1) {\includegraphics[width=0.25\textwidth, height=0.25\textwidth]{figure/saliency_example/input.png}};
+    \node[SIR, label={[align=center]\textbf{Saliency map}}] (id2) [right=of id1] {\includegraphics[width=0.25\textwidth, height=0.25\textwidth]{figure/saliency_example/saliency.png}};
+
+
+    \begin{scope}[shift={($(id2.east)+(0.1cm,0.25\textwidth / 2)$)}]
+        \pgfplotscolorbardrawstandalone[
+        colormap name=turbo,
+        point meta min=0,
+        point meta max=1,
+        colorbar style={
+            height=0.25\textwidth, % Match the height of the images
+            width=0.4cm, % Desired width of the colorbar
+            ytick={0, 0.5, 1},
+            % yticklabels={Low, Medium, High},
+        }]
+    \end{scope}
+
+    \end{tikzpicture}
+
+    \end{center}
+    \caption[Saliency Example]{Figure showing an input image and the corresponding saliency map, generated by an \ac{xai} algorithm which shows the important pixels for the predicted class (Rhodesian Ridgeback). The colorbar and heatmap show the relative saliency for all pixels, with 0 being the least important pixel and 1 being the most important pixel}
+    \label{fig:saliency_ex}
+\end{figure}
+
+Secondly, many methods which are designed for data tabular data (which have may have 10-20 features) are far too slow when the number of features may be over a hundred thousand. Methods such as \ac{lime}, Occlusion or Shapley fall into this category, as they permute the input at a rate which scales with the number of inputs.
+
+A solution to this is to segment the image into larger regions, which are treated as one. As opposed to asking "how does the prediction change if we change this pixel", we instead ask "how does the prediction change if we change this {\it region}". All pixels in a region are then awarded the same amount of importance. This drastically reduces the dimensionality of the problem, and allows us to use a much larger range of methods.
 
 Regions of pixels can be created in different ways. The simplest option is consider a window of a specific height and width, and slide this window over the image with a specific stride. By adjusting the stride and size, the number of dimensions can be adjusted. The benefit of such a simple approach is that the segmentation itself introduces no extra computation. However, a substantial downside is that each region can contain completely unrelated objects, because the regions are created without considering the underlying image. For example, if a 60 by 60 pixel region contains in its lower right corner a part of a dog, occluding this region could lead to a large change in confidence and thus high importance. However, it is not just the lower right corner that is awarded high importance, but the entire region, which may contain other objects or parts of the background which are not actually important.
 
@@ -786,12 +847,25 @@ By using more sophisticated segmentation methods, we can avoid this problem. Met
     \begin{center}
 
     \begin{tikzpicture}[
-    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
     ]
 
     \node[SIR, label={[align=center]\textbf{Input image}}] (id1) {\includegraphics[width=0.25\textwidth, height=0.25\textwidth]{figure/segmentation_comparison/lime_rectangular-img0.png}};
     \node[SIR, label={[align=center]\textbf{\ac{lime} applied to}\\\textbf{rectangular regions}}] (id2) [right=of id1] {\includegraphics[width=0.25\textwidth, height=0.25\textwidth]{figure/segmentation_comparison/lime_rectangular-img1.png}};
     \node[SIR, label={[align=center]\textbf{\ac{lime} applied to}\\\textbf{superpixel regions}}] (id3) [right=of id2] {\includegraphics[width=0.25\textwidth, height=0.25\textwidth]{figure/segmentation_comparison/lime_slic-img1.png}};
+
+    \begin{scope}[shift={($(id3.east)+(0.1cm,0.25\textwidth / 2)$)}]
+        \pgfplotscolorbardrawstandalone[
+        colormap name=turbo,
+        point meta min=0,
+        point meta max=1,
+        colorbar style={
+            height=0.25\textwidth, % Match the height of the images
+            width=0.4cm, % Desired width of the colorbar
+            ytick={0, 0.5, 1},
+            % yticklabels={Low, Medium, High},
+        }]
+    \end{scope}
 
 
     \end{tikzpicture}
@@ -801,26 +875,28 @@ By using more sophisticated segmentation methods, we can avoid this problem. Met
     \label{fig:segmentationcomp}
 \end{figure}
 
-Secondly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Instead we may be interested in how important pixels are relative to each other, or we may not be interested singular pixels at all.
 
-
-
-With these limitations in mind,
 
 \subsection{Specific methods}
 
 
-The following section goes through several specific \ac{xai} methods. This serves two purposes: Firstly, it aids the first objective mentioned in section \ref{section:problemstatement}, by explaining how commonly used \ac{xai} methods function in practice, and by elucidating exactly how one is able to go from gradients, counterfactuals and other model outputs to human interpretable explanations. Secondly, this section also covers the specific methods that will be analyzed and evaluated as part of the rest of the objectives. By thoroughly detailing the functions of these methods in this chapter, it becomes easier to analyse and explain the results in chapter \ref{chapter:experiments}
+The following section goes through several specific \ac{xai} methods. This serves two purposes: Firstly, by explaining how commonly used \ac{xai} methods function in more detail, it is easier to understand how \ac{xai} methods work in practice. Secondly, this section also covers the specific methods that will be analyzed and evaluated as part of the rest of the thesis. By thoroughly detailing the functions of these methods in this chapter, it becomes easier to analyse and explain the proposed methods in chapter \ref{chapter:methodology} and the results in chapter \ref{chapter:experiments}.
 \\
 
 
 \subsubsection{Local Interpretable Model-Agnostic Explanations (LIME)}
 
-\ac{lime} \cite{lime} is built on the idea that while the decision function of a large neural network (or any other large model) might be far too complex to easily interpret, it can most likely be approximated quite well by a simpler function, as long as we only look at the feature space around a single data point. For example, we could approximate a large feed forward neural network with a simple linear regression model, which can be intrinsically explained due to its low complexity.
+\ac{lime} \cite{lime} is a post-hoc, model independent \ac{xai} method. The method is built on the idea that while the decision function of a large neural network (or any other large model) might be far too complex to easily interpret, it can most likely be approximated quite well by a simpler function, as long as we only look at the feature space around a single data point. For example, we could approximate a large feed forward neural network with a simple linear regression model, which can be intrinsically explained due to its low complexity.
 
 To create a locally interpretable model, we need a neighbourhood of data points around our point of interest. To do this, we can sample a number of points from our dataset and weigh them by their distance to our original point. This sampling can be done in many ways, for example by calculating a mean and variance for each feature and sampling from a normal distribution. For image data, we can create new points similar to the image by masking out different regions of the image \cite{molnar}. The distance measure depends on the type of data we are dealing with. Regardless, the distance values are passed through a smoothing kernel which can be tuned to adjust the size of the "neighbourhood".
 
 With these new data points, we can generate new predictions using the original, complex model. Thus, we now have a series of points, each with a weighting based on their distance to our original point, and each with a predicted score from our original model. With such a dataset, we can train a simpler model, which will then approximate the complex model around the point of interest. By inspecting this simple model (for example the learned weights of a linear regression model, or the structure of a decision tree), we can learn approximately how the complex model functions in a region around this single data point.
+
+\subsubsection{Occlusion methods}
+
+Occlusion methods are a family of post-hoc model independent \ac{xai} methods. They function by masking different parts of the image and inspecting the change in output score. If an area leads to a large drop in softmax score for the predicted class when masked, this area must have been important for the network when making the prediction. The mask can be as simple as replacing all masked pixels with a single color, such as gray \cite{occlusion}, or they could use more advanced inpainting methods using generative models, for example by replacing a masked tumor with generated healthy tissue. 
+
+Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image. Figure \ref{fig:occlusion} shows the process visually.
 
 \subsubsection{Class Activation Mapping (CAM)}
 
@@ -905,6 +981,8 @@ Thus, \ac{gradcam} improves upon \ac{cam} by making the method less model depend
 
 Guided backpropagation is another \ac{xai} method which utilizes the gradients of the network with regards to the input to generate an explanation.
 
+\subsubsection{Integrated Gradients}
+
 % \subsubsection{Layer-Wise Relevance Propagation (LRP)}
 %
 % LRP is another \ac{xai} method which generates a visual explanation of the areas of an image which lead to a classification decision. Unlike \ac{cam} and \ac{gradcam} LRP outputs a map which describes the relevance of every single pixel in the input image, and is thus produces a much more fine grained explanation than these other methods. LRP also differs in that \cite{lrp} does not define it as a specific method, but rather as a concept defined by a certain set of constraints which can be satisfied by different implementations depending on the type of model.
@@ -920,11 +998,6 @@ Guided backpropagation is another \ac{xai} method which utilizes the gradients o
 % \\
 
 
-\subsubsection{Occlusion methods}
-
-Occlusion methods are a family of post-hoc model independent \ac{xai} methods. They function by masking different parts of the image and inspecting the change in output score. If an area leads to a large drop in softmax score for the predicted class when masked, this area must have been important for the network when making the prediction. The mask can be as simple as replacing all masked pixels with a single color, such as gray \cite{occlusion}, or they could use more advanced inpainting methods using generative models, for example by replacing a masked tumor with generated healthy tissue. 
-
-Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image. Figure \ref{fig:occlusion} shows the process visually.
 
 % TODO: Make a picture
 
@@ -948,7 +1021,7 @@ The first distinction to make in \ac{ood} detection tasks is whether an \ac{ood}
     \begin{center}
 
     \begin{tikzpicture}[
-    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
     ]
 
     \node[SIR, label={[align=center, above=0.2cm]\textbf{In Distribution}\\\textbf{images}}] (id1) {\includegraphics[width=0.25\textwidth, height=0.25\textwidth]{figure/semanticcovariate/id1.jpg}};
@@ -1309,7 +1382,7 @@ From the absence of any relevant method utilizing \ac{xai} in OpenOOD and from t
 
 In this chapter, I have given a thorough introduction.
 
-\chapter{Methodology}
+\chapter{Methodology} \label{chapter:methodology}
 
 The core of this work is the 
 
@@ -1337,7 +1410,7 @@ To further illustrate this theoretical justification, I present a simple example
     \begin{center}
 
     \begin{tikzpicture}[
-    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
     ]
 
     \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"English Foxhound"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/meansaliency/meansaliency0.png}};
@@ -1361,9 +1434,22 @@ To further illustrate this theoretical justification, I present a simple example
     \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
     \draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
 
+    \begin{scope}[shift={($(oodsal.east)+(0.1cm,0.25\textwidth / 2)$)}]
+        \pgfplotscolorbardrawstandalone[
+        colormap name=turbo,
+        point meta min=0,
+        point meta max=0.345,
+        colorbar style={
+            height=0.25\textwidth, % Match the height of the images
+            width=0.4cm, % Desired width of the colorbar
+            ytick={0, 0.173, 0.345},
+            % yticklabels={Low, Medium, High},
+        }]
+    \end{scope}
+
     \end{tikzpicture}
 
-    \caption[Mean Saliency visual explanation]{Figure showing the functioning of the Aggregate of Saliency \ac{ood} detector, using mean as the aggregation, in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present}
+    \caption[Mean Saliency visual explanation]{Figure showing the functioning of the Aggregate of Saliency \ac{ood} detector, using mean as the aggregation, in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present. The heatmaps here show the maximum value of both saliency maps as dark red, reflecting the lack of normalization}
     \label{fig:meansaliency}
 
     \end{center}
@@ -1379,7 +1465,7 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \begin{center}
 
     \begin{tikzpicture}[
-    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
     ]
 
     \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"Golden Retriever"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/varsaliency/varsaliency0.png}};
@@ -1394,8 +1480,8 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \draw[->, very thick] (idimg.south)  to node[midway, fill=white, align=center] {Generate \ac{xai} heatmap\\of model prediction} (idsal.north);
     \draw[->, very thick] (oodimg.south)  to node[midway, fill=white, align=center] {Generate \ac{xai} heatmap\\of model prediction} (oodsal.north);
 
-    \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of heatmap} (idmean.north);
-    \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of heatmap} (oodmean.north);
+    \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of normalized heatmap} (idmean.north);
+    \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of normalized heatmap} (oodmean.north);
 
     \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
     \node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as \ac{ood}};
@@ -1403,9 +1489,22 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
     \draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
 
+    \begin{scope}[shift={($(oodsal.east)+(0.1cm,0.25\textwidth / 2)$)}]
+        \pgfplotscolorbardrawstandalone[
+        colormap name=turbo,
+        point meta min=0,
+        point meta max=1,
+        colorbar style={
+            height=0.25\textwidth, % Match the height of the images
+            width=0.4cm, % Desired width of the colorbar
+            ytick={0, 0.5, 1},
+            % yticklabels={Low, Medium, High},
+        }]
+    \end{scope}
+
     \end{tikzpicture}
 
-    \caption[Spred of Saliency visual explanation]{Figure showing the functioning of the Spread of Saliency \ac{ood} detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present}
+    \caption[Spred of Saliency visual explanation]{Figure showing the functioning of the Spread of Saliency \ac{ood} detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present. The heatmaps are here based on the normalized values of each saliency map, meaning that magnitude information is ignored}
     \label{fig:varsaliency}
     \end{center}
 \end{figure}
@@ -1421,6 +1520,20 @@ Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
    \end{cases}
 \label{eq:aggregate}
 \end{align}
+
+Given the exploratory nature of this thesis, it is reasonable to try many different forms of aggregations. In the experiments, the following aggregations have been used.
+
+\begin{itemize}
+    \item Mean of saliencies
+    \item Median of saliencies
+    \item Norm of saliencies
+    \item Standard deviation of saliencies
+    \item Standard deviation of normalized saliencies
+    \item GINI of saliencies
+    \item Maximum of saliencies
+    \item Minimum of saliencies
+    \item Range of saliencies (maximum minus minimum)
+\end{itemize}
 
 % Algorithm \ref{algo:meansaliency} shows the pseudo-code for the Mean Saliency \ac{ood} Detector. Like the baseline Maximum Softmax and Logit methods introduced by \cite{oodbaseline} and \cite{mls}, it is very simple:
 %
@@ -1529,7 +1642,7 @@ In addition, a sample of images from CIFAR10 and the corresponding \ac{ood} data
     \begin{center}
 
     \begin{tikzpicture}[
-    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
     ]
 
 
@@ -1586,7 +1699,7 @@ In addition, a sample of images from CIFAR10 and the corresponding \ac{ood} data
     \begin{center}
 
     \begin{tikzpicture}[
-    SIR/.style={rectangle, draw=black!60, thick, minimum size=5mm},
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
     ]
 
 
@@ -1677,19 +1790,21 @@ However, given that a large part of the \ac{xai} methods have been developed in 
 
 \section{\ac{xai} Saliency Methods}
 
-In the following section, I will describe the saliency methods I have chosen to use.
+In the following section, I will describe the saliency methods I have chosen to use, and the specific ways I have used them.
+
+\subsection{\ac{lime}}
+
+As is common when applying \ac{lime} to images, I have used segmentations of the input image to reduce the dimensionality of the input that is fed into the \ac{lime} algorithm. During
+
+\subsection{Occlusion}
 
 \subsection{\ac{gradcam}}
 
 \ac{gradcam} is a natural choice of \ac{xai} method, given that is a seminal work which has inspired a large number of other methods \cite{gradcamplusplus, xgradcam, hirescam}.
 
-% TODO: move background here?
+\subsection{Guided Backpropagation}
 
-\subsection{\ac{lime}}
-
-
-\subsection{Occlusion}
-
+\subsection{Integrated Gradients}
 
 \section{Evaluation}
 
@@ -1697,7 +1812,7 @@ In the following section, I will describe the saliency methods I have chosen to 
 
 \ac{auroc} and \ac{fpr95} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD (\cite{openood}), \ac{auroc} is chosen as the primary metric used to rank methods against each other. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods, while also calculating \ac{fpr95} as a secondary metric.
 
-\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr95}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class), which aligns with the goal of \ac{ood} detection. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative. In this case, \ac{fpr95} has the following interpretation: When 95\% of \ac{ood} samples are correctly classified as \ac{ood}, what percentage of \ac{id} samples are incorrectly classified as \ac{ood}. In other words, \ac{fpr95} measures the rate of "false alarms" when 95\% of actual anomalies are caught.
+\ac{auroc} is agnostic to which class is the positive and which is the negative. Whether we consider \ac{ood} samples as 0 or 1, the result will be the same. However, the same is not true for \ac{fpr95}, necessitating a choice of positive and negative classes. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention". It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class). This aligns with the goal of \ac{ood} detection, which is to detect abnormal inputs with regard to the data the model is trained on. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative. In this case, \ac{fpr95} has the following interpretation: "If a specific threshold leads to 95\% of \ac{ood} samples being correctly classified as \ac{ood}, what percentage of \ac{id} samples are then incorrectly classified as \ac{ood}"? In other words, \ac{fpr95} measures the rate of "false alarms" when 95\% of actual anomalies are caught.
 
 For both of these metrics, the calculations are done on each \ac{ood} dataset individually, as opposed to comparing all \ac{ood} samples to the \ac{id} dataset. Afterwards, the metrics of all Near-\ac{ood} and Far-\ac{ood} are averaged, giving us two general performance metrics which tell us how a method functions on either Near-\ac{ood} or Far-\ac{ood}.
 
@@ -1709,7 +1824,7 @@ Thus, I have split all the datasets mentioned in \ref{section:datasets} into dev
 
 \subsection{Bootstrapping}
 
-When evaluating a new method, it is not enough to simply report the results from a single experiment. Instead one should run the same experiment multiple times and perform statistical analysis to ensure that the results are robust. Therefore, I have.
+When evaluating a new method, it is not enough to simply report the results from a single experiment. Instead one should run the same experiment multiple times and perform statistical analysis to ensure that the results are robust. Therefore, I have bootstrapped the test set ten times during the calculation of the final test results. This makes it possible to report means and standard deviations of the results as opposed to a single point estimate. With these repeated experiments, it is also possible to perform t-tests comparing the new methods against baseline \ac{ood} detection methods.
 
 \section{Implementation}
 
@@ -1842,7 +1957,7 @@ There are many libraries which implement \ac{xai} methods \cite{lime, captum, ja
 
 \ac{gradcam} has been implemented from scratch in \texttt{PyTorch}. There are several libraries which implement \ac{gradcam} \cite{jacobgilpytorchcam, captum}. However, given that these libraries are concerned with simply producing heatmaps that users can inspect, they do not output the raw saliency values, but upscale the saliencies to match the input image dimensions. As explained in \ref{section:gradcam}, \ac{gradcam} uses the final feature map to generate an explanation, which usually has a spatial dimension which is far smaller than the input image (e.g. $7 \times 7$ versus $224 \times 224$). When overlaying these values on the input image, it is common to use bilinear interpolation \cite{jacobgilpytorchcam}, which interpolates all $224 \times 224$ positions based on the original $7 \times 7$ saliency map. For visualizations, this is reasonable. When attempting to use this data to separate \ac{id} and \ac{ood} data however, this is undesirable. Bilinear interpolation introduces new values, which changes many statistical qualities of the saliency values. This may reduce the separability of different samples. Furthermore, given that these new values do not add any new information, it is inefficient to involve these upscaled saliency maps in any computational operation.
 
-Although it is relatively simple to modify the source code of these libraries to remove the interpolation, \ac{gradcam} is not very difficult to implement, and as such I have simply used my own implementation. 
+Although it is relatively simple to modify the source code of these libraries to remove the interpolation, \ac{gradcam} is not very difficult to implement, and as such I have simply used my own implementation.
 
 % Listing \ref{code:gradcam} shows the Python code.
 %
@@ -1910,7 +2025,15 @@ Thus I have implemented \ac{lime} myself, using PyTorch whenever possible.
 
 \subsubsection{Occlusion}
 
-Captum \cite{captum} is a library of \ac{xai} methods implemented in PyTorch, and this library contains a suitable implementation of occlusion. As explained previously, occlusion occludes parts of the image and compares the prediction scores before and after the occlusion. By occluding all parts of the image, we can get a saliency value for all positions. Occlusion is usually done using a sliding window, similar to a convolutional kernel, which is slid over all parts of the image. Such a window is rarely a single pixel, because it is often not interesting to see how a single pixel contributes to a prediction, but rather a larger region. What this means is that the final heatmap, although it is the same size as the input image, actually contains far fewer unique values. To avoid performing computations on thousands of repeated values, I reduce the size of the heatmap by sampling one pixel from each of the positions the sliding window has been applied, which can be efficiently done using a $1 \times 1$ MaxPooling kernel in PyTorch.
+Captum \cite{captum} is a library of \ac{xai} methods implemented in PyTorch, and this library contains a suitable implementation of occlusion. As explained previously, occlusion occludes parts of the image and compares the prediction scores before and after the occlusion. By occluding all parts of the image, we can get a saliency value for all positions. Occlusion is usually done using a sliding window, similar to a convolutional kernel, which is slid over all parts of the image. Such a window is rarely a single pixel, because it is often not interesting to see how a single pixel contributes to a prediction, but rather a larger region. What this means is that the final heatmap, although it is the same size as the input image, actually contains far fewer unique values. To avoid performing computations on thousands of repeated values, I reduce the size of the heatmap by sampling one pixel from each of the positions the sliding window has been applied, which can be efficiently done using a $1 \times 1$ MaxPooling kernel with a stride equal to the stride used during the occlusion.
+
+\subsubsection{Guided Backpropagation and Integrated Gradients}
+
+Captum also contains a suitable implementation for guided backpropagation and integrated gradients, which I have utilized in essentially unmodified forms. By definition (see section \ref{section:guidebackpropagation} and \ref{section:integratedgradients}), these methods return saliency maps over the entire input image dimensions. This separates them from the other methods, which return a far lower number of distinct saliencies, which are upscaled or transformed to the entire image (\ac{lime} and Occlusion output the same values for all pixels within a segment, \ac{gradcam} outputs an amount of saliencies corresponding to the final feature map, which is then upscaled). Because of this, the saliencies returned are exactly equivalent to the raw values I require, and no modifications are necessary.
+
+However, this lack of dimensionality reduction also poses a technical challenge when we wish to store these saliency maps for later data analysis. For example, storing all the saliencies, without dimensionality reduction, for ImageNet200 and its associated \ac{ood} datasets would require 28 GB. Thus, instead of storing the saliencies themselves, I calculate the aggregate values during saliency generation and store them instead. This has the downside that if a new form of aggregation is to be tested, the whole dataset of saliencies has to be generated again. However, the decrease in storage requirements is immense, being between a 1000 and 10 000 times decrease depending on the number of aggregates stored.
+
+
 
 
 % Listing \ref{code:occlusion} shows the code listing for this implementation.
@@ -1943,18 +2066,35 @@ In the second section, \ac{ood} detection on the test sets is performed, and the
 
 \section{Data Analysis of Explanations}
 
-This section will detail how various \ac{xai} methods generate explanations which differ between \ac{id} and \ac{ood} 
+This section will detail how various \ac{xai} methods generate explanations which differ between \ac{id} and \ac{ood}. The section considers each dataset individually. For each dataset, I first present the level of separation achieved by the two baseline methods \ac{msp} and \ac{mls}, to give a general intuition about how easily the \ac{id} and \ac{ood} datasets are to separate. Following this, I go through the different \ac{xai} methods and their different statistical qualities.
+
+% I present graphs of a selection of aggregations, giving a broad overview of what type of statistical qualities of explanations work best for separating \ac{id} and \ac{ood} data points. Finally, I present a table of all aggregations for all forms of saliency generation
 
 
-\subsection{CIFAR10}
+\subsection{ImageNet200}
 
-\subsubsection{\ac{gradcam}}
+ImageNet200 is a suitable dataset to begin with, given ImageNet's ubiquity in \ac{ai} research. Figure \ref{fig:imagenet200_logits} shows the distribution of the maximum softmax score and the maximum logit. Here, we see that there is a decent amount of separation between \ac{id} and \ac{ood} data points, even with the simple baseline methods introduced by \cite{oodbaseline} and \cite{mls}. Separating the distributions using \ac{msp}, we get an \ac{auroc} score of 0.834 for Near-\ac{ood} and 0.915 for Far-\ac{ood}. Using \ac{mls}, we get an \ac{auroc} score of 0.833 for Near-\ac{ood} and 0.903 for Far-\ac{ood}.
+
+\begin{figure}
+    \begin{center}
+        \input{figure/imagenet200_logits_distribution.pgf}
+    \end{center}
+    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+    \label{fig:imagenet200_logits}
+\end{figure}
 
 \subsubsection{\ac{lime}}
 
+With the baselines reported, we turn our attention to the first \ac{xai} saliency method, \ac{lime}.
+
 \subsubsection{Occlusion}
 
-\subsection{ImageNet200}
+\subsubsection{\ac{gradcam}}
+
+
+
+
+\subsection{CIFAR10}
 
 \subsubsection{\ac{gradcam}}
 
@@ -2096,138 +2236,138 @@ Furthermore, when looking at the average standard deviation for each saliency ma
 
 
 
-\chapter{Temporary chapter} \label{chapter:newmethod}
-
-
-\section{Overall plan}
-
-I will integrate \ac{xai} methods into a specific method from each of the four methodologies discussed in chapter \ref{chapter:background}; classification-, density-, distance-, and reconstruction-based methods. For each method, I shall compare the AUROC and FPR95-scores before and after integrating \ac{xai} values.
-
-Furthermore, I will perform data analysis on 
-
-\section{Motivation} \label{chapter:tempmotivation}
-
-Many \ac{ood}-detection methods use the final features of the network, i.e the values right before we generate logits for each class. In convolutional neural networks values typically contain a lot of semantic information, but little spatial information. For example, the ResNet family of convolutional networks use global average pooling on the feature map generated by the last convolutional layer to generate the penultimate features. When doing this, all positional information is lost, as we average over the pixel values in each channel, so that a 512 channel 7 by 7 feature map becomes a vector of 512 values. Thus, we have only the average activation of each channel, which gives us information about what is in the image, but not where.
-
-Explainability methods, especially local saliency methods, give information about where a model is focused when making a prediction. Such information could be valuable to deciding whether a data point is \ac{ood}. For example, by comparing explanations for \ac{ood} and ID data, we may find that the model is focused on several different areas of the image in an \ac{ood} data point, while it is focused on a single area in ID samples. The reasoning for this is that if a data point is ID, it must contain an object of the class the model has been trained on. It is then likely that this object will generate a higher response from the network than other parts of the image, which will be picked up by \ac{xai} algorithms. For an \ac{ood} data point, there is, by definition, no object of any of the classes that the model has been trained on. In this case, the predicted class will be essentially random, and it is less likely that there is a single object which elicits a very high response from the network. Thus, we expect to see an explanation which is more spread out.
-
-Furthermore, the explanations also contain magnitude information about the saliencies of different regions of the image, which one might expect to be higher for ID data, where there should be clear regions which contribute greatly to the final prediction. In \ac{ood} data points, we would expect there to be no region which is particularly important to the predicted class the model happened to output, given that (in the case of semantic shift) this class is not even present in the image.
-
-\section{Proof of Concept, preliminary investigations: ImageWoof}
-
-
-\subsection{Results}
-
-
-
-\section{Combine \ac{xai} and \ac{ood}}
-
-Given the poor results of \cite{martinez} in their attempt to perform \ac{ood} detection using only explanations, it is likely that explanations on their own will not be sufficient to discriminate between ID and \ac{ood} samples. Instead, I believe that by integrating explanations into \ac{ood} methods which use other features of the network, we could increase the gap between \ac{ood} and ID and increase the discriminatory power of these methods.
-
-\subsection{Virtual Logit Matching (ViM)}
-
-As a first choice of \ac{ood} method, I choose ViM. The reasoning is that ViM already is a method which attempts to use multiple sources of information from a network at once to determine an \ac{ood}-score. The baseline ViM uses the logits, features and softmax probabilities to determine \ac{ood}-ness. I propose to adapt this method to also include saliency values, which can come from different \ac{xai} methods.
-
-The methods I choose are LIME, Occlusion and \ac{gradcam}. The values are appended to the logit values for each sample. In this way, we gain some positional information along with the strictly semantic information of the logits of ResNet model.
-
-\section{Implemented method}
-
-Although there exists many libraries for \ac{xai} methods such as LIME, Occlusion and \ac{gradcam}, I have implemented them all from scratch. Given that I am using \ac{xai}-methods for an entirely different purpose than the libraries are designed for (\ac{ood} detection versus explainability), this is not so surprising.
-
-Lime and Occlusion have been implemented from scratch to work best in the context of \ac{ood} detection. Specifically, they have been implemented in such a way that the calculations can be batched, to take advantage of large 
-
-\ac{gradcam} has been implemented from scratch to allow for certain
-
-\section{Analysis of \ac{xai} methods}
-
-
-In this chapter, I will conduct a thorough analysis of the explanations generated by different \ac{xai} methods. The focus will be on the possible differences between explanations made on ID and \ac{ood} data points. With this in mind, I will compare and contrast the different methods, attempting to identify possible candidate methods for use in \ac{ood} detection.
-
-\section{Choice of \ac{xai} methods}
-
-While there exists a large multitude of \ac{xai} methods, the problem statement (\ac{ood} detection on image data) imposes a number of restrictions which restrict the choice of methods.
-
-Firstly, given the wish to use \ac{xai} methods for \ac{ood} detection, it is natural to favour local methods, i.e those that give explanations to single samples. Global methods, which describe the relation between the input features over a whole dataset, give a greater understanding of how the model functions in general but are of little use when attempting to decide whether a single data point is \ac{ood}, which is the goal during deployment of \ac{ood} methods.
-
-Secondly, since I am working with image classification problems, it is most reasonable to use post-hoc methods, as opposed to intrinsically explainable models.  Image classification is complex problem which can not be satisfactorily solved by simple methods such as logistic regression or random forests, and as such intrinsically explainable models will have unacceptably poor classification performance. Instead, the field of image classification is dominated by complex models such as Vision Transformers and Convolutional Neural Networks, which are not intrinsically explainable. Indeed, as shown by \cite{xaioverview}, the vast majority of \ac{xai} methods applied to images in the medical field are post-hoc.
-
-The majority of \ac{xai} methods applied to image models are so-called {\it saliency methods}, also known as {\it pixel attribution methods} \cite{molnar}. These methods produce a heatmap denoting which regions of the image the model was "focused on" when making the prediction, attributing a numerical value of importance to each pixel or region in the image. For example, when producing an explanation for why a classification model chose to label an image as "cat", we would expect the explanation to highlight the regions where the cat is, and not parts of the background.For my purposes, these methods are well-suited, as they output numerical values which are easy to compare between examples. In contrast, image captioning methods generate textual explanations, which are much harder to compare.
-
-In conclusion, given the requirements set by the type of data (images) and the task (\ac{ood} detection), the \ac{xai} methods I choose will:
-
-\begin{itemize}
-    \item be local rather than global
-    \item be post-hoc rather than intrinsically explainable
-    \item output numerical values (such as saliency values) rather than text
-\end{itemize}
-
-Based on these criteria, I choose N number of methods, all of which have been introduced and explained in chapter \ref{chapter:xai}.
-
-\begin{itemize}
-    \item Gradient Class Activation Mapping (GradCAM)
-    \item Occlusion
-    \item Local Interpretable Model-agnostic Explanations (LIME)
-    \item Layer Relevance Propagation (LRP)
-\end{itemize}
-
-\section{Analysis of methods on a proof of concept dataset}
-
-To investigate the potential for \ac{xai} methods to aid in separating ID from \ac{ood} data, I introduce a simple collection of datasets, which form an \ac{ood} detection problem. This collection consists of an ID, Near-\ac{ood} and Far-\ac{ood} dataset. The ID dataset is ImageWoof \cite{imagewoof}, a subset of ImageNet which contains ten different breeds of dogs which are to be classified. For Near-\ac{ood} data points, the obvious choice would be pictures of dogs which are of different breeds than the 10 breeds used in ImageWoof. Thus, I use the Stanford Dog Dataset \cite{stanforddogs}, and simply remove any classes which overlap with the 10 from ImageWoof. Given that dogs from two different breeds can have many similarities in terms of size, colour, texture and body and face structure, the Stanford Dog Dataset represents a very small semantic shift and consequently, a difficult \ac{ood} detection task.
-
-For a far-\ac{ood} dataset, I use Places365 \cite{places365}, a dataset used for scene recognition. This dataset has categories such as {\it Classroom}, {\it Forest road} or {\it Conference Room}, and thus does not contain anything resembling dogs or even any animal at all. 
-
-Below (figure \ref{fig:imagewoof_examples}) is a set of examples for each of these datasets. As we can see, ImageWoof and Stanford Dogs are quite similar, however, no breed is present in both datasets.
-
-\begin{figure}[h]
-\centerline{\includegraphics[width=5.25in]{figure/imagewoof_near_far_examples.pdf}}
-\caption{Figure}
-\label{fig:imagewoof_examples}
-\end{figure}
-
-With this collection, I train a ResNet-50 model on the ID dataset and subsequently run inference on all three datasets, generating explanations for all data points.
-
-\section{Results}
-
-When inspecting the generated saliency heatmaps, we can either normalize the values (making the maximum value equal to one and the minimum equal to 0) before displaying them, or keep the saliency values unnormalized. Because the intended purpose of saliency methods is simply to show which regions are more important than others when making a prediction, it is common to normalize the values before visualization \cite{molnar, gradcam}. However, as I will show, there is much understanding to be gained by looking at the unnormalized saliencies directly, especially for \ac{ood} detection. In fact, I posit that one of the reasons for the poor performance attained by \cite{martinez} is the presence of normalization in their implementation.
-
-For each method, I will 
-
-\subsection{\ac{gradcam}}
-
-
-
-
-\chapter{\ac{xai} for \ac{ood} Detection: Integration of Select \ac{xai} Methods}
-
-% \section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
+% \chapter{Temporary chapter} \label{chapter:newmethod}
 %
-% Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
 %
-% \section{Data Analysis of Explanations}
+% \section{Overall plan}
 %
-% As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
+% I will integrate \ac{xai} methods into a specific method from each of the four methodologies discussed in chapter \ref{chapter:background}; classification-, density-, distance-, and reconstruction-based methods. For each method, I shall compare the AUROC and FPR95-scores before and after integrating \ac{xai} values.
 %
-% \subsection{Data Generation}
+% Furthermore, I will perform data analysis on 
 %
-% As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
+% \section{Motivation} \label{chapter:tempmotivation}
 %
-% Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
+% Many \ac{ood}-detection methods use the final features of the network, i.e the values right before we generate logits for each class. In convolutional neural networks values typically contain a lot of semantic information, but little spatial information. For example, the ResNet family of convolutional networks use global average pooling on the feature map generated by the last convolutional layer to generate the penultimate features. When doing this, all positional information is lost, as we average over the pixel values in each channel, so that a 512 channel 7 by 7 feature map becomes a vector of 512 values. Thus, we have only the average activation of each channel, which gives us information about what is in the image, but not where.
 %
-% {\large
-% \begin{equation}
-%     D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
-% \end{equation}
-% }
+% Explainability methods, especially local saliency methods, give information about where a model is focused when making a prediction. Such information could be valuable to deciding whether a data point is \ac{ood}. For example, by comparing explanations for \ac{ood} and ID data, we may find that the model is focused on several different areas of the image in an \ac{ood} data point, while it is focused on a single area in ID samples. The reasoning for this is that if a data point is ID, it must contain an object of the class the model has been trained on. It is then likely that this object will generate a higher response from the network than other parts of the image, which will be picked up by \ac{xai} algorithms. For an \ac{ood} data point, there is, by definition, no object of any of the classes that the model has been trained on. In this case, the predicted class will be essentially random, and it is less likely that there is a single object which elicits a very high response from the network. Thus, we expect to see an explanation which is more spread out.
 %
-% In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
-
-
-
-\section{Saliency methods}
-
-
-
-\section{Methods}
+% Furthermore, the explanations also contain magnitude information about the saliencies of different regions of the image, which one might expect to be higher for ID data, where there should be clear regions which contribute greatly to the final prediction. In \ac{ood} data points, we would expect there to be no region which is particularly important to the predicted class the model happened to output, given that (in the case of semantic shift) this class is not even present in the image.
+%
+% \section{Proof of Concept, preliminary investigations: ImageWoof}
+%
+%
+% \subsection{Results}
+%
+%
+%
+% \section{Combine \ac{xai} and \ac{ood}}
+%
+% Given the poor results of \cite{martinez} in their attempt to perform \ac{ood} detection using only explanations, it is likely that explanations on their own will not be sufficient to discriminate between ID and \ac{ood} samples. Instead, I believe that by integrating explanations into \ac{ood} methods which use other features of the network, we could increase the gap between \ac{ood} and ID and increase the discriminatory power of these methods.
+%
+% \subsection{Virtual Logit Matching (ViM)}
+%
+% As a first choice of \ac{ood} method, I choose ViM. The reasoning is that ViM already is a method which attempts to use multiple sources of information from a network at once to determine an \ac{ood}-score. The baseline ViM uses the logits, features and softmax probabilities to determine \ac{ood}-ness. I propose to adapt this method to also include saliency values, which can come from different \ac{xai} methods.
+%
+% The methods I choose are LIME, Occlusion and \ac{gradcam}. The values are appended to the logit values for each sample. In this way, we gain some positional information along with the strictly semantic information of the logits of ResNet model.
+%
+% \section{Implemented method}
+%
+% Although there exists many libraries for \ac{xai} methods such as LIME, Occlusion and \ac{gradcam}, I have implemented them all from scratch. Given that I am using \ac{xai}-methods for an entirely different purpose than the libraries are designed for (\ac{ood} detection versus explainability), this is not so surprising.
+%
+% Lime and Occlusion have been implemented from scratch to work best in the context of \ac{ood} detection. Specifically, they have been implemented in such a way that the calculations can be batched, to take advantage of large 
+%
+% \ac{gradcam} has been implemented from scratch to allow for certain
+%
+% \section{Analysis of \ac{xai} methods}
+%
+%
+% In this chapter, I will conduct a thorough analysis of the explanations generated by different \ac{xai} methods. The focus will be on the possible differences between explanations made on ID and \ac{ood} data points. With this in mind, I will compare and contrast the different methods, attempting to identify possible candidate methods for use in \ac{ood} detection.
+%
+% \section{Choice of \ac{xai} methods}
+%
+% While there exists a large multitude of \ac{xai} methods, the problem statement (\ac{ood} detection on image data) imposes a number of restrictions which restrict the choice of methods.
+%
+% Firstly, given the wish to use \ac{xai} methods for \ac{ood} detection, it is natural to favour local methods, i.e those that give explanations to single samples. Global methods, which describe the relation between the input features over a whole dataset, give a greater understanding of how the model functions in general but are of little use when attempting to decide whether a single data point is \ac{ood}, which is the goal during deployment of \ac{ood} methods.
+%
+% Secondly, since I am working with image classification problems, it is most reasonable to use post-hoc methods, as opposed to intrinsically explainable models.  Image classification is complex problem which can not be satisfactorily solved by simple methods such as logistic regression or random forests, and as such intrinsically explainable models will have unacceptably poor classification performance. Instead, the field of image classification is dominated by complex models such as Vision Transformers and Convolutional Neural Networks, which are not intrinsically explainable. Indeed, as shown by \cite{xaioverview}, the vast majority of \ac{xai} methods applied to images in the medical field are post-hoc.
+%
+% The majority of \ac{xai} methods applied to image models are so-called {\it saliency methods}, also known as {\it pixel attribution methods} \cite{molnar}. These methods produce a heatmap denoting which regions of the image the model was "focused on" when making the prediction, attributing a numerical value of importance to each pixel or region in the image. For example, when producing an explanation for why a classification model chose to label an image as "cat", we would expect the explanation to highlight the regions where the cat is, and not parts of the background.For my purposes, these methods are well-suited, as they output numerical values which are easy to compare between examples. In contrast, image captioning methods generate textual explanations, which are much harder to compare.
+%
+% In conclusion, given the requirements set by the type of data (images) and the task (\ac{ood} detection), the \ac{xai} methods I choose will:
+%
+% \begin{itemize}
+%     \item be local rather than global
+%     \item be post-hoc rather than intrinsically explainable
+%     \item output numerical values (such as saliency values) rather than text
+% \end{itemize}
+%
+% Based on these criteria, I choose N number of methods, all of which have been introduced and explained in chapter \ref{chapter:xai}.
+%
+% \begin{itemize}
+%     \item Gradient Class Activation Mapping (GradCAM)
+%     \item Occlusion
+%     \item Local Interpretable Model-agnostic Explanations (LIME)
+%     \item Layer Relevance Propagation (LRP)
+% \end{itemize}
+%
+% \section{Analysis of methods on a proof of concept dataset}
+%
+% To investigate the potential for \ac{xai} methods to aid in separating ID from \ac{ood} data, I introduce a simple collection of datasets, which form an \ac{ood} detection problem. This collection consists of an ID, Near-\ac{ood} and Far-\ac{ood} dataset. The ID dataset is ImageWoof \cite{imagewoof}, a subset of ImageNet which contains ten different breeds of dogs which are to be classified. For Near-\ac{ood} data points, the obvious choice would be pictures of dogs which are of different breeds than the 10 breeds used in ImageWoof. Thus, I use the Stanford Dog Dataset \cite{stanforddogs}, and simply remove any classes which overlap with the 10 from ImageWoof. Given that dogs from two different breeds can have many similarities in terms of size, colour, texture and body and face structure, the Stanford Dog Dataset represents a very small semantic shift and consequently, a difficult \ac{ood} detection task.
+%
+% For a far-\ac{ood} dataset, I use Places365 \cite{places365}, a dataset used for scene recognition. This dataset has categories such as {\it Classroom}, {\it Forest road} or {\it Conference Room}, and thus does not contain anything resembling dogs or even any animal at all. 
+%
+% Below (figure \ref{fig:imagewoof_examples}) is a set of examples for each of these datasets. As we can see, ImageWoof and Stanford Dogs are quite similar, however, no breed is present in both datasets.
+%
+% \begin{figure}[h]
+% \centerline{\includegraphics[width=5.25in]{figure/imagewoof_near_far_examples.pdf}}
+% \caption{Figure}
+% \label{fig:imagewoof_examples}
+% \end{figure}
+%
+% With this collection, I train a ResNet-50 model on the ID dataset and subsequently run inference on all three datasets, generating explanations for all data points.
+%
+% \section{Results}
+%
+% When inspecting the generated saliency heatmaps, we can either normalize the values (making the maximum value equal to one and the minimum equal to 0) before displaying them, or keep the saliency values unnormalized. Because the intended purpose of saliency methods is simply to show which regions are more important than others when making a prediction, it is common to normalize the values before visualization \cite{molnar, gradcam}. However, as I will show, there is much understanding to be gained by looking at the unnormalized saliencies directly, especially for \ac{ood} detection. In fact, I posit that one of the reasons for the poor performance attained by \cite{martinez} is the presence of normalization in their implementation.
+%
+% For each method, I will 
+%
+% \subsection{\ac{gradcam}}
+%
+%
+%
+%
+% \chapter{\ac{xai} for \ac{ood} Detection: Integration of Select \ac{xai} Methods}
+%
+% % \section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
+% %
+% % Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
+% %
+% % \section{Data Analysis of Explanations}
+% %
+% % As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
+% %
+% % \subsection{Data Generation}
+% %
+% % As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
+% %
+% % Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
+% %
+% % {\large
+% % \begin{equation}
+% %     D_{sal} = \{ \mathbf{x}_{sal} \mid \mathbf{x}_{sal} = s(f, \mathbf{x}), \, \mathbf{x} \in D \}
+% % \end{equation}
+% % }
+% %
+% % In general, $\mathbf{x}_{sal} \in \R^{n, m}$, where $n \leq h$ and $m \leq w$. For methods such as \ac{gradcam}, the output saliency map $\mathbf{x}_{sal}$ may be as small as $7 \times 7$ despite the input image being $224 \times 224$, while other methods such as LRP will maintain the entire input dimension.
+%
+%
+%
+% \section{Saliency methods}
+%
+%
+%
+% \section{Methods}
 
 
 
