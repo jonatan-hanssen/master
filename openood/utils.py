@@ -303,7 +303,7 @@ class GradCAMWrapper(torch.nn.Module):
             handle.remove()
 
 
-def segmented_occlusion(net, batch, device='cuda'):
+def segmented_occlusion(net, batch, do_relu=False, device='cuda'):
     batch_size = batch.shape[0]
 
     preds = torch.argmax(net(batch), dim=1)
@@ -384,9 +384,28 @@ def get_saliency_generator(
     name: str,
     net: torch.nn.Module,
     repeats: int,
-    return_dim: int = 2,
+    return_dim: int = 3,
     do_relu: bool = False,
 ) -> Callable:
+    if return_dim == 3:  # batch x heigh x width
+        dim_reducer = lambda data: data
+
+    elif return_dim == 2:  # batch x number of aggregate functions
+
+        def dim_reducer(data):
+            data = data.reshape(data.shape[0], torch.prod(torch.tensor(data.shape[1:])))
+
+            all_results = list()
+            for name, function in get_aggregate_functions():
+                all_results.append(function(data, dim=-1))
+
+            all_results = torch.vstack(all_results).T
+
+            return all_results
+
+    elif return_dim == 1:  # batch
+        dim_reducer = lambda data: data.mean(dim=-1).mean(dim=-1)
+
     if name == 'gradcam':
         if repeats == 4:
             cam_wrapper = GradCAMWrapper(
@@ -428,112 +447,56 @@ def get_saliency_generator(
         generator_func = lambda data: torch.tensor(cam_wrapper(data))
 
     elif name == 'integratedgradients':
-        if return_dim == 0:
 
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                lrp = captum.attr.IntegratedGradients(net)
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            lrp = captum.attr.IntegratedGradients(net)
 
-                attributions = lrp.attribute(data, target=targets)
+            attributions = lrp.attribute(data, target=targets)
+            # attributions = torch.nn.functional.relu(attributions)
+            # attributions = attributions.sum(dim=1).detach().cpu()
 
-                attributions = torch.nn.functional.relu(attributions)
+            attributions = attributions.detach().cpu()
 
-                attributions = attributions.sum(dim=1)
-
-                return attributions.mean(dim=-1).mean(dim=-1).detach().cpu()
-
-        elif return_dim == 2:
-
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                lrp = captum.attr.IntegratedGradients(net)
-
-                attributions = lrp.attribute(data, target=targets)
-
-                attributions = torch.nn.functional.relu(attributions)
-
-                attributions = attributions.sum(dim=1)
-
-                return attributions.detach().cpu()
+            return dim_reducer(attributions)
 
     elif name == 'lrp':
-        if return_dim == 0:
 
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                lrp = captum.attr.LRP(net)
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            lrp = captum.attr.LRP(net)
 
-                attributions = lrp.attribute(data, target=targets)
+            attributions = lrp.attribute(data, target=targets)
+            # attributions = torch.nn.functional.relu(attributions)
+            # attributions = attributions.sum(dim=1).detach().cpu()
 
-                attributions = torch.nn.functional.relu(attributions)
+            attributions = attributions.detach().cpu()
 
-                attributions = attributions.sum(dim=1)
-
-                return attributions.mean(dim=-1).mean(dim=-1).detach().cpu()
-
-        elif return_dim == 2:
-
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                lrp = captum.attr.LRP(net)
-
-                attributions = lrp.attribute(data, target=targets)
-
-                attributions = torch.nn.functional.relu(attributions)
-
-                attributions = attributions.sum(dim=1)
-
-                return attributions
+            return dim_reducer(attributions)
 
     elif name == 'gbp':
-        if return_dim == 0:
 
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                gbp = captum.attr.GuidedBackprop(net)
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            gbp = captum.attr.GuidedBackprop(net)
 
-                attributions = gbp.attribute(data, target=targets)
+            attributions = gbp.attribute(data, target=targets)
 
-                attributions = attributions.sum(dim=1)
+            attributions = attributions.sum(dim=1).detach().cpu()
 
-                return attributions.mean(dim=-1).mean(dim=-1).detach().cpu()
-
-        elif return_dim == 2:
-
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                gbp = captum.attr.GuidedBackprop(net)
-
-                attributions = gbp.attribute(data, target=targets)
-
-                attributions = attributions.sum(dim=1)
-
-                return attributions.detach().cpu()
+            return dim_reducer(attributions)
 
     elif name == 'gbp9':
-        if return_dim == 0:
 
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                gbp = captum.attr.GuidedBackprop(net)
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            gbp = captum.attr.GuidedBackprop(net)
 
-                attributions = gbp.attribute(data, target=targets)
+            attributions = gbp.attribute(data, target=targets)
 
-                attributions = attributions.sum(dim=1)
+            attributions = attributions.sum(dim=1).detach().cpu()
 
-                return attributions.mean(dim=-1).mean(dim=-1).detach().cpu()
-
-        elif return_dim == 2:
-
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                gbp = captum.attr.GuidedBackprop(net)
-
-                attributions = gbp.attribute(data, target=targets)
-
-                attributions = attributions.sum(dim=1)
-
-                return attributions.detach().cpu()
+            return dim_reducer(attributions)
 
     elif name == 'gradshap':
 
@@ -564,58 +527,38 @@ def get_saliency_generator(
                 target=targets,
             )
 
-            saliencies = saliencies.sum(dim=1)
-            # saliencies -= torch.min(saliencies, dim=0)[0]
-            print(saliencies.shape)
+            saliencies = saliencies.sum(dim=1).detach().cpu()
 
-            return saliencies
+            return dim_reducer(saliencies)
 
     elif name == 'captumocc':
-        if return_dim == 2:
 
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                lrp = captum.attr.Occlusion(net)
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            lrp = captum.attr.Occlusion(net)
 
-                block_size = data.shape[-1] // repeats
+            block_size = data.shape[-1] // repeats
 
-                attributions = lrp.attribute(
-                    data,
-                    target=targets,
-                    sliding_window_shapes=(3, block_size, block_size),
-                    strides=(3, block_size, block_size),
-                )
+            attributions = lrp.attribute(
+                data,
+                target=targets,
+                sliding_window_shapes=(3, block_size, block_size),
+                strides=(3, block_size, block_size),
+            )
 
-                attributions = attributions.sum(dim=1)
-                attributions = torch.nn.MaxPool2d(1, block_size)(attributions)
+            attributions = attributions.sum(dim=1)
+            attributions = (
+                torch.nn.MaxPool2d(1, block_size)(attributions).detach().cpu()
+            )
 
-                return attributions
-
-        if return_dim == 1:
-
-            def generator_func(data):
-                targets = torch.argmax(net(data), dim=-1)
-                lrp = captum.attr.Occlusion(net)
-
-                block_size = data.shape[-1] // repeats
-
-                attributions = lrp.attribute(
-                    data,
-                    target=targets,
-                    sliding_window_shapes=(3, block_size, block_size),
-                    strides=(3, block_size // 2, block_size // 2),
-                )
-
-                attributions = attributions.sum(dim=1)
-
-                return attributions
+            return dim_reducer(attributions)
 
     elif name == 'segocc':
-        if return_dim == 2:
+        if return_dim == 3:
             generator_func = lambda data: segmented_occlusion(
                 net, data, do_relu=do_relu
             )
-        elif return_dim == 0:
+        elif return_dim == 1:
 
             def generator_func(data):
                 saliencies = segmented_occlusion(net, data, do_relu=do_relu)
@@ -625,7 +568,7 @@ def get_saliency_generator(
                 return means
 
     elif name == 'seglime':
-        if return_dim == 2:
+        if return_dim == 3:
             generator_func = lambda data: segmented_lime(
                 net,
                 data,
@@ -634,7 +577,7 @@ def get_saliency_generator(
                 batch_size=100,
                 do_relu=do_relu,
             )[0]
-        elif return_dim == 0:
+        elif return_dim == 1:
 
             def generator_func(data):
                 betas = segmented_lime(net, data)[1]
@@ -947,7 +890,7 @@ def overlay_saliency(
     if ax is not None:
         ax.axis('off')
         if opacity > 1:
-            return ax.imshow(sal, cmap='jet', vmax=max_val)
+            return ax.imshow(sal, cmap='turbo', vmax=max_val)
         else:
             return ax.imshow(
                 sal, alpha=np.abs(sal) * opacity, cmap='turbo', vmax=max_val
@@ -955,9 +898,9 @@ def overlay_saliency(
 
     else:
         if opacity > 1 and opacity < 2:
-            plt.imshow(sal, alpha=opacity - 1, cmap='jet', vmax=max_val)
+            plt.imshow(sal, alpha=opacity - 1, cmap='turbo', vmax=max_val)
         elif opacity > 2:
-            plt.imshow(sal, cmap='jet', vmax=max_val)
+            plt.imshow(sal, cmap='turbo', vmax=max_val)
         else:
             plt.imshow(sal, alpha=np.abs(sal) * opacity, cmap='turbo', vmax=max_val)
         plt.axis('off')
@@ -1375,3 +1318,36 @@ def display_pytorch_image(
     else:
         plt.imshow(image)
         plt.axis('off')
+
+
+def get_aggregate_functions():
+    aggregate_functions = [
+        ('Mean', torch.mean),
+        # ('Skew', lambda data, dim: scipy.stats.skew(data, axis=-1)),
+        ('Norm', torch.linalg.vector_norm),
+        ('Std', torch.std),
+        ('Norm3', lambda data, dim: torch.linalg.vector_norm(data, ord=3, dim=dim)),
+        (
+            'Norminf',
+            lambda data, dim: torch.linalg.vector_norm(data, ord=float('inf'), dim=dim),
+        ),
+        (
+            'Range',
+            lambda data, dim: torch.max(data, dim=-1)[0] - torch.min(data, dim=-1)[0],
+        ),
+        # ('Product', torch.prod),
+        ('Gini', gini),
+        ('Median', lambda data, dim: torch.median(data, dim=-1)[0]),
+        ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
+        # ('NormStd', utils.norm_std),
+    ]
+
+    new_aggregate_functions = [x for x in aggregate_functions]
+
+    for name, function in aggregate_functions:
+        new_agg = lambda data, dim, func=function: func(
+            torch.nn.functional.relu(data), dim=dim
+        )
+        new_aggregate_functions.append((f'ReLU{name}', new_agg))
+
+    return new_aggregate_functions

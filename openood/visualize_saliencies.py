@@ -12,28 +12,6 @@ from utils import calculate_auc, get_palette
 import utils
 import matplotlib
 
-functions = (
-    ('Mean', torch.mean),
-    # ('Skew', lambda data, dim: scipy.stats.skew(data, axis=-1)),
-    ('Norm', torch.linalg.vector_norm),
-    ('Std', torch.std),
-    ('Norm3', lambda data, dim: torch.linalg.vector_norm(data, ord=3, dim=dim)),
-    (
-        'Norminf',
-        lambda data, dim: torch.linalg.vector_norm(data, ord=float('inf'), dim=dim),
-    ),
-    ('Median', lambda data, dim: torch.median(data, dim=-1)[0]),
-    (
-        'Range',
-        lambda data, dim: torch.max(data, dim=-1)[0] - torch.min(data, dim=-1)[0],
-    ),
-    # ('Product', torch.prod),
-    ('Gini', utils.gini),
-    ('PCA', utils.pca_wrapper()),
-    ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
-    # ('NormStd', utils.norm_std),
-)
-
 
 parser = argparse.ArgumentParser()
 
@@ -58,6 +36,12 @@ parser.add_argument(
 )
 
 args = parser.parse_args(sys.argv[1:])
+
+if args.dont_plot:
+    args.show_scores = True
+    args.full = True
+
+
 if args.pgf:
     matplotlib.use('pgf')
     matplotlib.rcParams.update(
@@ -90,7 +74,10 @@ if not args.full:
         saliencies = [
             saliency_dict[key][second_key] for second_key in saliency_dict[key]
         ]
-        saliencies = torch.cat(saliencies, dim=0)
+        if isinstance(saliencies[0], dict):
+            pass
+        else:
+            saliencies = torch.cat(saliencies, dim=0)
         print(f'{key.upper()} length: {saliencies.shape[0]}')
         second_key = ', '.join(saliency_dict[key].keys())
         new_saliency_dict[key][second_key] = saliencies
@@ -109,10 +96,15 @@ if args.show_scores and not args.dont_plot:
             score = score_dict[key][second_key]
             score = torch.max(score, dim=-1)[0]
             saliency = saliency_dict[key][second_key]
-            b, h, w = saliency.shape
-            saliency = saliency.reshape((b, h * w))
+            if isinstance(saliency, dict):
+                print(saliency)
+                aggregate = saliency['Mean']
 
-            aggregate = torch.mean(saliency, dim=-1)
+            else:
+                b, h, w = saliency.shape
+                saliency = saliency.reshape((b, h * w))
+
+                aggregate = torch.mean(saliency, dim=-1)
             correlation = np.corrcoef(score.cpu(), aggregate.cpu())[0][1]
             plt.scatter(score, aggregate, label=f'{second_key}: {correlation=:.4f}')
 
@@ -145,23 +137,39 @@ if args.show_scores and not args.dont_plot:
 bogo = True
 
 
-for name, function in functions:
+for name, function in utils.get_aggregate_functions():
+    inner = saliency_dict['id'][next(iter(saliency_dict['id']))]
+    if isinstance(inner, dict):
+        spaces = 11 - len(name)
+        if name not in inner.keys():
+            print(f'{name}:{" "*spaces} NOT FOUND')
+            continue
+
     id_aggregate = None
     id_score = None
+    id_softmax_score = None
     near_aucs = list()
     far_aucs = list()
 
-    near_score_aucs = list()
-    far_score_aucs = list()
+    near_mls_aucs = list()
+    far_mls_aucs = list()
+
+    near_msp_aucs = list()
+    far_msp_aucs = list()
     for key in ('id', 'near', 'far'):
         if isinstance(saliency_dict[key], dict):
             for second_key in saliency_dict[key]:
                 saliency = saliency_dict[key][second_key]
-                saliency = saliency.cpu()
 
-                if len(saliency.shape) == 1:
+                if isinstance(saliency, dict):
+                    aggregate = saliency[name]
+                    aggregate.cpu()
+
+                elif len(saliency.shape) == 1:
+                    saliency = saliency.cpu()
                     aggregate = saliency
                 else:
+                    saliency = saliency.cpu()
                     b, h, w = saliency.shape
                     saliency = saliency.reshape((b, h * w))
 
@@ -181,8 +189,10 @@ for name, function in functions:
                     aggregate = torch.tensor(aggregate)
 
                 if args.show_scores:
-                    score = score_dict[key][second_key]
-                    score = torch.max(score, dim=1)[0]
+                    logits = score_dict[key][second_key]
+                    softmaxes = torch.nn.functional.softmax(logits, dim=1)
+                    score = torch.max(logits, dim=1)[0]
+                    softmax_score = torch.max(softmaxes, dim=1)[0]
 
                 if key == 'id':
                     id_aggregate = aggregate
@@ -191,6 +201,7 @@ for name, function in functions:
 
                     if args.show_scores:
                         id_score = score
+                        id_softmax_score = softmax_score
                         plot(score, f'{key}: {second_key} scores')
 
                 elif key == 'near':
@@ -213,7 +224,12 @@ for name, function in functions:
 
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
-                        near_score_aucs.append(score_auc)
+                        softmax_score_auc = calculate_auc(
+                            id_softmax_score, softmax_score
+                        )
+
+                        near_msp_aucs.append(softmax_score_auc)
+                        near_mls_aucs.append(score_auc)
                         if not args.dont_plot:
                             plot(score, f'{key}: {second_key} scores {score_auc:.2f}')
 
@@ -237,7 +253,13 @@ for name, function in functions:
 
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
-                        far_score_aucs.append(score_auc)
+
+                        softmax_score_auc = calculate_auc(
+                            id_softmax_score, softmax_score
+                        )
+
+                        far_msp_aucs.append(softmax_score_auc)
+                        far_mls_aucs.append(score_auc)
                         if not args.dont_plot:
                             plot(score, f'{key}: {second_key} scores {score_auc:.2f}')
 
@@ -245,16 +267,30 @@ for name, function in functions:
     far_auc = np.array(far_aucs).mean()
 
     if args.dont_plot:
-        spaces = 9 - len(name)
+        spaces = 11 - len(name)
         if args.show_scores:
-            near_auc_scores = np.array(near_score_aucs).mean()
-            far_auc_scores = np.array(far_score_aucs).mean()
+            near_mls_scores = np.array(near_mls_aucs).mean()
+            far_mls_scores = np.array(far_mls_aucs).mean()
+
+            near_msp_scores = np.array(near_msp_aucs).mean()
+            far_msp_scores = np.array(far_msp_aucs).mean()
             if bogo:
                 print(
-                    f'Max Logit: Near-AUC {near_auc_scores:.3f}   Far-AUC {far_auc_scores:.3f}\n'
+                    f'Max Logit:   Near-AUC {near_mls_scores:.3f}   Far-AUC {far_mls_scores:.3f}'
+                )
+                print(
+                    f'Max Softmax: Near-AUC {near_msp_scores:.3f}   Far-AUC {far_msp_scores:.3f}\n'
                 )
                 bogo = False
-        print(f'{name}:{" "*spaces} Near-AUC {near_auc:.3f}   Far-AUC {far_auc:.3f}')
+        if near_auc > 0.5:
+            print(
+                f'{name}:{" "*spaces} Near-AUC {near_auc:.3f}   Far-AUC {far_auc:.3f}'
+            )
+        else:
+            print(
+                f'{name}:{" "*spaces} Near-AUC {1 - near_auc:.3f}   Far-AUC {1 - far_auc:.3f}     (if negated)'
+            )
+
         continue
 
     if not args.pgf:
