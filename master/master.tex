@@ -7,8 +7,10 @@
 \usepackage{tikz}
 \usepackage{amsmath, amssymb, amsfonts, bm}
 \usepackage{acronym}
+\usepackage{multirow}
 \usepackage{mathtools}
 \usepackage{algorithm}
+\usepackage{array}
 \usepackage{listings}
 \usepackage[table]{xcolor}
 \usepackage{listofitems}
@@ -209,6 +211,7 @@ Here comes the abstract in a different language.
     \acro  {slic} [SLIC] {Simple Linear Iterative Clustering}
 
     \acro  {ffnn}[FFNN]{Feed Forward Neural Network}
+    \acro  {cov}[CoV]{Coefficient of Variance}
 
     \acro  {ml}   [ML]   {Machine Learning}
     \acro  {lrp}   [LRP]   {Layer Relevance Propagation}
@@ -741,7 +744,9 @@ The previous metrics are a clear improvement over simply using accuracy. However
     \label{fig:auroc}
 \end{figure}
 
-Once we have done this, we can calculate the integral under this curve, giving us the \ac{auroc}. If a binary classification model can perfectly separate the two classes, then all possible thresholds will either have 100\% \ac{tpr} or 0\% \ac{fpr}, giving an area under the curve of 1. If instead a model has no discriminative power, then the predicted values of positive and negative classes are entirely random, and all changes to the threshold will increase one of the metrics at the expense of the other. Such a model would have \acp{tpr} and \acp{fpr} making a straight line of points, and an \ac{auroc} of 0.5. In between these extremes, we can evaluate different models, without having to consider different thresholds. \ref{fig:auroc} shows what the \ac{roc}-curve of a model with either 0.97 or 0.80 \ac{auroc} looks like, as well as that of a random classifier with \ac{auroc} = 0.50.\\
+Once we have done this, we can calculate the integral under this curve, giving us the \ac{auroc}. If a binary classification model can perfectly separate the two classes, then all possible thresholds will either have 100\% \ac{tpr} or 0\% \ac{fpr}, giving an area under the curve of 1. If instead a model has no discriminative power, then the predicted values of positive and negative classes are entirely random, and all changes to the threshold will increase one of the metrics at the expense of the other. Such a model would have \acp{tpr} and \acp{fpr} making a straight line of points, and an \ac{auroc} of 0.5. In between these extremes, we can evaluate different models, without having to consider different thresholds. \ref{fig:auroc} shows what the \ac{roc}-curve of a model with either 0.97 or 0.80 \ac{auroc} looks like, as well as that of a random classifier with \ac{auroc} = 0.50. 
+
+One important thing to note about the \ac{auroc} is that values lower than 0.50 do not mean that a model is worse than random guessing. This is because if a model is consistently wrong, we can simply choose the opposite category of what the model outputs, and gain a new model which is better than random guessing. For example, if a cat versus dog detector gave an actual image dog a higher chance of being a cat than an actual image of a cat in 95\% of cases, it would have an \ac{auroc} of only 0.05. However, if we simply multiplied all outputs of the model by -1, we would suddenly have a model which correctly gives a cat a higher chance of being a cat in 95\% of the cases, and an \ac{auroc} of 0.95. Thus, we really only care about getting \ac{auroc} scores far away from 0.50.\\
 
 \noindent \textbf{False Positive Rate at 95\% Recall}
 
@@ -1504,7 +1509,7 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
 
     \end{tikzpicture}
 
-    \caption[Spred of Saliency visual explanation]{Figure showing the functioning of the Spread of Saliency \ac{ood} detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present. The heatmaps are here based on the normalized values of each saliency map, meaning that magnitude information is ignored}
+    \caption[Spread of Saliency visual explanation]{Figure showing the functioning of the Spread of Saliency \ac{ood} detector in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present. The heatmaps are here based on the normalized values of each saliency map, meaning that magnitude information is ignored}
     \label{fig:varsaliency}
     \end{center}
 \end{figure}
@@ -1521,19 +1526,27 @@ Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
 \label{eq:aggregate}
 \end{align}
 
-Given the exploratory nature of this thesis, it is reasonable to try many different forms of aggregations. In the experiments, the following aggregations have been used.
+Given the exploratory nature of this thesis, it is reasonable to try many different forms of aggregations. In the experiments, the following aggregations have been used. \\
 
+\textbf{Magnitude based:}
 \begin{itemize}
-    \item Mean of saliencies
-    \item Median of saliencies
-    \item Norm of saliencies
-    \item Standard deviation of saliencies
-    \item Standard deviation of normalized saliencies
-    \item GINI of saliencies
-    \item Maximum of saliencies
-    \item Minimum of saliencies
-    \item Range of saliencies (maximum minus minimum)
+    \item Mean
+    \item Median
+    \item Vector norm
+    \item Range
+    \item Maximum
+    \item Minimum
 \end{itemize}
+
+\textbf{Distribution based:}
+\begin{itemize}
+    \item Standard deviation
+    \item Skewness
+    \item \ac{cov}
+    \item Gini
+\end{itemize}
+
+Most of these aggregations are self explanatory, but for those who are not I shall give a brief explanation. The skewness of a vector
 
 % Algorithm \ref{algo:meansaliency} shows the pseudo-code for the Mean Saliency \ac{ood} Detector. Like the baseline Maximum Softmax and Logit methods introduced by \cite{oodbaseline} and \cite{mls}, it is very simple:
 %
@@ -2073,21 +2086,57 @@ This section will detail how various \ac{xai} methods generate explanations whic
 
 \subsection{ImageNet200}
 
-ImageNet200 is a suitable dataset to begin with, given ImageNet's ubiquity in \ac{ai} research. Figure \ref{fig:imagenet200_logits} shows the distribution of the maximum softmax score and the maximum logit. Here, we see that there is a decent amount of separation between \ac{id} and \ac{ood} data points, even with the simple baseline methods introduced by \cite{oodbaseline} and \cite{mls}. Separating the distributions using \ac{msp}, we get an \ac{auroc} score of 0.834 for Near-\ac{ood} and 0.915 for Far-\ac{ood}. Using \ac{mls}, we get an \ac{auroc} score of 0.833 for Near-\ac{ood} and 0.903 for Far-\ac{ood}.
+ImageNet200 is a suitable dataset to begin with, given ImageNet's ubiquity in \ac{ai} research. Figure \ref{fig:imagenet200logits} shows the distribution of the maximum softmax score and the maximum logit. Here, we see that there is a decent amount of separation between \ac{id} and \ac{ood} data points, even with the simple baseline methods introduced by \cite{oodbaseline} and \cite{mls}. Separating the distributions using \ac{msp}, we get an \ac{auroc} score of 0.834 for Near-\ac{ood} and 0.915 for Far-\ac{ood}. Using \ac{mls}, we get an \ac{auroc} score of 0.833 for Near-\ac{ood} and 0.903 for Far-\ac{ood}.
 
 \begin{figure}
     \begin{center}
         \input{figure/imagenet200_logits_distribution.pgf}
     \end{center}
     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-    \label{fig:imagenet200_logits}
+    \label{fig:imagenet200logits}
 \end{figure}
 
 \subsubsection{\ac{lime}}
 
-With the baselines reported, we turn our attention to the first \ac{xai} saliency method, \ac{lime}.
+With the baselines reported, we turn our attention to the first \ac{xai} saliency method, \ac{lime}. Figure \ref{fig:imagenet200limemeangini} presents graphs representing the two main forms of aggregation that has been applied; those which consider the magnitude of the saliencies and those which consider the statistical spread. These two forms are here represented by the mean and the Gini-coefficient.
 
-\subsubsection{Occlusion}
+\begin{figure}
+    \begin{center}
+        \input{figure/imagenet200_lime_triple_metrics.pgf}
+    \end{center}
+    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+    \label{fig:imagenet200limemeangini}
+\end{figure}
+
+From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. However, there is a considerable degree of overlap. Using mean aggregation to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.778 on Near-\ac{ood} and 0.881 on Far-\ac{ood}, which is around 4 and 2 percentage points lower than the baseline values on Near and Far, respectively. Regardless, these results are far better than those attained by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on datasets which were not just small toy datasets, which is for all practical purposes equivalent to guessing. This large improvement suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) is highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
+
+Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all forms of aggregation on \ac{lime}, as well as the \ac{auroc} of the baseline methods.
+
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{4}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & Std & Skew & CoV$\downarrow$ & Gini  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 78.8 & 69.3 & 81.4 & 77.1 & 78.1 & 54.3 & 78.5 & 58.9 & 53.7 & 59.4  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} & 91.5 & 90.3 & 88.1 & 75.2 &\textbf{ 92.5 }& 90.2 & 91.4 & 58.8 & 91.0 & 71.2 & 49.3 & 69.5  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 0.75 & 0.60 & 0.71 & 0.45 & 0.54 & 0.08 & 0.49 & 0.09 & -0.01 & 0.08  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.61 & 0.48 & 0.61 & 0.41 & 0.48 & 0.02 & 0.45 & 0.09 & -0.01 & 0.09  \\
+    \hline
+    \end{tabular}
+    \caption{No caption}
+    \label{table:imagenet200_lime_metrics }
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
 
 \subsubsection{\ac{gradcam}}
 
@@ -2111,91 +2160,91 @@ With the baselines reported, we turn our attention to the first \ac{xai} salienc
 \subsubsection{Occlusion}
 
 
-\begin{figure}
-    \label{fig:lime}
-    \begin{center}
-        \input{figure/cifar10_lime_mean.pgf}
-    \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-\end{figure}
-
-\begin{figure}
-    \label{fig:lime}
-    \begin{center}
-        \input{figure/cifar10_lime_gini.pgf}
-    \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-\end{figure}
-
-\begin{figure}
-    \label{fig:gradcam}
-    \begin{center}
-        \input{figure/cifar10_gradcam_gini.pgf}
-    \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-\end{figure}
-
-\begin{figure}
-    \label{fig:gradcam}
-    \begin{center}
-        \input{figure/imagenet200_gradcam_mean.pgf}
-    \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-\end{figure}
-
-\begin{figure}
-    \label{fig:gradcam}
-    \begin{center}
-        \input{figure/imagenet200_lime_mean.pgf}
-    \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-\end{figure}
-
-\begin{figure}
-    \label{fig:lime}
-    \begin{center}
-        \input{figure/imagenet200_lime_heatmaps_unnormalized.pgf}
-    \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-\end{figure}
-
-
-Figure \ref{fig:imagewoof_norm} shows an example of a case which corresponds to the intuition mentioned in chapter \ref{chapter:tempmotivation}. Here, we see how the spatial extent of explanations generated for a data point in the ImageWoof dataset (ID) differ from the explanations generated for a data point in the Places365 dataset (Far-\ac{ood}). In the first instance, the correct class is predicted, and we see that both \ac{gradcam}, LIME and Occlusion \ac{xai} methods highlight only a small, localized area of the image, corresponding roughly to the face of the dog. In the second instance, the prediction is much less localized, due to the fact that there is no single location corresponding to the predicted class (which is this case was Samoyed).
-
-\begin{figure}[h]
-\centerline{\includegraphics[width=5.25in]{figure/imagewoof_normalized_sal.pdf}}
-\caption{Figure}
-\label{fig:imagewoof_norm}
-\end{figure}
-
-If we look at the same examples as in figure \ref{fig:imagewoof_norm}, but without normalizing the saliencies, we can see from figure \ref{fig:imagewoof_unnorm} that there are not just spatial differences in the saliencies generated for ID and \ac{ood} data, but also great differences in magnitude. Intuitively, this also makes sense: For ID data, we expect there to be regions which are very important for the predicted class, which get corresponding high saliency values. For \ac{ood} data, the predicted class is always wrong (given that the image is, by definition, not of any of the known classes), and thus it less likely that any one region in the image was particularly important for the prediction. It is more likely that the responses of all parts of the image for all the different classes were quite low, and that one of these low responses simply happened to be higher than the others.
-
-\begin{figure}[ht]
-\centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal.pdf}}
-\caption{Figure}
-\label{fig:imagewoof_unnorm}
-\end{figure}
-
-Figure \ref{fig:imagewoof_unnorm_stan} shows that this can even be the case for near-\ac{ood}. Here we see that all though both images contain a dog, only the dog which is actually part of the ID classes generates a significant saliency response.
-
-\begin{figure}[ht]
-\centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal_stanford.pdf}}
-\caption{Figure}
-\label{fig:imagewoof_unnorm_stan}
-\end{figure}
-
-Looking at the mean saliency values for each image over all datasets (figure \ref{fig:imagewoof_mean_gradcam}, we can see that these examples were not outliers, but consistent with a clear trend in all explanations across the datasets. Here, we can see that the mean saliency per image is on average higher for ID than Near- or Far-\ac{ood}, although there is a certain amount of overlap, especially between ID and Near-\ac{ood}.
-
-Furthermore, when looking at the average standard deviation for each saliency map (figure \ref{fig:imagewoof_std_gradcam}), we see a similar result.
-
-
-\section{\ac{xai} methods for \ac{ood} detection}
-
-\subsection{CIFAR10}
-
-\subsection{ImageNet200}
-
-\subsection{HyperKvasir}
+% \begin{figure}
+%     \label{fig:lime}
+%     \begin{center}
+%         \input{figure/cifar10_lime_mean.pgf}
+%     \end{center}
+%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+% \end{figure}
+%
+% \begin{figure}
+%     \label{fig:lime}
+%     \begin{center}
+%         \input{figure/cifar10_lime_gini.pgf}
+%     \end{center}
+%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+% \end{figure}
+%
+% \begin{figure}
+%     \label{fig:gradcam}
+%     \begin{center}
+%         \input{figure/cifar10_gradcam_gini.pgf}
+%     \end{center}
+%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+% \end{figure}
+%
+% \begin{figure}
+%     \label{fig:gradcam}
+%     \begin{center}
+%         \input{figure/imagenet200_gradcam_mean.pgf}
+%     \end{center}
+%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+% \end{figure}
+%
+% \begin{figure}
+%     \label{fig:gradcam}
+%     \begin{center}
+%         \input{figure/imagenet200_lime_mean.pgf}
+%     \end{center}
+%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+% \end{figure}
+%
+% \begin{figure}
+%     \label{fig:lime}
+%     \begin{center}
+%         \input{figure/imagenet200_lime_heatmaps_unnormalized.pgf}
+%     \end{center}
+%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+% \end{figure}
+%
+%
+% Figure \ref{fig:imagewoof_norm} shows an example of a case which corresponds to the intuition mentioned in chapter \ref{chapter:tempmotivation}. Here, we see how the spatial extent of explanations generated for a data point in the ImageWoof dataset (ID) differ from the explanations generated for a data point in the Places365 dataset (Far-\ac{ood}). In the first instance, the correct class is predicted, and we see that both \ac{gradcam}, LIME and Occlusion \ac{xai} methods highlight only a small, localized area of the image, corresponding roughly to the face of the dog. In the second instance, the prediction is much less localized, due to the fact that there is no single location corresponding to the predicted class (which is this case was Samoyed).
+%
+% \begin{figure}[h]
+% \centerline{\includegraphics[width=5.25in]{figure/imagewoof_normalized_sal.pdf}}
+% \caption{Figure}
+% \label{fig:imagewoof_norm}
+% \end{figure}
+%
+% If we look at the same examples as in figure \ref{fig:imagewoof_norm}, but without normalizing the saliencies, we can see from figure \ref{fig:imagewoof_unnorm} that there are not just spatial differences in the saliencies generated for ID and \ac{ood} data, but also great differences in magnitude. Intuitively, this also makes sense: For ID data, we expect there to be regions which are very important for the predicted class, which get corresponding high saliency values. For \ac{ood} data, the predicted class is always wrong (given that the image is, by definition, not of any of the known classes), and thus it less likely that any one region in the image was particularly important for the prediction. It is more likely that the responses of all parts of the image for all the different classes were quite low, and that one of these low responses simply happened to be higher than the others.
+%
+% \begin{figure}[ht]
+% \centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal.pdf}}
+% \caption{Figure}
+% \label{fig:imagewoof_unnorm}
+% \end{figure}
+%
+% Figure \ref{fig:imagewoof_unnorm_stan} shows that this can even be the case for near-\ac{ood}. Here we see that all though both images contain a dog, only the dog which is actually part of the ID classes generates a significant saliency response.
+%
+% \begin{figure}[ht]
+% \centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal_stanford.pdf}}
+% \caption{Figure}
+% \label{fig:imagewoof_unnorm_stan}
+% \end{figure}
+%
+% Looking at the mean saliency values for each image over all datasets (figure \ref{fig:imagewoof_mean_gradcam}, we can see that these examples were not outliers, but consistent with a clear trend in all explanations across the datasets. Here, we can see that the mean saliency per image is on average higher for ID than Near- or Far-\ac{ood}, although there is a certain amount of overlap, especially between ID and Near-\ac{ood}.
+%
+% Furthermore, when looking at the average standard deviation for each saliency map (figure \ref{fig:imagewoof_std_gradcam}), we see a similar result.
+%
+%
+% \section{\ac{xai} methods for \ac{ood} detection}
+%
+% \subsection{CIFAR10}
+%
+% \subsection{ImageNet200}
+%
+% \subsection{HyperKvasir}
 
 \chapter{Discussion} \label{chapter:discussion}
 
