@@ -7,6 +7,9 @@ import argparse
 import sys
 
 from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
+from openood.postprocessors.logit_mean_saliency_postprocessor import (
+    LogitMeanSaliencyPostprocessor,
+)
 from openood.postprocessors.gradknn_postprocessor import GradKNNPostprocessor
 from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostprocessor
 from openood.postprocessors.grad_mean_postprocessor import GradMeanPostprocessor
@@ -37,6 +40,10 @@ if postprocessor_name == 'gradknn':
 
 if postprocessor_name == 'gradmean':
     postprocessor = GradMeanPostprocessor(None)
+    postprocessor_name = None
+
+if postprocessor_name == 'logitmean':
+    postprocessor = LogitMeanSaliencyPostprocessor(None)
     postprocessor_name = None
 
 
