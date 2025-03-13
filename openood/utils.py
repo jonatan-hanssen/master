@@ -2,6 +2,7 @@ import os
 import pickle
 from typing import Callable, List, Optional, Tuple
 
+import scipy
 import math
 import captum
 import matplotlib.pyplot as plt
@@ -385,7 +386,7 @@ def get_saliency_generator(
     net: torch.nn.Module,
     repeats: int,
     return_dim: int = 3,
-    do_relu: bool = False,
+    relu: bool = False,
 ) -> Callable:
     if return_dim == 3:  # batch x heigh x width
         dim_reducer = lambda data: data
@@ -396,8 +397,13 @@ def get_saliency_generator(
             data = data.reshape(data.shape[0], torch.prod(torch.tensor(data.shape[1:])))
 
             all_results = list()
-            for name, function in get_aggregate_functions():
-                all_results.append(function(data, dim=-1))
+            for name, function in get_aggregate_functions(relu):
+                result = function(data, dim=-1)
+
+                if isinstance(result, np.ndarray):
+                    result = torch.from_numpy(result)
+
+                all_results.append(result)
 
             all_results = torch.vstack(all_results).T
 
@@ -420,12 +426,33 @@ def get_saliency_generator(
         generator_func = cam_wrapper
 
     elif name == 'occlusion':
-        generator_func = lambda data: occlusion(
-            net, data, repeats=repeats, do_relu=do_relu
-        )
+        # generator_func = lambda data: occlusion(
+        #     net, data, repeats=repeats, do_relu=do_relu
+        # )
+
+        def generator_func(data):
+            targets = torch.argmax(net(data), dim=-1)
+            lrp = captum.attr.Occlusion(net)
+
+            block_size = data.shape[-1] // repeats
+
+            attributions = lrp.attribute(
+                data,
+                target=targets,
+                sliding_window_shapes=(3, block_size, block_size),
+                strides=(3, block_size, block_size),
+            )
+
+            attributions = attributions.sum(dim=1)
+            attributions = (
+                torch.nn.MaxPool2d(1, block_size)(attributions).detach().cpu()
+            )
+
+            return dim_reducer(attributions)
+
     elif name == 'lime':
         generator_func = lambda data: lime_explanation(
-            net, data, repeats=repeats, do_relu=do_relu
+            net, data, repeats=repeats, do_relu=relu
         )
 
     elif name == 'eigencam':
@@ -555,13 +582,11 @@ def get_saliency_generator(
 
     elif name == 'segocc':
         if return_dim == 3:
-            generator_func = lambda data: segmented_occlusion(
-                net, data, do_relu=do_relu
-            )
+            generator_func = lambda data: segmented_occlusion(net, data, do_relu=relu)
         elif return_dim == 1:
 
             def generator_func(data):
-                saliencies = segmented_occlusion(net, data, do_relu=do_relu)
+                saliencies = segmented_occlusion(net, data, do_relu=relu)
                 means = torch.zeros(data.shape[0])
                 for i, saliency in enumerate(saliencies):
                     means[i] = torch.unique(saliency).mean()
@@ -575,7 +600,7 @@ def get_saliency_generator(
                 perturbations=200,
                 kernel_width=0.25,
                 batch_size=100,
-                do_relu=do_relu,
+                do_relu=relu,
             )[0]
         elif return_dim == 1:
 
@@ -598,7 +623,7 @@ def entropy(saliencies, dim=-1):
     return entropy
 
 
-def gini(saliencies, dim=-1):
+def rmd(saliencies, dim=-1):
     """Calculate the Gini coefficient of a numpy array."""
     # based on bottom eq: http://www.statsdirect.com/help/content/image/stat0206_wmf.gif
     # from: http://www.statsdirect.com/help/default.htm#nonparametric_methods/gini.htm
@@ -619,7 +644,7 @@ def gini(saliencies, dim=-1):
         )  # Gini coefficient
         ginies.append(gini)
 
-    return torch.tensor(ginies)
+    return torch.tensor(ginies) * 2
 
 
 def norm_std(saliencies, dim=-1):
@@ -1320,34 +1345,70 @@ def display_pytorch_image(
         plt.axis('off')
 
 
-def get_aggregate_functions():
+def std_norm(data, dim=-1):
+    data -= torch.min(data, dim=-1)[0].unsqueeze(1)
+    data /= torch.sum(data, dim=-1).unsqueeze(1)
+    return torch.std(data, dim=-1)
+
+
+def qcd(data, dim=-1):
+    q1 = np.quantile(data, 0.25, axis=-1)
+    q3 = np.quantile(data, 0.75, axis=-1)
+
+    numerator = q3 - q1
+    denominator = q3 + q1
+
+    new_denominator = denominator[:]
+    new_denominator[np.where(denominator == 0)] = 1
+    numerator[np.where(denominator == 0)] = float('inf')
+
+    return numerator / new_denominator
+
+
+def iqr(data, dim=-1):
+    q1 = np.quantile(data, 0.25, axis=-1)
+    q3 = np.quantile(data, 0.75, axis=-1)
+
+    return q3 - q1
+
+
+def get_aggregate_functions(relu=False):
     aggregate_functions = [
         ('Mean', torch.mean),
-        # ('Skew', lambda data, dim: scipy.stats.skew(data, axis=-1)),
+        ('Median', lambda data, dim: torch.median(data, dim=-1)[0]),
         ('Norm', torch.linalg.vector_norm),
-        ('Std', torch.std),
-        ('Norm3', lambda data, dim: torch.linalg.vector_norm(data, ord=3, dim=dim)),
-        (
-            'Norminf',
-            lambda data, dim: torch.linalg.vector_norm(data, ord=float('inf'), dim=dim),
-        ),
         (
             'Range',
             lambda data, dim: torch.max(data, dim=-1)[0] - torch.min(data, dim=-1)[0],
         ),
-        # ('Product', torch.prod),
-        ('Gini', gini),
-        ('Median', lambda data, dim: torch.median(data, dim=-1)[0]),
         ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
+        ('Min', lambda data, dim: torch.min(data, dim=-1)[0]),
+        (
+            'CV',
+            lambda data, dim: torch.std(data, dim=-1)
+            / torch.where(
+                torch.mean(data, dim=-1) != 0, torch.mean(data, dim=-1), 1e-10
+            ),
+        ),
+        ('RMD', rmd),
+        # ('Skew', lambda data, dim: scipy.stats.skew(data, axis=-1)),
+        # ('StdNorm', std_norm),
+        ('QCD', qcd),
         # ('NormStd', utils.norm_std),
+        # ('Norm3', lambda data, dim: torch.linalg.vector_norm(data, ord=3, dim=dim)),
+        # (
+        #     'Norminf',
+        #     lambda data, dim: torch.linalg.vector_norm(data, ord=float('inf'), dim=dim),
+        # ),
     ]
 
     new_aggregate_functions = [x for x in aggregate_functions]
 
-    for name, function in aggregate_functions:
-        new_agg = lambda data, dim, func=function: func(
-            torch.nn.functional.relu(data), dim=dim
-        )
-        new_aggregate_functions.append((f'ReLU{name}', new_agg))
+    if relu:
+        for name, function in aggregate_functions:
+            new_agg = lambda data, dim, func=function: func(
+                torch.nn.functional.relu(data), dim=dim
+            )
+            new_aggregate_functions.append((f'ReLU{name}', new_agg))
 
     return new_aggregate_functions

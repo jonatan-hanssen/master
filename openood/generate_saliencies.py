@@ -35,7 +35,7 @@ batch_size = args.batch_size
 dataloaders = get_dataloaders(id_name, batch_size=batch_size, full=True, shuffle=False)
 
 
-aggregate_functions = utils.get_aggregate_functions()
+aggregate_functions = utils.get_aggregate_functions(args.relu)
 
 # load the model
 net = get_network(id_name)
@@ -44,6 +44,7 @@ generator_func = get_saliency_generator(
     net,
     args.repeats,
     return_dim=args.return_dim,
+    relu=args.relu,
 )
 
 saliency_dict = dict()
