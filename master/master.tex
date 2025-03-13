@@ -190,6 +190,12 @@ As Artificial Intelligence becomes a larger and larger part of society, the need
 Here comes the abstract in a different language.
 \end{xabstract}
 
+\chapter*{Preface}
+
+Generative \ac{ai} has not been used to generate or enhance any written text contained in this thesis. However, generative \ac{ai} has been used for some programmatic tasks. Services such as GPT UiO have been used for code debugging, for generating TikZ code used for creating diagrams, and for generating some boilerplate Python code. All data and personal information have been processed in accordance with the University of Oslo's regulations, and I, as the author of the document, take full responsibility for the validity of any generated code used as part of this work.
+
+
+
 \tableofcontents{}
 \listoffigures{}
 \listoftables{}
@@ -205,14 +211,17 @@ Here comes the abstract in a different language.
     \acro  {lime}   [LIME]   {Local Interpretable Model-Agnostic Explanations}
     \acro  {mls}   [MLS]   {Maximum Logit Score}
     \acro  {msp}   [MSP]   {Maximum Softmax Probability}
+    \acro  {rmd}   [RMD]   {Relative Mean Absolute Difference}
+    \acro  {qcd}   [QCD]   {Quartile Coefficient of Determination}
 
     \acro  {cnn}   [CNN]   {Convolutional Neural Network}
 
     \acro  {slic} [SLIC] {Simple Linear Iterative Clustering}
 
     \acro  {ffnn}[FFNN]{Feed Forward Neural Network}
-    \acro  {cov}[CoV]{Coefficient of Variance}
+    \acro  {cv}[CV]{Coefficient of Variance}
 
+    \acro  {gbp}   [GBP]   {Guided Backpropagation}
     \acro  {ml}   [ML]   {Machine Learning}
     \acro  {lrp}   [LRP]   {Layer Relevance Propagation}
     \acro  {xai}   [XAI]   {Explainable Artificial Intelligence}
@@ -1526,10 +1535,13 @@ Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
 \label{eq:aggregate}
 \end{align}
 
+An astute reader may note that aggregation functions are permutation invariant, meaning that all positional information from the two-dimensional saliency maps is lost when aggregating. This may seem strange, as it is primarily the positions of the different values that is important when using \ac{xai} methods for explaining model predictions on images. However, there is good reason to believe that for many image classification tasks, the positions of the points of interest in an \ac{xai} saliency map does not carry much discriminative potential. For datasets such as CIFAR10 and ImageNet200, there is a huge variety in the positions of the ground truth class (a dog may appear in the middle, the top right corner, or any other position and still be of the class 'dog'). As such, it is not a given that the removal of any positional information will be massively detrimental. Indeed, when \cite{martinez} reflects upon the poor results of their saliency heatmap clustering for detecting \ac{ood} samples on CIFAR10, it is exactly this variability in position they highlight: "Indeed, the CIFAR10-C dataset does not afford the positional bias and low intra-class variability observed in the previous case studies: informative objects for the classes to be predicted appear in arbitrary parts of the image and have a high degree of compositional variability" \cite{martinez}.
+
 Given the exploratory nature of this thesis, it is reasonable to try many different forms of aggregations. In the experiments, the following aggregations have been used. \\
 
-\textbf{Magnitude based:}
+\textbf{Magnitude:}
 \begin{itemize}
+    \itemsep0em
     \item Mean
     \item Median
     \item Vector norm
@@ -1538,15 +1550,15 @@ Given the exploratory nature of this thesis, it is reasonable to try many differ
     \item Minimum
 \end{itemize}
 
-\textbf{Distribution based:}
+\textbf{Statistical dispersion:}
 \begin{itemize}
-    \item Standard deviation
-    \item Skewness
-    \item \ac{cov}
-    \item Gini
+    \itemsep0em
+    \item \ac{cv}
+    \item \ac{qcd}
+    \item \ac{rmd}
 \end{itemize}
 
-Most of these aggregations are self explanatory, but for those who are not I shall give a brief explanation. The skewness of a vector
+The magnitude based aggregations are essentially self-explanatory. For the distribution based methods, some explanation is necessary. The \acf{cv} is an alternative to using standard deviation, which removes the effect of the magnitude of the values over which the standard deviation is calculated. The \ac{cv} of a set of values is simply the standard deviation divided by the mean: $CV(\mathbf{x}) = \sigma_x / \mu_x$. For exploring whether the saliencies of \ac{ood} data is more dispersed or spread out than \ac{id} data, such a normalization is required, given that we do not expect the saliencies of \ac{id} and \ac{ood} data to have the same magnitude. Skewness is a measure of asymmetry of a distribution, and can tell us something about the outliers of the saliency maps and their location in relation to the rest of the values. The Gini coefficient is another measure of statistical dispersion, most commonly used to measure income and wealth inequality. The Gini-coefficient of a data set where all values are the same is zero, while it is 1 for a data set where all values are 0 except for one. 
 
 % Algorithm \ref{algo:meansaliency} shows the pseudo-code for the Mean Saliency \ac{ood} Detector. Like the baseline Maximum Softmax and Logit methods introduced by \cite{oodbaseline} and \cite{mls}, it is very simple:
 %
@@ -2108,56 +2120,292 @@ With the baselines reported, we turn our attention to the first \ac{xai} salienc
     \label{fig:imagenet200limemeangini}
 \end{figure}
 
-From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. However, there is a considerable degree of overlap. Using mean aggregation to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.778 on Near-\ac{ood} and 0.881 on Far-\ac{ood}, which is around 4 and 2 percentage points lower than the baseline values on Near and Far, respectively. Regardless, these results are far better than those attained by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on datasets which were not just small toy datasets, which is for all practical purposes equivalent to guessing. This large improvement suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) is highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
+From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. Using the vector norm to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.814 on Near-\ac{ood}, which is slightly lower than the baseline methods, and 0.925 on Far-\ac{ood}, which is actually higher than the baselines. These results are far better than those attained by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on datasets which were not just small toy datasets, which is for all practical purposes equivalent to guessing. This large improvement suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) is highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
 
-Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all forms of aggregation on \ac{lime}, as well as the \ac{auroc} of the baseline methods.
+Measuring the statistical spread using \ac{rmd}, we find that there is indeed also a higher spread in \ac{id} data when compared to \ac{ood} data. However, in this case the overlap is substantial, which is reflected in the \ac{auroc} scores attained when discriminating using \ac{rmd}: The Near-\ac{ood} \ac{auroc} score was 0.594, and the Far-\ac{ood} score was 0.695. In both cases, the scores attained are far lower than the both of the baselines.
+
+
+
+Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all forms of aggregation on \ac{lime}, as well as the previously mentioned \ac{auroc} of the baseline methods. In addition, the correlation between the aggregates and the maximum logit and maximum softmax score is reported, which gives insight into how \ac{xai} saliency maps are related to the prediction confidence of the model.
 
 \begin{table}[H]
 \setlength\tabcolsep{4pt}
 \begin{center}
-\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c c| }
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
     \hline
-     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{4}{c|}{Spread of saliencies} \\
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
     \hline
-    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & Std & Skew & CoV$\downarrow$ & Gini  \\
+     Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & \ac{cv}$\downarrow$ & \ac{rmd} & \ac{qcd}$\downarrow$  \\
     \hline
     \rowcolor{near!50}
-    Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 78.8 & 69.3 & 81.4 & 77.1 & 78.1 & 54.3 & 78.5 & 58.9 & 53.7 & 59.4  \\
+    Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 78.8 & 69.3 & 81.4 & 77.1 & 78.1 & 54.3 & 53.7 & 59.4 & 53.2  \\
     \hline
     \rowcolor{far!50}
-    Far-\ac{ood} \ac{auroc} & 91.5 & 90.3 & 88.1 & 75.2 &\textbf{ 92.5 }& 90.2 & 91.4 & 58.8 & 91.0 & 71.2 & 49.3 & 69.5  \\
+    Far-\ac{ood} \ac{auroc} & 91.5 & 90.3 & 88.1 & 75.2 &\textbf{ 92.5 }& 90.2 & 91.4 & 58.8 & 49.3 & 69.5 & 49.8  \\
     \hline
-    Correlation with \ac{mls}& - & - & 0.75 & 0.60 & 0.71 & 0.45 & 0.54 & 0.08 & 0.49 & 0.09 & -0.01 & 0.08  \\
+    Correlation with \ac{mls}& - & - & 0.75 & 0.60 & 0.71 & 0.45 & 0.54 & 0.08 & -0.01 & 0.08 & -0.01  \\
     \hline
-    Correlation with \ac{msp}& - & - & 0.61 & 0.48 & 0.61 & 0.41 & 0.48 & 0.02 & 0.45 & 0.09 & -0.01 & 0.09  \\
+    Correlation with \ac{msp}& - & - & 0.61 & 0.48 & 0.61 & 0.41 & 0.48 & 0.02 & -0.01 & 0.09 & -0.01  \\
     \hline
     \end{tabular}
-    \caption{No caption}
-    \label{table:imagenet200_lime_metrics }
+    \caption{\ac{auroc} scores for lime on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:imagenet200_lime_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+From this table, we can note several interesting observations. Firstly, the aggregates which capture information about the magnitude of the saliencies are highly correlated with both the maximum logit and the maximum softmax score of the predicted class. This is not unexpected, as \ac{lime} generates saliencies using differences in prediction values as different parts of the image is masked. If the predicted value is higher on average for \ac{id} data, then it is likely that the drop in predicted value when masking parts of the image is larger as well, leading to higher saliencies. Regardless, it seems clear that it is not only the correlation to the model output which explains the discriminative power of these aggregates, as we see that both
+
+Secondly, the magnitude based
+
+\subsubsection{Occlusion}
+
+\begin{figure}
+    \begin{center}
+        \input{figure/imagenet200_occlusion_triple_metrics.pgf}
+    \end{center}
+    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+    \label{fig:imagenet200_occlusion_mean_rmd}
+\end{figure}
+
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+     Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & \ac{cv} & \ac{rmd} & \ac{qcd}  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 58.6 & 54.2 & 65.7 & 69.1 & 66.8 & 54.3 & 55.0 & 57.7 & 55.4  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} &\textbf{ 91.5 }& 90.3 & 69.7 & 62.9 & 77.8 & 84.6 & 83.5 & 54.0 & 63.8 & 64.7 & 62.7  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 0.37 & 0.31 & 0.42 & 0.44 & 0.47 & 0.07 & 0.01 & 0.14 & 0.01  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.29 & 0.24 & 0.37 & 0.41 & 0.41 & 0.03 & 0.01 & 0.13 & 0.01  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for occlusion on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+
+    \label{table:imagenet200_occlusion_metrics}
 \end{center}
 \setlength\tabcolsep{6pt}
 \end{table}
 
 \subsubsection{\ac{gradcam}}
 
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Statistical dispersion} \\
+    \hline
+     Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min & \ac{cv} & \ac{rmd} & \ac{qcd}  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 83.3 & 83.4 & 83.3 & 80.3 &\textbf{ 83.8 }& 80.5 & 81.9 & 59.2 & 50.8 & 51.8 & 51.7  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} & 91.5 & 90.3 & 91.5 & 87.6 &\textbf{ 92.9 }& 92.2 & 92.8 & 56.1 & 63.6 & 64.9 & 64.8  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 1.00 & 0.94 & 0.97 & 0.69 & 0.81 & 0.49 & -0.16 & -0.12 & -0.12  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.83 & 0.78 & 0.82 & 0.62 & 0.70 & 0.37 & -0.11 & -0.07 & -0.07  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for gradcam on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
 
+    \label{table:imagenet200_gradcam_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+\subsubsection{Integrated Gradients}
+
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Statistical dispersion} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & CV$\downarrow$ & RMD & QCD  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 82.1 & 55.3 & 67.3 & 63.9 & 63.5 & 63.6 & 66.1 & 51.3 & 50.5  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} &\textbf{ 91.5 }& 90.3 & 90.5 & 56.0 & 87.8 & 86.7 & 85.9 & 86.2 & 49.8 & 39.1 & 53.4  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 0.94 & 0.14 & 0.40 & 0.31 & 0.30 & -0.30 & -0.16 & 0.01 & 0.01  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.79 & 0.10 & 0.36 & 0.29 & 0.28 & -0.27 & -0.15 & 0.00 & 0.00  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for integratedgradients on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:imagenet200_integratedgradients_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+\subsubsection{\ac{gbp}}
+
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean$\downarrow$ & Median$\downarrow$ & Norm & Range & Max & Min$\downarrow$ & CV & RMD$\downarrow$ & QCD$\downarrow$  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 73.7 & 55.7 & 77.4 & 71.3 & 71.8 & 69.9 & 50.2 & 52.8 & 51.5  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} & 91.5 & 90.3 & 81.7 & 51.1 &\textbf{ 92.3 }& 90.7 & 90.6 & 89.7 & 43.5 & 72.3 & 50.7  \\
+    \hline
+    Correlation with \ac{mls}& - & - & -0.33 & -0.08 & 0.45 & 0.25 & 0.25 & -0.24 & 0.00 & -0.01 & -0.00  \\
+    \hline
+    Correlation with \ac{msp}& - & - & -0.30 & -0.08 & 0.42 & 0.25 & 0.24 & -0.24 & 0.01 & -0.00 & -0.00  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for gbp on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:imagenet200_gbp_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
 
 
 \subsection{CIFAR10}
 
-\subsubsection{\ac{gradcam}}
 
 \subsubsection{\ac{lime}}
 
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min & CV$\downarrow$ & RMD & QCD$\downarrow$  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 86.7 &\textbf{ 87.7 }& 81.2 & 73.0 & 77.7 & 67.1 & 76.1 & 62.8 & 63.6 & 61.0 & 59.0  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} &\textbf{ 91.4 }& 90.8 & 86.1 & 77.9 & 84.0 & 74.5 & 81.9 & 59.6 & 59.0 & 61.2 & 53.2  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 0.40 & 0.28 & 0.34 & 0.22 & 0.31 & 0.08 & -0.00 & 0.11 & -0.00  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.29 & 0.20 & 0.23 & 0.15 & 0.22 & 0.06 & 0.01 & 0.08 & -0.00  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for lime on cifar10. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:cifar10_lime_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
 \subsubsection{Occlusion}
 
-\subsection{HyperKvasir}
+
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean$\downarrow$ & Median$\downarrow$ & Norm$\downarrow$ & Range$\downarrow$ & Max$\downarrow$ & Min & CV & RMD & QCD  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 86.7 &\textbf{ 87.7 }& 79.2 & 69.3 & 84.5 & 79.5 & 75.6 & 83.7 & 68.3 & 66.3 & 51.5  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} &\textbf{ 91.4 }& 90.8 & 79.2 & 72.4 & 84.9 & 78.8 & 74.6 & 86.6 & 70.5 & 71.2 & 52.5  \\
+    \hline
+    Correlation with \ac{mls}& - & - & -0.17 & -0.28 & -0.39 & -0.39 & 0.00 & 0.68 & 0.01 & 0.71 & 0.00  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.07 & -0.16 & -0.18 & -0.24 & 0.26 & 0.87 & 0.02 & 0.68 & 0.01  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for occlusion on cifar10. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:cifar10_occlusion_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
 
 \subsubsection{\ac{gradcam}}
 
-\subsubsection{\ac{lime}}
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min & CV$\downarrow$ & RMD$\downarrow$ & QCD$\downarrow$  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 86.7 &\textbf{ 87.7 }& 86.8 & 85.9 & 86.7 & 71.8 & 86.5 & 87.5 & 75.3 & 76.7 & 74.2  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} & 91.4 & 90.8 &\textbf{ 91.4 }& 91.2 & 91.4 & 80.7 & 91.2 & 90.7 & 78.8 & 80.1 & 74.5  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 1.00 & 0.99 & 1.00 & 0.68 & 0.96 & 0.90 & -0.47 & -0.48 & -0.45  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.79 & 0.78 & 0.79 & 0.57 & 0.77 & 0.70 & -0.42 & -0.42 & -0.41  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for gradcam on cifar10. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:cifar10_gradcam_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
 
-\subsubsection{Occlusion}
+\subsection{\ac{gbp}}
+
+\subsection{Integrated Gradients}
+
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm$\downarrow$ & Range$\downarrow$ & Max$\downarrow$ & Min & CV & RMD & QCD$\downarrow$  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 86.7 &\textbf{ 87.7 }& 52.4 & 51.9 & 86.0 & 84.8 & 84.8 & 84.4 & 51.4 & 54.1 & 50.3  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} &\textbf{ 91.4 }& 90.8 & 46.2 & 44.7 & 83.6 & 82.5 & 82.4 & 82.1 & 51.9 & 53.1 & 50.8  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 0.01 & 0.03 & -0.24 & -0.21 & -0.20 & 0.20 & 0.00 & 0.02 & 0.00  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.02 & 0.03 & -0.16 & -0.15 & -0.14 & 0.14 & 0.00 & 0.03 & 0.00  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for gbp on cifar10. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:cifar10_gbp_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+% \subsection{HyperKvasir}
+%
+% \subsubsection{\ac{gradcam}}
+%
+% \subsubsection{\ac{lime}}
+%
+% \subsubsection{Occlusion}
 
 
 % \begin{figure}
