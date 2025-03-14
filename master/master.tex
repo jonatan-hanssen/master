@@ -2449,116 +2449,11 @@ A second interesting observation is that the mean value is completely correlated
 \setlength\tabcolsep{6pt}
 \end{table}
 
-% \subsection{HyperKvasir}
-%
-% \subsubsection{\ac{gradcam}}
-%
-% \subsubsection{\ac{lime}}
-%
-% \subsubsection{Occlusion}
-
-
-% \begin{figure}
-%     \label{fig:lime}
-%     \begin{center}
-%         \input{figure/cifar10_lime_mean.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:lime}
-%     \begin{center}
-%         \input{figure/cifar10_lime_gini.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:gradcam}
-%     \begin{center}
-%         \input{figure/cifar10_gradcam_gini.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:gradcam}
-%     \begin{center}
-%         \input{figure/imagenet200_gradcam_mean.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:gradcam}
-%     \begin{center}
-%         \input{figure/imagenet200_lime_mean.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:lime}
-%     \begin{center}
-%         \input{figure/imagenet200_lime_heatmaps_unnormalized.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-%
-% Figure \ref{fig:imagewoof_norm} shows an example of a case which corresponds to the intuition mentioned in chapter \ref{chapter:tempmotivation}. Here, we see how the spatial extent of explanations generated for a data point in the ImageWoof dataset (ID) differ from the explanations generated for a data point in the Places365 dataset (Far-\ac{ood}). In the first instance, the correct class is predicted, and we see that both \ac{gradcam}, LIME and Occlusion \ac{xai} methods highlight only a small, localized area of the image, corresponding roughly to the face of the dog. In the second instance, the prediction is much less localized, due to the fact that there is no single location corresponding to the predicted class (which is this case was Samoyed).
-%
-% \begin{figure}[h]
-% \centerline{\includegraphics[width=5.25in]{figure/imagewoof_normalized_sal.pdf}}
-% \caption{Figure}
-% \label{fig:imagewoof_norm}
-% \end{figure}
-%
-% If we look at the same examples as in figure \ref{fig:imagewoof_norm}, but without normalizing the saliencies, we can see from figure \ref{fig:imagewoof_unnorm} that there are not just spatial differences in the saliencies generated for ID and \ac{ood} data, but also great differences in magnitude. Intuitively, this also makes sense: For ID data, we expect there to be regions which are very important for the predicted class, which get corresponding high saliency values. For \ac{ood} data, the predicted class is always wrong (given that the image is, by definition, not of any of the known classes), and thus it less likely that any one region in the image was particularly important for the prediction. It is more likely that the responses of all parts of the image for all the different classes were quite low, and that one of these low responses simply happened to be higher than the others.
-%
-% \begin{figure}[ht]
-% \centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal.pdf}}
-% \caption{Figure}
-% \label{fig:imagewoof_unnorm}
-% \end{figure}
-%
-% Figure \ref{fig:imagewoof_unnorm_stan} shows that this can even be the case for near-\ac{ood}. Here we see that all though both images contain a dog, only the dog which is actually part of the ID classes generates a significant saliency response.
-%
-% \begin{figure}[ht]
-% \centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal_stanford.pdf}}
-% \caption{Figure}
-% \label{fig:imagewoof_unnorm_stan}
-% \end{figure}
-%
-% Looking at the mean saliency values for each image over all datasets (figure \ref{fig:imagewoof_mean_gradcam}, we can see that these examples were not outliers, but consistent with a clear trend in all explanations across the datasets. Here, we can see that the mean saliency per image is on average higher for ID than Near- or Far-\ac{ood}, although there is a certain amount of overlap, especially between ID and Near-\ac{ood}.
-%
-% Furthermore, when looking at the average standard deviation for each saliency map (figure \ref{fig:imagewoof_std_gradcam}), we see a similar result.
-%
-%
-% \section{\ac{xai} methods for \ac{ood} detection}
-%
-% \subsection{CIFAR10}
-%
-% \subsection{ImageNet200}
-%
-% \subsection{HyperKvasir}
-
 \chapter{Discussion} \label{chapter:discussion}
 
 \chapter{Conclusion} \label{chapter:conclusion}
 
 \section{Future work}
-
-
-
-
-
-
-
-
-
-
 
 
 
