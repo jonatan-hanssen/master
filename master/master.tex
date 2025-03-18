@@ -190,11 +190,6 @@ As Artificial Intelligence becomes a larger and larger part of society, the need
 Here comes the abstract in a different language.
 \end{xabstract}
 
-\chapter*{Preface}
-
-Generative \ac{ai} has not been used to generate or enhance any written text contained in this thesis. However, generative \ac{ai} has been used for some programmatic tasks. Services such as GPT UiO have been used for code debugging, for generating TikZ code used for creating diagrams, and for generating some boilerplate Python code. All data and personal information have been processed in accordance with the University of Oslo's regulations, and I, as the author of the document, take full responsibility for the validity of any generated code used as part of this work.
-
-
 
 \tableofcontents{}
 \listoffigures{}
@@ -209,6 +204,7 @@ Generative \ac{ai} has not been used to generate or enhance any written text con
     \acro  {gap}   [GAP]   {Global Average Pooling}
     \acro  {msp}   [MSP]   {Maximum Softmax Probability}
     \acro  {lime}   [LIME]   {Local Interpretable Model-Agnostic Explanations}
+    \acro  {relu}   [ReLU]   {Rectified Linear Unit}
     \acro  {mls}   [MLS]   {Maximum Logit Score}
     \acro  {msp}   [MSP]   {Maximum Softmax Probability}
     \acro  {rmd}   [RMD]   {Relative Mean Absolute Difference}
@@ -235,7 +231,7 @@ Generative \ac{ai} has not been used to generate or enhance any written text con
 \end{acronym}
 
 \begin{preface}
-I would like to thank my dog and Ed Bickley, who is still at large.
+Generative \ac{ai} has not been used to generate or enhance any written text contained in this thesis. However, generative \ac{ai} has been used for some programmatic tasks. Services such as GPT UiO have been used for code debugging, for generating TikZ code used for creating diagrams, and for generating some boilerplate Python code. All data and personal information have been processed in accordance with the University of Oslo's regulations, and I, as the author of the document, take full responsibility for the validity of any generated code used as part of this work.
 \end{preface}
 
 \mainmatter{}
@@ -993,9 +989,27 @@ Thus, \ac{gradcam} improves upon \ac{cam} by making the method less model depend
 
 \subsubsection{Guided Backpropagation}
 
-Guided backpropagation is another \ac{xai} method which utilizes the gradients of the network with regards to the input to generate an explanation.
+\ac{gbp} \cite{gbp} is another \ac{xai} method which utilizes the gradients of the network to calculate saliencies. In this case, we do not stop at the final feature map, but backpropagate through the entire network to the input image. Simply backpropagating in this way produces a saliency map for the entire input image. However, \cite{gbp} finds that by only backpropagating positive gradients through \acs{relu} functions, they are able to produce "sharper visualizations of descriptive image regions than the previously known methods". Although the choice to simply neglect negative gradients when backpropagating lacks theoretical justification, \ac{gbp} has been shown to be accurate and trustworthy compared to other methods \cite{arras2022clevr, pianpanit2021parkinson}. Compared to the previous methods, \ac{gbp} differs in the sense that it produces a saliency value for every single input feature (every pixel, for example) as opposed to regions.
 
 \subsubsection{Integrated Gradients}
+
+Integrated Gradients \cite{integratedgradients} is another gradient based \ac{xai} method. The method was developed as part of an effort to create an \ac{xai} method which satisfies two axioms; sensitivity, and implementation invariance. Sensitivity states that if an input and a baseline differ in only one input feature, and have different outputs, then this input feature should have non-zero saliency. \cite{integratedgradients} shows that gradients violate this property because "the prediction function may flatten at the input and thus have zero gradient despite the function value at the input being different from that at the baseline". Implementation invariance states that if two models are functionally identical (their outputs are equal for all inputs), then their attributions should be identical as well. Gradients satisfy this property, but methods which use discrete gradients such as \ac{lrp} \cite{lrp} break this axiom.
+
+Both these axioms represent desirable qualities for an \ac{xai} method; we don't want our attribution method to miss any features which lead to a change in the model prediction, and we don't want the internal structure of the model to affect the attribution if it does not affect the output score in any way. Thus, it is problematic that there are few methods which satisfy both criteria. \cite{integratedgradients} finds that by integrating the gradients of the network in the straight line path between a baseline and the input, both these axioms are satisfied. Mathematically, the saliency for a specific input feature $\mathbf{x}_i$ is defined as follows, given an input $\mathbf{x}$, a baseline $\mathbf{x'}$ and a deep learning model $f$:
+
+\begin{equation}
+    \text{IntegratedGradients}_i(\mathbf{x}) := (\mathbf{x}_i - \mathbf{x}_i') \times \int_{\alpha = 0}^1 \frac{\delta f(\mathbf{x}' + \alpha \times (\mathbf{x} - \mathbf{x}'))}{\delta \mathbf{x}_i}d\alpha
+\end{equation}
+
+By cumulating the gradients of the network at all points between the baseline and the input, \cite{integratedgradients} manages to combine the implementation invariance of gradients with the sensitivity of techniques like \ac{lrp}. In addition, they prove that if the model $f$ is differentiable "almost everywhere", then the sum of all attributions is equal to the difference in output between the baseline and the input:
+
+\begin{equation}
+    \sum_{i=1}^n \text{IntegratedGradients}_i(\mathbf{x}) = f(\mathbf{x}) - f(\mathbf{x'})
+\end{equation}
+
+If we then choose a baseline which has $f(\mathbf{x'}) \approx 0$, we see that integrated gradients is equivalent to distributing the output prediction amongst the input features, a very desirable interpretation for an \ac{xai} attribution method.
+
+
 
 % \subsubsection{Layer-Wise Relevance Propagation (LRP)}
 %
@@ -1416,7 +1430,7 @@ As we have seen from section \ref{section:relatedwork}, there has been little re
 
 As mentioned previously, the field of \ac{ood} detection started with the simple baseline introduced by \cite{oodbaseline}, which simply uses the \ac{msp} (i.e the confidence score of the predicted class) as a way to measure \ac{ood}. As such, I propose a similarly simple baseline when using explanations for \ac{ood} detection. The analogue of the maximum logit in an \ac{xai} context can reasonably be said to be the explanation generated of the predicted class (the class corresponding to the maximum logit). As explained previously, this explanation will take the form of an $n \times m$ saliency map. This saliency map is not a single scalar value, and does thus not make a suitable \ac{ood} score by itself. Instead, we may perform some form of aggregation on the saliency map (such as taking the mean, the max, the variance or some other form), and use this as the \ac{ood} score.
 
-The intuition for this method is informed by the fact that there are many forms of aggregation over saliencies which one might reasonably expect to be different for ID and \ac{ood} data. As an example, let us consider the implications of aggregating in some way which captures the magnitude of the saliencies, such as the {\it mean}, the {\it norm}, or the {\it max value}. When we generate a saliency map using the predicted class, the \ac{xai} saliency method attempts to calculate a measure of importance for each region of the input image, with regard to this class. For ID data, as long as the model predicted correctly, we know that there really are regions of the input image which contain the predicted class. If we instead are looking at semantically shifted \ac{ood} data, we know that no input image contains any of the ID classes. Thus, when a neural network makes a prediction on such a data point, it will always be wrong, because it will always predict one of the ID classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to a false decision. Given that there are no objects of the predicted class, in any region, we should expect the saliency values to be lower than in an ID case, where such objects actually are present.
+The intuition for this method is informed by the fact that there are many forms of aggregation over saliencies which one might reasonably expect to be different for ID and \ac{ood} data. As an example, let us consider the implications of aggregating in some way which captures the magnitude of the saliencies, such as the {\it mean}, the {\it vector norm}, or the {\it max value}. When we generate a saliency map using the predicted class, the \ac{xai} saliency method attempts to calculate a measure of importance for each region of the input image, with regard to this class. For ID data, as long as the model predicted correctly, we know that there really are regions of the input image which contain the predicted class. If we instead are looking at semantically shifted \ac{ood} data, we know that no input image contains any of the ID classes. Thus, when a neural network makes a prediction on such a data point, it will always be wrong, because it will always predict one of the ID classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to a false decision. Given that there are no objects of the predicted class, in any region, we should expect the saliency values to be lower than in an ID case, where such objects actually are present.
 
 To further illustrate this theoretical justification, I present a simple example scenario (figure \ref{fig:meansaliency}). Here, I imagine a model which has been trained to differentiate between different breeds of dogs. In the first case, it is given an image of a dog, and a prediction of "English Foxhound" is made, which happens to be correct. Generating an explanation for this prediction, each region of the image is given a measure of importance, calculated using gradient information, differences in prediction score on counterfactual examples or by other means. As there actually is an English Foxhound in the image, we expect that these methods generate saliencies which have a magnitude which is higher than if there was no dog present.
 
@@ -1471,9 +1485,9 @@ To further illustrate this theoretical justification, I present a simple example
 
 In the second case, the model is given an image without any dogs present. Given that there is no class for images without dogs in them, the model will classify the image as one of the possible dog breeds. In this case, the model predicted the class of "Samoyed", a decision which can be considered essentially arbitrary. When a explanation is generated for this decision, the methods for calculating importance scores will most likely assign saliencies to most regions, given that no region contains a dog. As such, if we calculate mean saliencies for both the image with the dog and the one without, we expect the image with the dog to have a higher mean saliency. As long as we work with semantically shifted \ac{ood} data, it will always be the case that the prediction on \ac{ood} data is wrong, and thus we may also expect that the generated explanations in general output lower saliencies.
 
-Apart from aggregations which convey information about the magnitude of the saliencies, we may also expect the variation or spread of the saliencies to be different between ID and \ac{ood} data. The intuition is that one might expect the heatmap on \ac{ood} data to be less concentrated and more spread out, given that there are no actual objects of interest present.
+Apart from aggregations which convey information about the magnitude of the saliencies, we may also expect the variation or dispersion of the saliencies to be different between ID and \ac{ood} data. The intuition is that one might expect the heatmap on \ac{ood} data to be less concentrated and more spread out, given that there are no actual objects of interest present.
 
-Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating the spread could be beneficial in \ac{ood} detection. Like in the previous case, we imagine a model trained on dogs, which is fed two images, one which contains a dog and one which does not. In this case, we do not care about the magnitudes, but instead only the spread of the values in relation to each other, and thus the heatmap is normalized. As we can see, the heatmap is more spread out in the explanation where there is no dog present than for the image with a dog. By calculating a suitable metric, such as the Gini coefficient, entropy or another measure of spread, we can get a single number which represents how spread out the heatmap is, regardless of its magnitude. Using these values, we can define a threshold which is below most ID data and above most \ac{ood} data, allowing us to separate these distributions.
+Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating the spread could be beneficial in \ac{ood} detection. Like in the previous case, we imagine a model trained on dogs, which is fed two images, one which contains a dog and one which does not. In this case, we do not care about the magnitudes, but instead only the spread of the values in relation to each other, and thus the heatmap is normalized. As we can see, the heatmap is more spread out in the explanation where there is no dog present than for the image with a dog. By calculating a suitable metric, such as the \ac{rmd}, \ac{cv} or another measure of statistical dispersion, we can get a single number which represents how spread out the heatmap is, regardless of its magnitude. Using these values, we can define a threshold which is below most \ac{id} data and above most \ac{ood} data, allowing us to separate these distributions.
 
 \begin{figure}[H]
     \begin{center}
@@ -1558,7 +1572,9 @@ Given the exploratory nature of this thesis, it is reasonable to try many differ
     \item \ac{rmd}
 \end{itemize}
 
-The magnitude based aggregations are essentially self-explanatory. For the distribution based methods, some explanation is necessary. The \acf{cv} is an alternative to using standard deviation, which removes the effect of the magnitude of the values over which the standard deviation is calculated. The \ac{cv} of a set of values is simply the standard deviation divided by the mean: $CV(\mathbf{x}) = \sigma_x / \mu_x$. For exploring whether the saliencies of \ac{ood} data is more dispersed or spread out than \ac{id} data, such a normalization is required, given that we do not expect the saliencies of \ac{id} and \ac{ood} data to have the same magnitude. Skewness is a measure of asymmetry of a distribution, and can tell us something about the outliers of the saliency maps and their location in relation to the rest of the values. The Gini coefficient is another measure of statistical dispersion, most commonly used to measure income and wealth inequality. The Gini-coefficient of a data set where all values are the same is zero, while it is 1 for a data set where all values are 0 except for one. 
+These two categories follow the intuition explained above, and will test the two hypotheses that (1) \ac{id} saliency maps have higher magnitude than \ac{ood}, and that (2) \ac{id} saliency maps are more concentrated and less evenly spread out than \ac{ood}, and thus have higher statistical dispersion.
+
+% The magnitude based aggregations are essentially self-explanatory. For the distribution based methods, some explanation is necessary. The \acf{cv} is an alternative to using standard deviation, which removes the effect of the magnitude of the values over which the standard deviation is calculated. The \ac{cv} of a set of values is simply the standard deviation divided by the mean: $CV(\mathbf{x}) = \sigma_x / \mu_x$. For exploring whether the saliencies of \ac{ood} data is more dispersed or spread out than \ac{id} data, such a normalization is required, given that we do not expect the saliencies of \ac{id} and \ac{ood} data to have the same magnitude. Skewness is a measure of asymmetry of a distribution, and can tell us something about the outliers of the saliency maps and their location in relation to the rest of the values. The Gini coefficient is another measure of statistical dispersion, most commonly used to measure income and wealth inequality. The Gini-coefficient of a data set where all values are the same is zero, while it is 1 for a data set where all values are 0 except for one. 
 
 % Algorithm \ref{algo:meansaliency} shows the pseudo-code for the Mean Saliency \ac{ood} Detector. Like the baseline Maximum Softmax and Logit methods introduced by \cite{oodbaseline} and \cite{mls}, it is very simple:
 %
@@ -2087,9 +2103,9 @@ However, this lack of dimensionality reduction also poses a technical challenge 
 
 This chapter contains my findings. In the first section, I show how different forms of aggregation over saliency maps separate \ac{id} and \ac{ood} data points. This step is important, because it informs the choice of aggregation used in the Aggregation-of-Saliency \ac{ood} detection method. I report \ac{auroc} for different forms of aggregation over the three datasets. This is done on the validation sets, to avoid biasing the final results.
 
-In the second section, \ac{ood} detection on the test sets is performed, and the \ac{auroc} and \ac{fpr95} for each method on each dataset is reported. In addition, I perform statistical analyses to investigate whether my \ac{xai} \ac{ood} detection methods outperform baseline methods.
+In the second section, \ac{ood} detection on the test sets is performed, and the \ac{auroc} and \ac{fpr95} for each method on each dataset is reported. The choice of methods are informed by the findings from the preceding section. In addition, I perform statistical analyses to investigate whether my \ac{xai} \ac{ood} detection methods outperform baseline methods.
 
-\section{Data Analysis of Explanations}
+\section{Data Analysis of Saliency Maps}
 
 This section will detail how various \ac{xai} methods generate explanations which differ between \ac{id} and \ac{ood}. The section considers each dataset individually. For each dataset, I first present the level of separation achieved by the two baseline methods \ac{msp} and \ac{mls}, to give a general intuition about how easily the \ac{id} and \ac{ood} datasets are to separate. Following this, I go through the different \ac{xai} methods and their different statistical qualities.
 
@@ -2129,11 +2145,11 @@ Measuring the statistical spread using \ac{rmd}, we find that there is indeed al
 Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all forms of aggregation on \ac{lime}, as well as the previously mentioned \ac{auroc} of the baseline methods. In addition, the correlation between the aggregates and the maximum logit and maximum softmax score is reported, which gives insight into how \ac{xai} saliency maps are related to the prediction confidence of the model.
 
 \begin{table}[H]
-\setlength\tabcolsep{4pt}
+\setlength\tabcolsep{3pt}
 \begin{center}
 \begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
     \hline
-     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \centering Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{p{8em}|}{\centering Statistical dispersion} \\
     \hline
      Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & \ac{cv}$\downarrow$ & \ac{rmd} & \ac{qcd}$\downarrow$  \\
     \hline
@@ -2154,11 +2170,15 @@ Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all f
 \setlength\tabcolsep{6pt}
 \end{table}
 
-From this table, we can note several interesting observations. Firstly, the aggregates which capture information about the magnitude of the saliencies are highly correlated with both the maximum logit and the maximum softmax score of the predicted class. This is not unexpected, as \ac{lime} generates saliencies using differences in prediction values as different parts of the image is masked. If the predicted value is higher on average for \ac{id} data, then it is likely that the drop in predicted value when masking parts of the image is larger as well, leading to higher saliencies. Regardless, it seems clear that it is not only the correlation to the model output which explains the discriminative power of these aggregates, as we see that both
+From this table, we can note several interesting observations. Firstly, the aggregates which capture information about the magnitude of the saliencies are highly correlated with both the maximum logit and the maximum softmax score of the predicted class. This is not unexpected, as \ac{lime} generates saliencies using differences in prediction values as different parts of the image is masked. If the predicted value is higher on average for \ac{id} data, then it is likely that the drop in predicted value when masking parts of the image is larger as well, leading to higher saliencies. Regardless, it seems clear that it is not only the correlation to the model output which explains the discriminative power of these aggregates, as we see that vector norm aggregation has lower correlation with \ac{mls} and equal correlation with \ac{msp} when compared to the mean, but has higher scores.
 
-Secondly, the magnitude based
+Secondly, we see that the magnitude based aggregations in general perform quite well, with vector norm in this case being the best. In contrast, the methods based on statistical dispersion perform poorly, putting into question the hypothesis that the saliency maps of \ac{id} data is more concentrated and less spread out than those on \ac{ood} data. Indeed, we see that while the \ac{rmd} is higher on average for \ac{id} data, the \ac{qcd} and \ac{cv} is lower on average when generating saliencies using \ac{lime}. This further puts doubt on the idea that the spread of saliency maps is a reliable indicator of \ac{ood}-ness.
+
+In general, the results from these aggregations are promising, and show that there is definite potential for \ac{ood} detection algorithms based on \ac{xai} outputs. However, the reader should note that these results are done on the validation set, and that no statistical tests have been done at this point. The statistical significance of using \ac{xai} saliency maps for \ac{ood} detection will be revealed in section \ref{section:results}, when the final testing is done on the test set and bootstrapping is performed.
 
 \subsubsection{Occlusion}
+
+Now, we turn our attention to occlusion saliency mapping. Looking at figure \ref{fig:imagenet200_occlusion_mean_rmd}, we see that there is far more overlap between the \ac{id} and \ac{ood} densities than with \ac{lime}.
 
 \begin{figure}
     \begin{center}
@@ -2168,14 +2188,16 @@ Secondly, the magnitude based
     \label{fig:imagenet200_occlusion_mean_rmd}
 \end{figure}
 
+From table \ref{table:cifar10_occlusion_metrics} we see that this trend is apparent over all of the different forms of aggregation, not just the vector norm and \ac{rmd}. Interestingly, we see that in this case, all the statistical dispersion aggregates are higher for \ac{id} data, as was the original hypothesis. Regardless, the \ac{auroc} scores are very poor, and thus these metrics do not seem suitable to discriminate between \ac{id} and \ac{ood}.
+
 \begin{table}[H]
-\setlength\tabcolsep{4pt}
+\setlength\tabcolsep{3pt}
 \begin{center}
-\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+\begin{tabular}{ |p{5em}|c c|c c c c c c|c c c| }
     \hline
-     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+     \centering Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{p{8em}|}{\centering Statistical dispersion} \\
     \hline
-     Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & \ac{cv} & \ac{rmd} & \ac{qcd}  \\
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Min$\downarrow$ & CV & RMD & QCD  \\
     \hline
     \rowcolor{near!50}
     Near-\ac{ood} \ac{auroc} & 83.3 &\textbf{ 83.4 }& 58.6 & 54.2 & 65.7 & 69.1 & 66.8 & 54.3 & 55.0 & 57.7 & 55.4  \\
@@ -2189,13 +2211,14 @@ Secondly, the magnitude based
     \hline
     \end{tabular}
     \caption{\ac{auroc} scores for occlusion on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
-
     \label{table:imagenet200_occlusion_metrics}
 \end{center}
 \setlength\tabcolsep{6pt}
 \end{table}
 
 \subsubsection{\ac{gradcam}}
+
+After having inspected two completely model independent \ac{xai} methods, we turn our attention to the first of the three gradient based methods, \ac{gradcam}. As we have seen density plots for both \ac{lime} and occlusion, I will omit these here, as the table contains the necessary information. From table \ref{table:cifar10_gradcam_metrics}, we see that vector norm aggregation of \ac{gradcam} saliencies actually beats the baselines on both Near- and Far-\ac{ood} detection. The increase on Far-\ac{ood} is particularly impressive, with an increase of 1.4 percentage points. However, we should keep in mind that these results are done on the validation set and that the final results and their statistical significance will only be explored in section \ref{section:results}.
 
 \begin{table}[H]
 \setlength\tabcolsep{4pt}
@@ -2218,11 +2241,12 @@ Secondly, the magnitude based
     \hline
     \end{tabular}
     \caption{\ac{auroc} scores for gradcam on imagenet200. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
-
     \label{table:imagenet200_gradcam_metrics}
 \end{center}
 \setlength\tabcolsep{6pt}
 \end{table}
+
+A second interesting observation is that the mean value is completely correlated with the maximum logit. The vector norm is also almost completely correlated, but slightly less, and has a higher score than the mean.
 
 \subsubsection{Integrated Gradients}
 
@@ -2252,7 +2276,7 @@ Secondly, the magnitude based
 \setlength\tabcolsep{6pt}
 \end{table}
 
-\subsubsection{\ac{gbp}}
+\subsubsection{\ac*{gbp}}
 
 \begin{table}[H]
 \setlength\tabcolsep{4pt}
@@ -2369,9 +2393,7 @@ Secondly, the magnitude based
 \setlength\tabcolsep{6pt}
 \end{table}
 
-\subsection{\ac{gbp}}
-
-\subsection{Integrated Gradients}
+\subsubsection{\ac*{gbp}}
 
 \begin{table}[H]
 \setlength\tabcolsep{4pt}
@@ -2399,116 +2421,39 @@ Secondly, the magnitude based
 \setlength\tabcolsep{6pt}
 \end{table}
 
-% \subsection{HyperKvasir}
-%
-% \subsubsection{\ac{gradcam}}
-%
-% \subsubsection{\ac{lime}}
-%
-% \subsubsection{Occlusion}
+\subsubsection{Integrated Gradients}
 
-
-% \begin{figure}
-%     \label{fig:lime}
-%     \begin{center}
-%         \input{figure/cifar10_lime_mean.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:lime}
-%     \begin{center}
-%         \input{figure/cifar10_lime_gini.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:gradcam}
-%     \begin{center}
-%         \input{figure/cifar10_gradcam_gini.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:gradcam}
-%     \begin{center}
-%         \input{figure/imagenet200_gradcam_mean.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:gradcam}
-%     \begin{center}
-%         \input{figure/imagenet200_lime_mean.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-% \begin{figure}
-%     \label{fig:lime}
-%     \begin{center}
-%         \input{figure/imagenet200_lime_heatmaps_unnormalized.pgf}
-%     \end{center}
-%     \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
-% \end{figure}
-%
-%
-% Figure \ref{fig:imagewoof_norm} shows an example of a case which corresponds to the intuition mentioned in chapter \ref{chapter:tempmotivation}. Here, we see how the spatial extent of explanations generated for a data point in the ImageWoof dataset (ID) differ from the explanations generated for a data point in the Places365 dataset (Far-\ac{ood}). In the first instance, the correct class is predicted, and we see that both \ac{gradcam}, LIME and Occlusion \ac{xai} methods highlight only a small, localized area of the image, corresponding roughly to the face of the dog. In the second instance, the prediction is much less localized, due to the fact that there is no single location corresponding to the predicted class (which is this case was Samoyed).
-%
-% \begin{figure}[h]
-% \centerline{\includegraphics[width=5.25in]{figure/imagewoof_normalized_sal.pdf}}
-% \caption{Figure}
-% \label{fig:imagewoof_norm}
-% \end{figure}
-%
-% If we look at the same examples as in figure \ref{fig:imagewoof_norm}, but without normalizing the saliencies, we can see from figure \ref{fig:imagewoof_unnorm} that there are not just spatial differences in the saliencies generated for ID and \ac{ood} data, but also great differences in magnitude. Intuitively, this also makes sense: For ID data, we expect there to be regions which are very important for the predicted class, which get corresponding high saliency values. For \ac{ood} data, the predicted class is always wrong (given that the image is, by definition, not of any of the known classes), and thus it less likely that any one region in the image was particularly important for the prediction. It is more likely that the responses of all parts of the image for all the different classes were quite low, and that one of these low responses simply happened to be higher than the others.
-%
-% \begin{figure}[ht]
-% \centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal.pdf}}
-% \caption{Figure}
-% \label{fig:imagewoof_unnorm}
-% \end{figure}
-%
-% Figure \ref{fig:imagewoof_unnorm_stan} shows that this can even be the case for near-\ac{ood}. Here we see that all though both images contain a dog, only the dog which is actually part of the ID classes generates a significant saliency response.
-%
-% \begin{figure}[ht]
-% \centerline{\includegraphics[width=6.25in]{figure/imagewoof_unnormalized_sal_stanford.pdf}}
-% \caption{Figure}
-% \label{fig:imagewoof_unnorm_stan}
-% \end{figure}
-%
-% Looking at the mean saliency values for each image over all datasets (figure \ref{fig:imagewoof_mean_gradcam}, we can see that these examples were not outliers, but consistent with a clear trend in all explanations across the datasets. Here, we can see that the mean saliency per image is on average higher for ID than Near- or Far-\ac{ood}, although there is a certain amount of overlap, especially between ID and Near-\ac{ood}.
-%
-% Furthermore, when looking at the average standard deviation for each saliency map (figure \ref{fig:imagewoof_std_gradcam}), we see a similar result.
-%
-%
-% \section{\ac{xai} methods for \ac{ood} detection}
-%
-% \subsection{CIFAR10}
-%
-% \subsection{ImageNet200}
-%
-% \subsection{HyperKvasir}
+\begin{table}[H]
+\setlength\tabcolsep{4pt}
+\begin{center}
+\begin{tabular}{ |m{5em}|c c|c c c c c c|c c c| }
+    \hline
+     Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{c|}{Spread of saliencies} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm$\downarrow$ & Range$\downarrow$ & Max$\downarrow$ & Min & CV & RMD & QCD$\downarrow$  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 86.7 &\textbf{ 87.7 }& 52.4 & 51.9 & 86.0 & 84.8 & 84.8 & 84.4 & 51.4 & 54.1 & 50.3  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} &\textbf{ 91.4 }& 90.8 & 46.2 & 44.7 & 83.6 & 82.5 & 82.4 & 82.1 & 51.9 & 53.1 & 50.8  \\
+    \hline
+    Correlation with \ac{mls}& - & - & 0.01 & 0.03 & -0.24 & -0.21 & -0.20 & 0.20 & 0.00 & 0.02 & 0.00  \\
+    \hline
+    Correlation with \ac{msp}& - & - & 0.02 & 0.03 & -0.16 & -0.15 & -0.14 & 0.14 & 0.00 & 0.03 & 0.00  \\
+    \hline
+    \end{tabular}
+    \caption{\ac{auroc} scores for gbp on cifar10. The highest value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:cifar10_gbp_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
 
 \chapter{Discussion} \label{chapter:discussion}
 
 \chapter{Conclusion} \label{chapter:conclusion}
 
 \section{Future work}
-
-
-
-
-
-
-
-
-
-
 
 
 
