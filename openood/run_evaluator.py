@@ -47,7 +47,7 @@ if postprocessor_name == 'logitmean':
     postprocessor_name = None
 
 
-net = get_network(id_name)
+net = get_network(args.dataset)
 
 
 print(f'ID Dataset: {id_name}')
@@ -65,7 +65,7 @@ evaluator = Evaluator(
     batch_size=args.batch_size,  # for certain methods the results can be slightly affected by batch size
     shuffle=False,
     num_workers=2,
-    data_split='val',  # added by me, split into val and test for development
+    # data_split='val',  # added by me, split into val and test for development
     # bootstrap_seed=i,  # added by me, bootstrap validation
 )  # could use more num_workers outside colab
 

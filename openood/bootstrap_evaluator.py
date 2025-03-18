@@ -12,6 +12,10 @@ from openood.postprocessors.occlusion_postprocessor import OcclusionVIMPostproce
 from openood.postprocessors.grad_mean_postprocessor import GradMeanPostprocessor
 from openood.evaluation_api import Evaluator
 
+from openood.postprocessors.logit_mean_saliency_postprocessor import (
+    LogitMeanSaliencyPostprocessor,
+)
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
@@ -37,6 +41,10 @@ if postprocessor_name == 'gradknn':
 
 if postprocessor_name == 'gradmean':
     postprocessor = GradMeanPostprocessor(None)
+    postprocessor_name = None
+
+if postprocessor_name == 'logitmean':
+    postprocessor = LogitMeanSaliencyPostprocessor(None)
     postprocessor_name = None
 
 
