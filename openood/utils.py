@@ -431,6 +431,7 @@ def get_saliency_generator(
         # )
 
         def generator_func(data):
+            breakpoint()
             targets = torch.argmax(net(data), dim=-1)
             lrp = captum.attr.Occlusion(net)
 
@@ -1382,7 +1383,7 @@ def get_aggregate_functions(relu=False):
             lambda data, dim: torch.max(data, dim=-1)[0] - torch.min(data, dim=-1)[0],
         ),
         ('Max', lambda data, dim: torch.max(data, dim=-1)[0]),
-        ('Min', lambda data, dim: torch.min(data, dim=-1)[0]),
+        ('Q3', lambda data, dim: np.quantile(data, 0.75, axis=-1)),
         (
             'CV',
             lambda data, dim: torch.std(data, dim=-1)

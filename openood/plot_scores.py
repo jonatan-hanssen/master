@@ -102,9 +102,6 @@ for name, function in utils.get_aggregate_functions(args.relu):
                     b, h, w = saliency.shape
                     saliency = saliency.reshape((b, h * w))
 
-                    if args.relu:
-                        saliency = torch.nn.functional.relu(saliency)
-
                     if args.normalize:
                         saliency -= torch.mean(saliency, dim=0)
                         # saliency /= torch.std(saliency, dim=0)[0]
@@ -261,11 +258,11 @@ soft_corr = 'Correlation with \\ac{msp}' + ''.join(
 
 latex_table = f"""
 \\begin{{table}}[H]
-\setlength\\tabcolsep{{4pt}}
+\setlength\\tabcolsep{{3pt}}
 \\begin{{center}}
-\\begin{{tabular}}{{ |m{{5em}}|c c|c c c c c c|c c c| }}
+\\begin{{tabular}}{{ |p{{5em}}|c c|c c c c c c|c c c| }}
     \hline
-     Aggregation type & \multicolumn{{2}}{{c|}}{{Baselines}} & \multicolumn{{6}}{{c|}}{{Magnitude of saliencies}} & \multicolumn{{3}}{{c|}}{{Spread of saliencies}} \\\\
+     \centering Aggregation type & \multicolumn{{2}}{{c|}}{{Baselines}} & \multicolumn{{6}}{{c|}}{{Magnitude of saliencies}} & \multicolumn{{3}}{{p{{8em}}|}}{{\centering Statistical dispersion}} \\\\
     \hline
     {names} \\\\
     \hline
@@ -280,7 +277,7 @@ latex_table = f"""
     {soft_corr} \\\\
     \hline
     \end{{tabular}}
-    \caption{{\\ac{{auroc}} scores for {args.generator} on {args.dataset}. The highest value for Near- and Far-\\ac{{ood}} is highlighted in bold. $\downarrow$ denotes that \\ac{{id}} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \\ref{{section:aurocfpr95}})}}
+    \caption[\\ac{{auroc}} scores for {args.generator} on {args.dataset}]{{\\ac{{auroc}} scores for {args.generator} on {args.dataset}. The highest value for Near- and Far-\\ac{{ood}} is highlighted in bold. $\downarrow$ denotes that \\ac{{id}} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \\ref{{section:aurocfpr95}})}}
     \label{{table:{args.dataset}_{args.generator}_metrics}}
 \end{{center}}
 \setlength\\tabcolsep{{6pt}}
@@ -288,27 +285,3 @@ latex_table = f"""
 """
 if args.table:
     print(latex_table)
-
-
-# latex_table = f"""
-# \\begin{{table}}[H]
-# \setlength\\tabcolsep{{4pt}}
-# \\begin{{center}}
-# \\begin{{tabular}}{{ |m{{5em}}|c c|c c c c c c|c c c| }}
-#     \hline
-#      Aggregation type & \multicolumn{{2}}{{c|}}{{Baselines}} & \multicolumn{{6}}{{c|}}{{Magnitude of saliencies}} & \multicolumn{{3}}{{c|}}{{Spread of saliencies}} \\\\
-#     \hline
-#     {names} \\\\
-#     \hline
-#     \\rowcolor{{near!50}}
-#     {near} \\\\
-#     \hline
-#     \\rowcolor{{far!50}}
-#     {far} \\\\
-#     \hline
-#     {corr} \\\\
-#     \hline
-#     {soft_corr} \\\\
-#     \hline
-#     \end{{tabular}}
-#     \caption{{\\ac{{auroc}} scores for {args.generator} on {args.dataset}. The highest value for Near- and Far-\\ac{{ood}} is highlighted in bold. $\downarrow$ denotes that \\ac{{id}} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \\ref{{section:aurocfpr95}})}}

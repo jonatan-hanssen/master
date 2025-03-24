@@ -22,13 +22,11 @@ class BasePostprocessor:
         conf, pred = torch.max(score, dim=1)
         return pred, conf
 
-    def inference(self,
-                  net: nn.Module,
-                  data_loader: DataLoader,
-                  progress: bool = True):
+    def inference(self, net: nn.Module, data_loader: DataLoader, progress: bool = True):
         pred_list, conf_list, label_list = [], [], []
-        for batch in tqdm(data_loader,
-                          disable=not progress or not comm.is_main_process()):
+        for batch in tqdm(
+            data_loader, disable=not progress or not comm.is_main_process()
+        ):
             data = batch['data'].cuda()
             label = batch['label'].cuda()
             pred, conf = self.postprocess(net, data)
