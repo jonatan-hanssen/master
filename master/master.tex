@@ -2235,9 +2235,8 @@ Figure \ref{fig:imagenet200_all_metrics_barplot} shows the average Near- and Far
     \label{fig:imagenet200_all_metrics_barplot}
 \end{figure}
 
-Table \ref{table:imagenet200_all_metrics} shows the underlying data for the figure above, as well as the mean \ac{auroc} for both Near and Far. Here, we can see that the mean performed the best on Near-\ac{ood} while the range performed the best on Far-\ac{ood}. However, as we know, the mean was lower for \ac{gbp} and lower scores had to be considered \ac{id}, which makes it less desirable than the other methods, which were consistently larger for \ac{id} data. The vector norm was only slightly worse than the mean on Near-\ac{ood} and only slightly worse than the range on Far-\ac{ood}, making it the best aggregation overall. All the statistical dispersion methods performed poorly.
 
-% Overall, the results on ImageNet200 are promising, and show that the magnitudes of \ac{id} saliencies are larger than those of \ac{ood} saliencies. Apart from the median and mean, which were lower on \ac{gbp}, all magnitude metrics were higher on average for \ac{id}, and the separation was large enough to outperform the baseline methods on several occasion. 
+Table \ref{table:imagenet200_all_metrics} shows the underlying data for the figure above, as well as the mean \ac{auroc} for both Near and Far. Here, we can see that the mean performed the best on Near-\ac{ood} while the range performed the best on Far-\ac{ood}. However, as we know, the mean was lower for \ac{gbp} and lower scores had to be considered \ac{id}, which makes it less desirable than the other methods, which were consistently larger for \ac{id} data. The vector norm was only slightly worse than the mean on Near-\ac{ood} and only slightly worse than the range on Far-\ac{ood}, making it the best aggregation overall. As we can see, all the statistical dispersion methods performed poorly.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2263,11 +2262,36 @@ Table \ref{table:imagenet200_all_metrics} shows the underlying data for the figu
 \setlength\tabcolsep{6pt}
 \end{table}
 
+If we instead look at the best aggregation for each \ac{xai} saliency method (figure \ref{fig:imagenet200_all_generators_barplot}), and compare these to the baselines, we find that \ac{lime}, \ac{gradcam} and \ac{gbp} beat the baselines on Far-\ac{ood}, while \ac{gradcam} is the only method who beats the baselines on Near-\ac{ood}. Except for occlusion, all method performed reasonably well, given a correct choice of aggregation.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/imagenet200_all_generators_barplot.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of the highest \ac{auroc} scores per XAI saliency method on ImageNet200. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:imagenet200_all_generators_barplot}
+\end{figure}
+
+% Overall, the results on ImageNet200 are promising, and show that the magnitudes of \ac{id} saliencies are larger than those of \ac{ood} saliencies. Apart from the median and mean, which were lower on \ac{gbp}, all magnitude metrics were higher on average for \ac{id}, and the separation was large enough to outperform the baseline methods on several occasion. 
+
+
 These results demonstrate that saliency maps themselves, without any other information from the network, seem to be able to adequately separate \ac{id} from \ac{ood} data points, contrary to what was found by \cite{martinez}. In the next section, I will explore whether these results hold on CIFAR10 as well. After these tests, we will have an informed opinion about what \ac{xai} saliency methods and aggregations best separate the data on the validation set, and we can choose a selection of combinations and gather final results on the test set.
 
 \subsection{CIFAR10}
 
-CIFAR10 differs from ImageNet200 in some important respects, making it an ideal second dataset to investigate. While ImageNet200 has 200 classes, CIFAR10 has only 10. This means that ImageNet200 is a much broader classification task, with networks that are trained to recognize a wide variety of different objects. With a more narrow \ac{id} dataset of only 10 classes, we may see different behaviour when a network is exposed to \ac{ood} data. Another important change is the size of the images. ImageNet200 images are $224 \times 224$ pixels, while CIFAR10 images are only $32 \times 32$. This reduction in resolution may also affect how saliency maps are generated, as each pixel now covers a much larger area of the total image and is thus more important compared to each pixel in ImageNet200 images. We start by looking at \ac{lime} again.
+CIFAR10 differs from ImageNet200 in some important respects, making it an ideal second dataset to investigate. While ImageNet200 has 200 classes, CIFAR10 has only 10. This means that ImageNet200 is a much broader classification task, with networks that are trained to recognize a wide variety of different objects. With a more narrow \ac{id} dataset of only 10 classes, we may see different behaviour when a network is exposed to \ac{ood} data. Another important change is the size of the images. ImageNet200 images are $224 \times 224$ pixels, while CIFAR10 images are only $32 \times 32$. This reduction in resolution may also affect how saliency maps are generated, as each pixel now covers a much larger area of the total image and is thus more important compared to each pixel in ImageNet200 images. First, let us inspect the baseline performances.
+
+From figure \ref{fig:cifar10_logits_distribution}, we can see that there is a decent degree of separation when using the maximum logit and the maximum softmax score. The maximum softmax score is highly concentrated around 0.95-1.00 for \ac{id} data, to a much higher degree than with ImageNet200. This is not surprising, given the much smaller number of classes in CIFAR10. With fewer and more easily separated classes, it is much easier for the network to saturate the maximum softmax score.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/cifar10_logits_distribution.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on ImageNet200. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:cifar10_logits_distribution}
+\end{figure}
+
+Separating the distributions using \ac{msp}, we get an \ac{auroc} score of 0.877 for Near-\ac{ood} and 0.908 for Far-\ac{ood}. Using \ac{mls}, we get an \ac{auroc} score of 0.867 for Near-\ac{ood} and 0.914 for Far-\ac{ood}. With the baselines reported, we turn our attention to the first \ac{xai} saliency method, \ac{lime}.
 
 \subsubsection{\ac{lime}}
 
@@ -2296,6 +2320,7 @@ Table \ref{table:cifar10_lime_metrics} shows the results for the aggregations on
     \caption[\ac{auroc} scores for \ac{lime} on CIFAR10]{\ac{auroc} scores for \ac{lime} on CIFAR10. The highest non-baseline value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
     \label{table:cifar10_lime_metrics}
 \end{center}
+
 \setlength\tabcolsep{6pt}
 \end{table}
 
@@ -2303,7 +2328,7 @@ Regardless of the lower scores when compared to ImageNet200, the scores still sh
 
 \subsubsection{Occlusion}
 
-Table \ref{table:cifar10_occlusion_metrics} the results of using occlusion to generate saliency maps.
+Table \ref{table:cifar10_occlusion_metrics} shows the results of using occlusion to generate saliency maps. Here we see something quite surprising: all magnitude metrics are lower for \ac{id} data. This result forces us to reconsider the theory that the magnitude of saliencies is higher on average for \ac{id} data, as we see a complete inversion of the results we got when using occlusion on ImageNet200. % Furthermore, the results here are quite poor, over 10 percentage points below the Near-\ac{ood} \ac{auroc} baseline and over 15 percentage points below on Far-\ac{ood}.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2331,7 +2356,22 @@ Table \ref{table:cifar10_occlusion_metrics} the results of using occlusion to ge
 \setlength\tabcolsep{6pt}
 \end{table}
 
+Looking at the distribution for the vector norm (figure \ref{fig:cifar10_occlusion_norm}), we find a consistently lower \ac{id} value when compared to all \ac{ood} datasets. Essentially the same plot can be seen with the other magnitude metrics as well.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/cifar10_occlusion_Norm_.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on ImageNet200. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:cifar10_occlusion_norm}
+\end{figure}
+
+These results are very interesting, as they show that there is no guarantee that \ac{xai} saliency maps will be of higher magnitude on \ac{id} data. Even more interesting is the fact that when they are lower, they are lower across all \ac{ood} datasets and still allow for separation between \ac{id} and \ac{ood} by considering low saliency magnitudes as \ac{id} as opposed to high saliency magnitudes. These results imply that even if the main hypothesis of \ac{id} saliency maps having higher magnitudes may not be correct, this does not mean that we cannot separate \ac{id} and \ac{ood} based on magnitude.
+
+
 \subsubsection{\ac{gradcam}}
+
+Saliency maps made from \ac{gradcam}, with their mathematical equivalence to the maximum logit when applying the mean, unsurprisingly do not suffer from the same problems as occlusion. As we can see from table \ref{table:cifar10_gradcam_metrics}, the results for mean are equivalent to the maximum logit.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2359,35 +2399,10 @@ Table \ref{table:cifar10_occlusion_metrics} the results of using occlusion to ge
 \setlength\tabcolsep{6pt}
 \end{table}
 
-\subsubsection{\ac*{gbp}}
-
-\begin{table}[H]
-\setlength\tabcolsep{3pt}
-\begin{center}
-\begin{tabular}{ |p{5.1em}|c c|c c c c c c|c c c| }
-    \hline
-     \centering Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{p{8em}|}{\centering Statistical dispersion} \\
-    \hline
-    Aggregate & \ac{mls} & \ac{msp} & Mean$\downarrow$ & Median & Norm & Range & Max & Q3 & CV$\downarrow$ & RMD$\downarrow$ & QCD  \\
-    \hline
-    \rowcolor{near!50}
-    Near-\ac{ood} \ac{auroc} & 86.7 & 87.7 & 56.0 & 58.6 &\textbf{ 83.4 }& 81.2 & 80.6 & 65.5 & 53.1 & 64.6 & 51.8  \\
-    \hline
-    \rowcolor{far!50}
-    Far-\ac{ood} \ac{auroc} & 91.4 & 90.8 & 50.0 & 70.6 &\textbf{ 89.6 }& 88.7 & 87.5 & 79.1 & 61.6 & 69.2 & 60.9  \\
-    \hline
-    Correlation with \ac{mls}& - & - & -0.11 & 0.03 & 0.30 & 0.22 & 0.22 & 0.18 & -0.04 & -0.03 & -0.02  \\
-    \hline
-    Correlation with \ac{msp}& - & - & -0.08 & 0.01 & 0.21 & 0.15 & 0.15 & 0.11 & -0.02 & -0.02 & -0.01  \\
-    \hline
-    \end{tabular}
-    \caption[\ac{auroc} scores for \ac{gbp} on CIFAR10]{\ac{auroc} scores for \ac{gbp} on CIFAR10. The highest non-baseline value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
-    \label{table:cifar10_gbp_metrics}
-\end{center}
-\setlength\tabcolsep{6pt}
-\end{table}
 
 \subsubsection{Integrated Gradients}
+
+With integrated gradients we see another surprising result. Here, the mean and median are higher for \ac{id} data, while the vector norm, range, maximum and third quartile are lower.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2415,7 +2430,47 @@ Table \ref{table:cifar10_occlusion_metrics} the results of using occlusion to ge
 \setlength\tabcolsep{6pt}
 \end{table}
 
-\subsubsection{Overall results on ImageNet200}
+This implies that \ac{id} data has higher positive saliencies on average than \ac{ood} data, but that the magnitude of both positive and negative saliencies is higher on \ac{ood} data. Looking at figure \ref{fig:cifar10_integratedgradients_mean_norm}, we see this difference clearly.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/cifar10_integratedgradients_Mean_Norm.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on ImageNet200. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:cifar10_integratedgradients_mean_norm}
+\end{figure}
+
+\subsubsection{\ac*{gbp}}
+
+\ac{gbp} performs decently, with the best saliency aggregation method (vector norm) achieving scores which are a few percentage points below the baselines. The only surprise here is that the mean is lower on average for \ac{id} data, which it also was when applying \ac{gpb} to ImageNet200.
+
+\begin{table}[H]
+\setlength\tabcolsep{3pt}
+\begin{center}
+\begin{tabular}{ |p{5.1em}|c c|c c c c c c|c c c| }
+    \hline
+     \centering Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{p{8em}|}{\centering Statistical dispersion} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean$\downarrow$ & Median & Norm & Range & Max & Q3 & CV$\downarrow$ & RMD$\downarrow$ & QCD  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 86.7 & 87.7 & 56.0 & 58.6 &\textbf{ 83.4 }& 81.2 & 80.6 & 65.5 & 53.1 & 64.6 & 51.8  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} & 91.4 & 90.8 & 50.0 & 70.6 &\textbf{ 89.6 }& 88.7 & 87.5 & 79.1 & 61.6 & 69.2 & 60.9  \\
+    \hline
+    Correlation with \ac{mls}& - & - & -0.11 & 0.03 & 0.30 & 0.22 & 0.22 & 0.18 & -0.04 & -0.03 & -0.02  \\
+    \hline
+    Correlation with \ac{msp}& - & - & -0.08 & 0.01 & 0.21 & 0.15 & 0.15 & 0.11 & -0.02 & -0.02 & -0.01  \\
+    \hline
+    \end{tabular}
+    \caption[\ac{auroc} scores for \ac{gbp} on CIFAR10]{\ac{auroc} scores for \ac{gbp} on CIFAR10. The highest non-baseline value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:cifar10_gbp_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+\subsubsection{Overall results on CIFAR10}
 
 \begin{figure}[H]
     \begin{center}
