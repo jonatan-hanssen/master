@@ -9,6 +9,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--better_postprocessor', '-b', type=str, default='vim')
 parser.add_argument('--worse_postprocessor', '-w', type=str, default='gradmean')
+parser.add_argument('--generator', '-g', type=str, default='gradcam')
+parser.add_argument('--aggregator', '-a', type=str, default='Norm')
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -23,9 +25,15 @@ def get_metrics(filename):
     return metrics, names
 
 
-better_metric, names = get_metrics(
-    f'saved_metrics/{args.dataset}_{args.better_postprocessor}_bootstrapped.pkl'
-)
+if args.better_postprocessor == 'salagg':
+    better_metric, names = get_metrics(
+        f'saved_metrics/{args.dataset}_{args.better_postprocessor}_{args.generator}_{args.aggregator}_bootstrapped.pkl'
+    )
+
+else:
+    better_metric, names = get_metrics(
+        f'saved_metrics/{args.dataset}_{args.better_postprocessor}_bootstrapped.pkl'
+    )
 worse_metric, _ = get_metrics(
     f'saved_metrics/{args.dataset}_{args.worse_postprocessor}_bootstrapped.pkl'
 )

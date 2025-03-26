@@ -384,7 +384,7 @@ class EigenCAM(pytorch_grad_cam.EigenCAM):
 def get_saliency_generator(
     name: str,
     net: torch.nn.Module,
-    repeats: int,
+    repeats: int = 4,
     return_dim: int = 3,
     relu: bool = False,
 ) -> Callable:
@@ -431,7 +431,6 @@ def get_saliency_generator(
         # )
 
         def generator_func(data):
-            breakpoint()
             targets = torch.argmax(net(data), dim=-1)
             lrp = captum.attr.Occlusion(net)
 
@@ -1373,9 +1372,57 @@ def iqr(data, dim=-1):
     return q3 - q1
 
 
+def prettify(label):
+    if label == 'id':
+        return 'ID'
+    if label == 'near':
+        return 'Near'
+    if label == 'far':
+        return 'Far'
+
+    if label == 'imagenet200':
+        return 'ImageNet200'
+    if label == 'cifar10':
+        return 'CIFAR10'
+    if label == 'cifar100':
+        return 'CIFAR100'
+    if label == 'ssb_hard':
+        return 'SSB\_HARD'
+    if label == 'openimage_o':
+        return 'OpenImage\_O'
+    if label == 'svhn':
+        return 'SVHN'
+    if label == 'tin':
+        return 'TIN'
+    if label == 'mnist':
+        return 'MNIST'
+    if label == 'ninco':
+        return 'NINCO'
+    if label == 'inaturalist':
+        return 'iNaturalist'
+
+    if label == 'gradcam':
+        return '\\ac{gradcam}'
+    if label == 'gbp':
+        return '\\ac{gbp}'
+    if label == 'lime':
+        return '\\ac{lime}'
+    if label == 'integratedgradients':
+        return 'IntegratedGradients'
+    if label == 'occlusion':
+        return 'Occlusion'
+
+    return label.capitalize()
+
+
+def pp(label):
+    return prettify(label)
+
+
 def get_aggregate_functions(relu=False):
     aggregate_functions = [
-        ('Mean', torch.mean),
+        ('Mean', torch.sum),
+        # ('AbsMean', lambda data, dim: torch.sum(torch.abs(data), dim=-1)),
         ('Median', lambda data, dim: torch.median(data, dim=-1)[0]),
         ('Norm', torch.linalg.vector_norm),
         (
@@ -1413,3 +1460,10 @@ def get_aggregate_functions(relu=False):
             new_aggregate_functions.append((f'ReLU{name}', new_agg))
 
     return new_aggregate_functions
+
+
+def get_aggregate_function(name):
+    for pair in get_aggregate_functions(True):
+        if pair[0] == name.capitalize():
+            return pair[1]
+    raise ValueError('No such aggregator')

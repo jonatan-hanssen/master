@@ -148,7 +148,9 @@ plt.xlabel('MLS after combining Near and Far')
 
 
 if args.pgf:
-    plt.savefig(f'../master/figure/{args.dataset}_logits_distribution.pgf')
+    plt.savefig(
+        f'../master/figure/{args.dataset}_logits_distribution_full_not_full.pgf'
+    )
     plt.clf()
 else:
     plt.show()

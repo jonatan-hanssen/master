@@ -1,8 +1,5 @@
 import numpy as np
 import pickle
-import matplotlib.pyplot as plt
-import matplotlib
-import seaborn as sns
 import sys, argparse
 import torch
 import scipy
@@ -10,7 +7,8 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from utils import calculate_auc, get_palette
 import utils
-import matplotlib
+from utils import prettify, pp
+import copy
 
 
 parser = argparse.ArgumentParser()
@@ -19,9 +17,7 @@ parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
 parser.add_argument('--negate', action=argparse.BooleanOptionalAction, default=False)
-parser.add_argument('--linewidth', type=float, default=1.5)
 parser.add_argument('--pgf', action=argparse.BooleanOptionalAction, default=False)
-parser.add_argument('--smoothing', type=float, default=0.3)
 parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--table', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument(
@@ -31,27 +27,6 @@ parser.add_argument(
 args = parser.parse_args(sys.argv[1:])
 
 results_dict = dict()
-
-if args.pgf:
-    matplotlib.use('pgf')
-    matplotlib.rcParams.update(
-        {
-            'pgf.texsystem': 'pdflatex',
-            'font.family': 'serif',
-            'text.usetex': True,
-            'pgf.rcfonts': False,
-        }
-    )
-
-else:
-    plt.rcParams.update({'font.size': 22})
-
-plot = lambda data, label: sns.kdeplot(
-    data, bw_method=args.smoothing, label=label, linewidth=args.linewidth
-)
-
-sns.set_palette(get_palette())
-
 
 filename = f'saved_saliencies/{args.dataset}_{args.generator}_{args.repeats}.pkl'
 with open(filename, 'rb') as file:
@@ -133,7 +108,6 @@ for name, function in utils.get_aggregate_functions(args.relu):
 
                     id_score = score
                     id_softmax_score = softmax_score
-                    plot(score, f'{key}: {second_key} scores')
 
                 elif key == 'near':
                     auc = calculate_auc(id_aggregate, aggregate)
@@ -217,8 +191,13 @@ for name, function in utils.get_aggregate_functions(args.relu):
             'soft_corr': soft_correlations,
         }
 
-max_near = max(results_dict, key=lambda name: results_dict[name]['near'])
-max_far = max(results_dict, key=lambda name: results_dict[name]['far'])
+results_dict2 = copy.deepcopy(results_dict)
+
+results_dict2.pop('\\ac{mls}')
+results_dict2.pop('\\ac{msp}')
+
+max_near = max(results_dict2, key=lambda name: results_dict2[name]['near'])
+max_far = max(results_dict2, key=lambda name: results_dict2[name]['far'])
 
 columns = '|m{5em}|' + 'c|' * len(results_dict)
 names = 'Aggregate ' + ''.join([f'& {name} ' for name in results_dict])
@@ -260,7 +239,7 @@ latex_table = f"""
 \\begin{{table}}[H]
 \setlength\\tabcolsep{{3pt}}
 \\begin{{center}}
-\\begin{{tabular}}{{ |p{{5em}}|c c|c c c c c c|c c c| }}
+\\begin{{tabular}}{{ |p{{5.1em}}|c c|c c c c c c|c c c| }}
     \hline
      \centering Aggregation type & \multicolumn{{2}}{{c|}}{{Baselines}} & \multicolumn{{6}}{{c|}}{{Magnitude of saliencies}} & \multicolumn{{3}}{{p{{8em}}|}}{{\centering Statistical dispersion}} \\\\
     \hline
@@ -277,7 +256,7 @@ latex_table = f"""
     {soft_corr} \\\\
     \hline
     \end{{tabular}}
-    \caption[\\ac{{auroc}} scores for {args.generator} on {args.dataset}]{{\\ac{{auroc}} scores for {args.generator} on {args.dataset}. The highest value for Near- and Far-\\ac{{ood}} is highlighted in bold. $\downarrow$ denotes that \\ac{{id}} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \\ref{{section:aurocfpr95}})}}
+    \caption[\\ac{{auroc}} scores for {pp(args.generator)} on {pp(args.dataset)}]{{\\ac{{auroc}} scores for {pp(args.generator)} on {pp(args.dataset)}. The highest non-baseline value for Near- and Far-\\ac{{ood}} is highlighted in bold. $\downarrow$ denotes that \\ac{{id}} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \\ref{{section:aurocfpr95}})}}
     \label{{table:{args.dataset}_{args.generator}_metrics}}
 \end{{center}}
 \setlength\\tabcolsep{{6pt}}
