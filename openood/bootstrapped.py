@@ -3,8 +3,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sys, argparse, pickle
 from scipy.stats import ttest_ind
+import pandas as pd
 
 parser = argparse.ArgumentParser()
+
+pd.set_option('display.precision', 3)
 
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--better_postprocessor', '-b', type=str, default='vim')
@@ -13,6 +16,11 @@ parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--aggregator', '-a', type=str, default='Norm')
 
 args = parser.parse_args(sys.argv[1:])
+
+filename = f'saved_metrics/{args.dataset}_{args.worse_postprocessor}_bootstrapped.pkl'
+with open(filename, 'rb') as file:
+    data = pickle.load(file)
+    dataframe = data[0][0]
 
 
 def get_metrics(filename):
@@ -39,16 +47,22 @@ worse_metric, _ = get_metrics(
 )
 
 print(args.better_postprocessor)
-print(better_metric.mean(axis=0))
+print('-' * 52)
+dataframe.values[:] = better_metric.mean(axis=0)
+print(dataframe)
+
+print()
 
 print(args.worse_postprocessor)
-print(worse_metric.mean(axis=0))
+print('-' * 52)
+dataframe.values[:] = worse_metric.mean(axis=0)
+print(dataframe)
 
 print(
     f'\n{args.worse_postprocessor} has higher AUROC than {args.better_postprocessor} with the following probabilities (null hypothesis)'
 )
 
-for i in range(8):
+for i in range(len(names)):
     better = better_metric[:, i, 1]
     worse = worse_metric[:, i, 1]
 

@@ -10,6 +10,9 @@ from openood.postprocessors.lime_postprocessor import LimeVIMPostprocessor
 from openood.postprocessors.saliency_aggregate_postprocessor import (
     SaliencyAggregatePostprocessor,
 )
+from openood.postprocessors.saliency_plus_logit_postprocessor import (
+    SaliencyPlusLogitPostprocessor,
+)
 from openood.postprocessors.logit_mean_saliency_postprocessor import (
     LogitMeanSaliencyPostprocessor,
 )
@@ -65,6 +68,14 @@ if postprocessor_name == 'salagg':
     generator = get_saliency_generator(args.generator, net)
     aggregator = get_aggregate_function(args.aggregator)
     postprocessor = SaliencyAggregatePostprocessor(
+        None, saliency_generator=generator, aggregator=aggregator
+    )
+    postprocessor_name = None
+
+if postprocessor_name == 'salpluslogit':
+    generator = get_saliency_generator(args.generator, net)
+    aggregator = get_aggregate_function(args.aggregator)
+    postprocessor = SaliencyPlusLogitPostprocessor(
         None, saliency_generator=generator, aggregator=aggregator
     )
     postprocessor_name = None

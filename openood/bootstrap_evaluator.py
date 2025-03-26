@@ -14,6 +14,9 @@ from openood.evaluation_api import Evaluator
 from openood.postprocessors.saliency_aggregate_postprocessor import (
     SaliencyAggregatePostprocessor,
 )
+from openood.postprocessors.saliency_plus_logit_postprocessor import (
+    SaliencyPlusLogitPostprocessor,
+)
 
 from openood.postprocessors.logit_mean_saliency_postprocessor import (
     LogitMeanSaliencyPostprocessor,
@@ -62,6 +65,14 @@ if postprocessor_name == 'salagg':
     )
     postprocessor_name = None
 
+if postprocessor_name == 'salpluslogit':
+    generator = get_saliency_generator(args.generator, net)
+    aggregator = get_aggregate_function(args.aggregator)
+    postprocessor = SaliencyPlusLogitPostprocessor(
+        None, saliency_generator=generator, aggregator=aggregator
+    )
+    postprocessor_name = None
+
 
 print(f'ID Dataset: {id_name}')
 print(f'Postprocessor: {args.postprocessor}')
@@ -80,7 +91,7 @@ for i in range(10):
         preprocessor=None,  # default preprocessing for the target ID dataset
         postprocessor_name=postprocessor_name,  # the postprocessor to use
         postprocessor=postprocessor,  # if you want to use your own postprocessor
-        batch_size=200,  # for certain methods the results can be slightly affected by batch size
+        batch_size=args.batch_size,  # for certain methods the results can be slightly affected by batch size
         shuffle=False,
         num_workers=2,
         data_split=args.split,  # added by me, split into val and test for development

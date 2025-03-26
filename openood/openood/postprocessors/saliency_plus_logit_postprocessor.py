@@ -55,9 +55,6 @@ class SaliencyPlusLogitPostprocessor(BasePostprocessor):
 
             id_saliency_mean = torch.cat(all_saliency_aggregates).mean()
 
-            print(f'{self.saliency_mean=}')
-            print(f'{self.saliency_std=}')
-
             all_saliency_aggregates = list()
             for batch in tqdm(
                 ood_loader_dict['val'], desc='OOD Setup: ', position=0, leave=True
@@ -77,6 +74,9 @@ class SaliencyPlusLogitPostprocessor(BasePostprocessor):
             ood_saliency_mean = torch.cat(all_saliency_aggregates).mean()
 
             self.sign = 1 if id_saliency_mean > ood_saliency_mean else -1
+            print(f'{self.saliency_std=}')
+            print(f'{id_saliency_mean=}')
+            print(f'{ood_saliency_mean=}')
 
             self.setup_flag = True
         else:
@@ -96,11 +96,7 @@ class SaliencyPlusLogitPostprocessor(BasePostprocessor):
         max_logits = max_logits.detach().cpu()
         preds = preds.detach().cpu()
 
-        score_ood = mean_saliencies / self.saliency_mean + max_logits / self.logit_mean
+        score_ood = max_logits / self.logit_std + self.sign * (
+            aggregate / self.saliency_std
+        )
         return preds, score_ood
-
-    def set_hyperparam(self, hyperparam: list):
-        self.dim = hyperparam[0]
-
-    def get_hyperparam(self):
-        return self.dim
