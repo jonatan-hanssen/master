@@ -37,6 +37,10 @@ dataloaders = get_dataloaders(id_name, batch_size=batch_size, full=True, shuffle
 
 aggregate_functions = utils.get_aggregate_functions(args.relu)
 
+if args.generator == 'gbp' or args.generator == 'integratedgradients':
+    args.return_dim = 2
+print(args)
+
 # load the model
 net = get_network(id_name)
 generator_func = get_saliency_generator(
@@ -46,6 +50,7 @@ generator_func = get_saliency_generator(
     return_dim=args.return_dim,
     relu=args.relu,
 )
+
 
 saliency_dict = dict()
 score_dict = dict()

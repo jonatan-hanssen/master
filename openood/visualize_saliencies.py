@@ -212,15 +212,10 @@ for name, function in utils.get_aggregate_functions():
                         if args.auc:
                             plot(
                                 aggregate,
-                                f'{key}: {second_key}, {auc=:.2f}'.upper().replace(
-                                    '_', '\_'
-                                ),
+                                f'{prettify(key)}: {prettify(second_key)}, {auc=:.2f}',
                             )
                         else:
-                            plot(
-                                aggregate,
-                                f'{key}: {second_key}'.upper().replace('_', '\_'),
-                            )
+                            plot(aggregate, f'{prettify(key)}: {prettify(second_key)}')
 
                     if args.show_scores:
                         score_auc = calculate_auc(id_score, score)
