@@ -806,14 +806,14 @@ Local explanations do not describe general trends, but focus only on a single da
 %
 % In general, it is difficult to evaluate an AI explanations, and there is no clear consensus in the field as to what metrics should be the standard \cite{molnar, evalxai}.
 
-\subsection{\ac{xai} methods adapted to images: Saliency maps and segmentation}
+\subsection{\ac{xai} methods adapted to images: Saliency maps and segmentation} \label{section:saliencymapbackground}
 
 
 As explained in section \ref{section:scope}, the field of \ac{ood} detection is primarily focused on image data, and as such this is the focus of this thesis as well. Thus, before delving into specific \ac{xai} methods, it is beneficial to elaborate on how \ac{xai} methods are adapted to images. When explaining tabular data made up of categorical and numerical values, it is often common to explain each feature by associating it with some change in the output prediction. For example, one might say that increasing the number of rooms in a house by one increases the predicted sale price by 30 000 NOK, or that the absence of a balcony decreases it by 25 000 NOK. But, given that images are made up of tens or hundreds of thousands of features (pixels), such an approach may not be suitable.
 
-Firstly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Furthermore, inspecting the contribution of each individual pixel, like one might do for tabular data, is not even realistically feasible, due the overwhelming number of features. Given that our input is in the form of an image, which is best understood visually, as opposed to numerically, it is then natural to instead present the explanation in the same way.
+Firstly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Furthermore, inspecting the contribution of each individual pixel, like one might do for tabular data, is not even realistically feasible, due the overwhelming number of features. Given that our input is in the form of an image, which is best understood visually as opposed to numerically, it is then natural to instead present the explanation in the same way.
 
-These visual explanations take the form of saliency maps, as shown in figure \ref{fig:saliency_ex}. Here, we display the saliency values of all pixels in a heatmap, as opposed to numerically. Instead of considering the absolute values, we instead display the saliencies in relation to each other, such that the most important and least important pixel has colors on opposite sides of the colormap. In this way, it is easy and intuitive to see where the important regions of the image are, and we do not need to consider the absolute values of each pixel.
+These visual explanations take the form of saliency maps, as shown in figure \ref{fig:saliency_ex}. Here, we display the saliency values of all pixels in a heatmap. Instead of considering the absolute values, we instead display the saliencies in relation to each other, such that the most important and least important pixel has colors on opposite sides of the colormap. In this way, it is easy and intuitive to see where the important regions of the image are, and we do not need to consider the absolute values of each pixel.
 
 \begin{figure}[H]
     \begin{center}
@@ -1105,7 +1105,7 @@ Below follows a short explanation of each the four categories mentioned above.
 
 Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish \ac{ood} and \ac{id} samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for \ac{id} samples as opposed to \ac{ood} samples. By using this simple distinction, they created a baseline model which separated \ac{ood} and \ac{id} samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of \ac{id} and \ac{ood} data. 
 
-More generally, classification-based methods do not need to use the softmax score, but may attempt to find any metric which separates the distribution of \ac{id} samples from \ac{ood} samples. Figure \ref{fig:ood_metric} shows the probability density for an unspecified metric for both \ac{ood} and \ac{id} samples. The goal of classification-based \ac{ood} detection is to find metrics or training methods which make these probability densities have as little overlap as possible, such that they are easily separated by a threshold. The threshold, often denoted as $\delta$, is a parameter that needs to be set at a specific value based on the values of a validation \ac{id} and validation \ac{ood} data set.
+More generally, classification-based methods do not need to use the softmax score, but may attempt to find any metric which separates the distribution of \ac{id} samples from \ac{ood} samples. Figure \ref{fig:ood_metric} shows the probability density for an unspecified metric for both \ac{ood} and \ac{id} samples. The goal of classification-based \ac{ood} detection is to find metrics or training methods which make these probability densities have as little overlap as possible, such that they are easily separated by a threshold. The threshold, often denoted as $\delta$, is a parameter that needs to be set at a specific value based on the values of a validation \ac{id} and validation \ac{ood} data set. Often, one sets the $\delta$ such that a certain percentage of \ac{ood} samples in the validation set are correctly detected, for example 95\%.
 
 There are several \ac{sota} methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for \ac{ood} detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
 
@@ -1156,7 +1156,7 @@ then the \ac{ood} detector has the following simple form, given a threshold $\de
    \end{cases},
 \end{align}
 
-As explained previously, the $\delta$ must be set by the 
+As explained previously, the $\delta$ must be set by the user of the system based on results from a validation set of \ac{id} and \ac{ood} data.
 
 This method reasonably well, because the softmax scores for \ac{id} data generally is higher than for \ac{ood} data. Two years later, \cite{mls} showed that this baseline could be improved in settings with larger datasets by forgoing the softmax normalization and instead only looking at the maximum logit, with the even simpler form
 
@@ -1565,7 +1565,7 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \end{center}
 \end{figure}
 
-With the intuition explained, we may now formalize the method. To define this detector mathematically, let us first define the necessary components. As in chapter \ref{chapter:background}, we assume we have a model $f: \bm{x} \to \R^C$. In this case, $\bm{x} \in \R^{D \times H \times W}$, i.e a $D$ channel image of height $H$ and width $W$. In addition, we define a \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$. This function takes the model $f$ and an input $\bm{x}$ and returns a $H_s$ by $W_s$ saliency map for the predicted class, i.e. the class corresponding to the highest logit. We also define an aggregation function $A: \bm{x} \rightarrow \R$, where $\bm{x}$ can be of any shape. Given the fact that we do not know whether the saliency aggregation of a specific \ac{xai} method $s$ and a specific model $f$ will be larger or smaller for \ac{id} data, we must also decide whether larger or smaller values should be considered \ac{id}. To do this, we can calculate the mean value of the \ac{ood} detector over a validation \ac{id} and validation \ac{ood} dataset, and compare their values. If we denote the mean value of the aggregation over the \ac{id} validation dataset as $\mu_{id}$, and over the \ac{ood} dataset as $\mu_{ood}$, we can use $\text{sign}(\mu_{id} - \mu_{ood})$ to multiply the \ac{ood} detection score by $1$ or $-1$, respectively. This ensures that the \ac{ood} detector follows the convention of the \ac{ood} detection field, which is that \ac{id} samples should have higher scores than \ac{ood} samples on a given \ac{ood} detection metric.
+With the intuition explained, we may now formalize the method. To define this detector mathematically, let us first define the necessary components. As in chapter \ref{chapter:background}, we assume we have a model $f: \bm{x} \to \R^C$. In this case, $\bm{x} \in \R^{D \times H \times W}$, i.e a $D$ channel image of height $H$ and width $W$. In addition, we define a \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$. This function takes the model $f$ and an input $\bm{x}$ and returns a $H_s$ by $W_s$ saliency map for the predicted class, i.e. the class corresponding to the highest logit. We also define an aggregation function $A: \bm{x} \rightarrow \R$, where $\bm{x}$ can be of any shape. Given the fact that we do not know whether the saliency aggregation of a specific \ac{xai} method $s$ and a specific model $f$ will be larger or smaller for \ac{id} data, we must also decide whether larger or smaller values should be considered \ac{id}. To do this, we can calculate the mean value of the \ac{ood} detector over a validation \ac{id} and validation \ac{ood} dataset, and compare their values. Requiring the presence of a validation set does not impose any actual limitations on the method, as a validation set is required for all \ac{ood} detection methods, to be able to set the threshold $\delta$. If we denote the mean value of the aggregation over the \ac{id} validation dataset as $\mu_{id}$, and over the \ac{ood} dataset as $\mu_{ood}$, we can use $\text{sign}(\mu_{id} - \mu_{ood})$ to multiply the \ac{ood} detection score by $1$ or $-1$, respectively. This ensures that the \ac{ood} detector follows the convention of the \ac{ood} detection field, which is that \ac{id} samples should have higher scores than \ac{ood} samples on a given \ac{ood} detection metric.
 
 Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
 
@@ -1642,17 +1642,37 @@ Given the poor results of \cite{martinez}, one might expect that saliency maps o
 
 In 2024, \cite{combood} introduced \texttt{COMBOOD}. This \ac{ood} detector combines the \ac{ood} detection scores of two different distance metrics; Mahalanobis distance and nearest neighbour distance. They do this by summing confidence scores computed from the log distributions of these two metrics. \texttt{COMBOOD} achieves \ac{sota} performance, and is (at the time of writing) by far the best performing method on ImageNet200 in the OpenOOD benchmark. Based on these results, I propose a similar method for combining \ac{xai}-based and traditional \ac{ood} detection metrics.
 
-For this method, the \ac{ood} score is a sum of the maximum logit and a saliency aggregate. However, due to the fact that both the logit and saliency values can be of any arbitrary magnitude, if we want them to be equally important, we must normalize them before summing. Thus, can sum the Z-scores of each metric instead. This ensures that the values of the maximum logit and the saliency aggregate are distributed in about the same way. To calculate the Z-scores, we can simply subtract the mean and divide by the standard deviation over an entire \ac{id} validation dataset, for each metric. Thus, we calculate the mean and standard deviations of the max logit over an \ac{id} validation set $\mu_{\text{MLS}}^{id}$ and $\sigma_{\text{MLS}}^{id}$, as well as the mean and standard deviation of the aggregate of saliencies $\mu_{\text{Agg}}^{id}$ and $\sigma_{\text{Agg}}^{id}$. In addition, we must calculate the mean value of the aggregation metric over a validation \ac{ood} dataset, as we do not know whether a given aggregation is higher or lower for \ac{id} data. We denote this value as $\mu_{\text{Agg}}^{ood}$. We now have the necessary values required to define this method mathematically:
+For this method, the \ac{ood} score is a sum of the maximum logit and a saliency aggregate. However, due to the fact that both the logit and saliency values can be of any arbitrary magnitude, we must normalize them before summing if we want each part to contribute equally to the final score. Thus, we can sum the Z-scores of each metric instead. This ensures that the values of the maximum logit and the saliency aggregate are distributed in about the same way. To calculate the Z-scores, we can simply subtract the mean and divide by the standard deviation over an entire \ac{id} validation dataset, for each metric. Thus, we calculate the mean and standard deviations of the max logit over an \ac{id} validation set $\mu_{\text{MLS}}^{id}$ and $\sigma_{\text{MLS}}^{id}$, as well as the mean and standard deviation of the aggregate of saliencies $\mu_{\text{Agg}}^{id}$ and $\sigma_{\text{Agg}}^{id}$. In addition, we must calculate the mean value of the aggregation metric over a validation \ac{ood} dataset, as we do not know whether a given aggregation is higher or lower for \ac{id} data. We denote this value as $\mu_{\text{Agg}}^{ood}$. We now have the necessary values required to define this method mathematically:
 
 % A simple and intuitive way to combine the information retrieved from \ac{xai} saliency methods and traditional \ac{ood} detection algorithms is to simply add them together. If we have two metrics, both of which are higher for \ac{id} data than \ac{ood} data, then a sum of these two could increase the separation further. This intuition has been utilized by \cite{combood}. Their method combines two distance metrics by a simple unweighted addition, and achieves \ac{sota} performance on ImageNet200. Thus, a similar approach with saliency and traditional \ac{ood} detection metrics could prove effective. As a baseline, I propose using the maximum logit and an aggregate of saliency. Let us define this method mathematically:
 
-As in the previous section, we assume we have a model $f: \bm{x} \to \R^C$, an \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$, and an aggregation function $A: \bm{x} \rightarrow \R$. The \ac{ood} detector then has the following form, given a threshold $\delta$:
+As in the previous section, we assume we have a model $f: \bm{x} \to \R^C$, an \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$, and an aggregation function $A: \bm{x} \rightarrow \R$. Let us denote $\text{sign}(\mu_{\text{Agg}}^{id} - \mu_{\text{Agg}}^{ood})$ as $S$, for readability. The \ac{ood} detector then has the following form, given a threshold $\delta$:
 
 {\large
 \begin{align}
     g(\bm{x}; s, A, \delta)=\begin{cases} 
-    \text{in } &  \text{sign}(\mu_{\text{Agg}}^{id} - \mu_{\text{Agg}}^{ood}) \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
-    \text{out} &  \text{sign}(\mu_{\text{Agg}}^{id} - \mu_{\text{Agg}}^{ood}) \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} < \delta \\
+    \text{in } &  S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
+    \text{out} &  S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} < \delta \\
+   \end{cases}
+\label{eq:aggregate}
+\end{align}
+}
+
+In fact, this detector can be simplified somewhat. Consider the following:
+
+\begin{gather} 
+S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} = \\
+S \left( \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} - \frac{\mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} \right) + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} - \frac{\mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} = \\
+S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} - \left(S \cdot \frac{\mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \right)
+\end{gather}
+
+Notice how all the values in the third term of the above summation are constants; they do not depend on $\bm{x}$. Thus, we can disregard these terms, as all they do is shift all outputs by a constant value. The final \ac{ood} detector thus has the following form:
+
+{\large
+\begin{align}
+    g(\bm{x}; s, A, \delta)=\begin{cases} 
+    \text{in } &  S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
+    \text{out} &  S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} < \delta \\[10pt]
    \end{cases}
 \label{eq:aggregate}
 \end{align}
@@ -1885,11 +1905,11 @@ For all saliency methods, one significant difference between my application and 
 
 \subsection{\ac{lime}}
 
-As is common when applying \ac{lime} to images, I have used segmentations of the input image to reduce the dimensionality of the input that is fed into the \ac{lime} algorithm. As superpixel segmentation algorithms such as \ac{slic} are CPU-bound and thus introduce a considerable computational overhead (which is problematic when tens of thousands of samples are to be evaluated), I have chosen to stick to a simple rectangular segmentation instead. Each image is simply split into $N \times N$ equally sized rectangular regions, with $N$ being set to 4 during the experiments unless otherwise specified.
+As is common when applying \ac{lime} to images, I have used segmentations of the input image to reduce the dimensionality of the input that is fed into the \ac{lime} algorithm. As explained in section \ref{section:saliencymapbackground}, superpixel segmentation algorithms such as \ac{slic} may increase the accuracy of the explanations, but are CPU-bound and thus introduce a considerable computational overhead (which is problematic when tens of thousands of samples are to be evaluated). Thus, I have chosen to stick to a simple rectangular segmentation instead. Each image is split into $N \times N$ equally sized rectangular regions, with $N$ being set to 4.
 
 \subsection{Occlusion}
 
-Like with \ac{lime}, I have used a rectangular segmentation approach, with each image being split into $N \times N$ regions. $N$ is set to 4 during the experiments. This ensures that accurate comparisons between \ac{lime} and occlusion can be made.
+Like with \ac{lime}, I have used a rectangular segmentation approach, with each image being split into $N \times N$ regions. As with \ac{lime}, $N$ is set to 4, which ensures that accurate comparisons between \ac{lime} and occlusion can be made.
 
 \subsection{\ac{gradcam}}
 
