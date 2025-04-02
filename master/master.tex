@@ -293,7 +293,7 @@ Objective 1 is accomplished in chapter \ref{chapter:background}. Here, the field
 
 \section{Thesis Outline}
 
-Chapter \ref{chapter:background} gives a short introduction to machine learning, followed by a deeper look at the fields of \ac{xai} and \ac{ood} detection. Chapter \ref{chapter:methodology} introduces my methodology; the methods I will use to compare and contrast \ac{xai} explanations on ID and \ac{ood} data, as well as a handful of \ac{ood} detection methods which integrate explanations into their functioning. Furthermore, I introduce the different datasets which will be used in chapter \ref{chapter:experiments}, among them the HyperKvasir gastrointestinal dataset \cite{hyperkvasir}. \ref{chapter:experiments} will first go into the results of the comparison between ID and \ac{ood} explanations, detailing the differences between different methods. Then, I will report the performance of the different \ac{ood} detection algorithms I have developed, on a handful of datasets, including HyperKvasir, CIFAR10 and ImageNet. After the experiments follow a discussion (chapter \ref{chapter:discussion}), where I reflect on the benefits and drawbacks of using \ac{xai} methods for \ac{ood} detection, and summarize the results from \ref{chapter:experiments}. Finally, the conclusion (chapter \ref{chapter:conclusion}) concludes.
+Chapter \ref{chapter:background} gives a short introduction to machine learning, followed by a deeper look at the fields of \ac{xai} and \ac{ood} detection. Chapter \ref{chapter:methodology} introduces my methodology; the methods I will use to compare and contrast \ac{xai} explanations on \ac{id} and \ac{ood} data, as well as a handful of \ac{ood} detection methods which integrate explanations into their functioning. Furthermore, I introduce the different datasets which will be used in chapter \ref{chapter:experiments}, among them the HyperKvasir gastrointestinal dataset \cite{hyperkvasir}. \ref{chapter:experiments} will first go into the results of the comparison between \ac{id} and \ac{ood} explanations, detailing the differences between different methods. Then, I will report the performance of the different \ac{ood} detection algorithms I have developed, on a handful of datasets, including HyperKvasir, CIFAR10 and ImageNet. After the experiments follow a discussion (chapter \ref{chapter:discussion}), where I reflect on the benefits and drawbacks of using \ac{xai} methods for \ac{ood} detection, and summarize the results from \ref{chapter:experiments}. Finally, the conclusion (chapter \ref{chapter:conclusion}) concludes.
 
 \chapter{Background} \label{chapter:background}
 
@@ -686,7 +686,7 @@ Accuracy is the simplest metric used in binary classification. It is simply the 
 
 Accuracy has the advantage of being simple to understand and calculate, but it is very often insufficient. A simple (and quite common) scenario where accuracy fails to capture the performance of a model is any situation where there are large class imbalances. For example, imagine we have trained a \ac{cnn} to predict whether a person has lung cancer or not, based on CT-scans of their lungs. As most people do not have lung cancer, we can imagine that such a dataset is highly imbalanced, for example that only 1 in 100 people actually have cancer. If a model simply predicts that no one ever has lung cancer, it will be correct in $99\%$ of cases, and will thus have an accuracy of $99\%$, although it has missed every instance of cancer and is completely unusable in any real context.
 
-For the purposes of \ac{ood} detection, accuracy is thus insufficient, as we have no guarantees that ID and OOD will be balanced. In fact, we expect OOD data to be relatively rare, given that the goal of developing an \ac{ai} model is to ensure high performance during deployment, which necessitates having training data which covers as much as possible of the data seen during inference.
+For the purposes of \ac{ood} detection, accuracy is thus insufficient, as we have no guarantees that \ac{id} and OOD will be balanced. In fact, we expect OOD data to be relatively rare, given that the goal of developing an \ac{ai} model is to ensure high performance during deployment, which necessitates having training data which covers as much as possible of the data seen during inference.
 
 \subsubsection{Metrics utilizing the binary classification confusion matrix} \label{section:aurocfpr95}
 
@@ -724,7 +724,7 @@ With these possibilities defined, we can begin to gain a clearer picture of the 
 
 \noindent \textbf{Precision and Recall}
 
-\noindent Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} detection setting, a model which flags many ID samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
+\noindent Precision is the share of positive predictions that were actually positive. With a high false positive rate, we have a low precision, which means that the model is erroneously flagging many negative classes as positive. In an \ac{ood} detection setting, a model which flags many \ac{id} samples as \ac{ood} would have a low precision, if we treat \ac{ood} samples as the positive class.
 
 Recall is the share of actual positive samples that were predicted positive. Recall tells us how many of positive samples we missed. In and \ac{ood} detection context, a model which lets many \ac{ood} samples slip by undetected will have a low recall score.
 
@@ -746,7 +746,7 @@ The previous metrics are a clear improvement over simply using accuracy. However
     \begin{center}
         \input{figure/auroc.pgf}
     \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+    \caption[Hypothetical \ac{id}/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical \ac{id}, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the \ac{id} and \ac{ood} samples.}
     \label{fig:auroc}
 \end{figure}
 
@@ -806,14 +806,14 @@ Local explanations do not describe general trends, but focus only on a single da
 %
 % In general, it is difficult to evaluate an AI explanations, and there is no clear consensus in the field as to what metrics should be the standard \cite{molnar, evalxai}.
 
-\subsection{\ac{xai} methods adapted to images: Saliency maps and segmentation}
+\subsection{\ac{xai} methods adapted to images: Saliency maps and segmentation} \label{section:saliencymapbackground}
 
 
 As explained in section \ref{section:scope}, the field of \ac{ood} detection is primarily focused on image data, and as such this is the focus of this thesis as well. Thus, before delving into specific \ac{xai} methods, it is beneficial to elaborate on how \ac{xai} methods are adapted to images. When explaining tabular data made up of categorical and numerical values, it is often common to explain each feature by associating it with some change in the output prediction. For example, one might say that increasing the number of rooms in a house by one increases the predicted sale price by 30 000 NOK, or that the absence of a balcony decreases it by 25 000 NOK. But, given that images are made up of tens or hundreds of thousands of features (pixels), such an approach may not be suitable.
 
-Firstly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Furthermore, inspecting the contribution of each individual pixel, like one might do for tabular data, is not even realistically feasible, due the overwhelming number of features. Given that our input is in the form of an image, which is best understood visually, as opposed to numerically, it is then natural to instead present the explanation in the same way.
+Firstly, given that we have so many features, it may no longer be interesting to know exactly how much each feature contributes to a prediction, given that we don't expect any single pixel to have a very large impact. Furthermore, inspecting the contribution of each individual pixel, like one might do for tabular data, is not even realistically feasible, due the overwhelming number of features. Given that our input is in the form of an image, which is best understood visually as opposed to numerically, it is then natural to instead present the explanation in the same way.
 
-These visual explanations take the form of saliency maps, as shown in figure \ref{fig:saliency_ex}. Here, we display the saliency values of all pixels in a heatmap, as opposed to numerically. Instead of considering the absolute values, we instead display the saliencies in relation to each other, such that the most important and least important pixel has colors on opposite sides of the colormap. In this way, it is easy and intuitive to see where the important regions of the image are, and we do not need to consider the absolute values of each pixel.
+These visual explanations take the form of saliency maps, as shown in figure \ref{fig:saliency_ex}. Here, we display the saliency values of all pixels in a heatmap. Instead of considering the absolute values, we instead display the saliencies in relation to each other, such that the most important and least important pixel has colors on opposite sides of the colormap. In this way, it is easy and intuitive to see where the important regions of the image are, and we do not need to consider the absolute values of each pixel.
 
 \begin{figure}[H]
     \begin{center}
@@ -1017,13 +1017,13 @@ This section discusses \ac{ood} detection, the field which attempts to tackle th
 
 \subsection{Motivation for Out-of-Distribution Detection}
 
-When training a model using supervised learning, we implicitly use the "closed-world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without \ac{ood} detection, the model will behave in the exact same way when encountering \ac{ood} samples or in distribution (ID) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a model to claim high confidence when predicting if a woman has lung cancer if the model has only been trained on men, nor do we want a model to attempt to classify a rare disease that was not part of the training data. Thus, \ac{ood} detection methods are necessary, so that \ac{ood} samples can be caught before the model makes a prediction and dealt with correctly.
+When training a model using supervised learning, we implicitly use the "closed-world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without \ac{ood} detection, the model will behave in the exact same way when encountering \ac{ood} samples or in distribution (\ac{id}) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a model to claim high confidence when predicting if a woman has lung cancer if the model has only been trained on men, nor do we want a model to attempt to classify a rare disease that was not part of the training data. Thus, \ac{ood} detection methods are necessary, so that \ac{ood} samples can be caught before the model makes a prediction and dealt with correctly.
 
-Intuitively, one might assume that distinguishing ID and \ac{ood} samples from each other can be solved by simple binary classification using a dataset of ID samples and one of \ac{ood} samples. Indeed, if one has sufficient amount of high quality \ac{ood} samples, this can be done. However, this can be difficult to obtain in practice \cite[15]{oodoverview}, thus requiring more sophisticated methods of \ac{ood} detection.
+Intuitively, one might assume that distinguishing \ac{id} and \ac{ood} samples from each other can be solved by simple binary classification using a dataset of \ac{id} samples and one of \ac{ood} samples. Indeed, if one has sufficient amount of high quality \ac{ood} samples, this can be done. However, this can be difficult to obtain in practice \cite[15]{oodoverview}, thus requiring more sophisticated methods of \ac{ood} detection.
 
 \subsection{Semantic versus covariate shift}
 
-The first distinction to make in \ac{ood} detection tasks is whether an \ac{ood} sample is \ac{ood} because of {\it semantic} or {\it covariate} shift. Semantic shift refers to samples with different classes than the ones the model is trained on. A picture of a giraffe would represent a semantic shift for a model trained to differentiate between different breeds of dogs, as a giraffe does not belong to any breed of dog. Covariate shift refers to samples which come from a different distribution while still belonging to one of the classes of the original data set. An image of a Beagle puppy could represent covariate shift for a dog breed classifier despite Beagle being one of the classes, if all ID images were of adult dogs. Likewise, an image of a dog in a dark room could represent covariate shift, if all the ID images were of dogs outside, in well lit conditions. Figure \ref{fig:semanticcovariate} shows this distinction visually. Here, we can easily see the difference between covariate and semantic shift; covariate shifted images come from the same classes as \ac{id} samples, while semantically shifted images come from completely unknown classes.
+The first distinction to make in \ac{ood} detection tasks is whether an \ac{ood} sample is \ac{ood} because of {\it semantic} or {\it covariate} shift. Semantic shift refers to samples with different classes than the ones the model is trained on. A picture of a giraffe would represent a semantic shift for a model trained to differentiate between different breeds of dogs, as a giraffe does not belong to any breed of dog. Covariate shift refers to samples which come from a different distribution while still belonging to one of the classes of the original data set. An image of a Beagle puppy could represent covariate shift for a dog breed classifier despite Beagle being one of the classes, if all \ac{id} images were of adult dogs. Likewise, an image of a dog in a dark room could represent covariate shift, if all the \ac{id} images were of dogs outside, in well lit conditions. Figure \ref{fig:semanticcovariate} shows this distinction visually. Here, we can easily see the difference between covariate and semantic shift; covariate shifted images come from the same classes as \ac{id} samples, while semantically shifted images come from completely unknown classes.
 
 \begin{figure}[H]
     \begin{center}
@@ -1070,14 +1070,14 @@ Given that the detection of semantic shift has been the main focus of most \ac{o
 
 \subsection{Benchmarking}
 
-The performance of an \ac{xai} is hard to quantify, because the quality of an explanation is not easily reduced to a number. For \ac{ood} detection, performance is much easier to measure, as the problem can be described as a binary classification problem, with \ac{ood} and \ac{id} samples as the positive and negative class, respectively. Thus, we can calculate many different metrics and compare methods against each other. For \ac{ood} methods, the two most common metrics to report are \ac{fpr95} and the \ac{auroc} (see section \ref{section:aurocfpr95}). It is common to use ImageNet or CIFAR as the ID dataset, and calculate \ac{fpr95} and \ac{auroc} on other datasets which contain no overlapping class labels. When selecting \ac{ood} datasets, it is common to differentiate between \textbf{Near-\ac{ood}} and \textbf{Far-\ac{ood}}. Far-\ac{ood} samples are samples which are drastically different from the ID samples, while Near-\ac{ood} samples only differ slightly. For a cat-versus-dog classifier, a tiger and a wolf would represent Near-\ac{ood} semantic shift, while a plane and a car would represent Far-\ac{ood} semantic shift. As one might expect, detecting Near-\ac{ood} samples is much harder.
+The performance of an \ac{xai} is hard to quantify, because the quality of an explanation is not easily reduced to a number. For \ac{ood} detection, performance is much easier to measure, as the problem can be described as a binary classification problem, with \ac{ood} and \ac{id} samples as the positive and negative class, respectively. Thus, we can calculate many different metrics and compare methods against each other. For \ac{ood} methods, the two most common metrics to report are \ac{fpr95} and the \ac{auroc} (see section \ref{section:aurocfpr95}). It is common to use ImageNet or CIFAR as the \ac{id} dataset, and calculate \ac{fpr95} and \ac{auroc} on other datasets which contain no overlapping class labels. When selecting \ac{ood} datasets, it is common to differentiate between \textbf{Near-\ac{ood}} and \textbf{Far-\ac{ood}}. Far-\ac{ood} samples are samples which are drastically different from the \ac{id} samples, while Near-\ac{ood} samples only differ slightly. For a cat-versus-dog classifier, a tiger and a wolf would represent Near-\ac{ood} semantic shift, while a plane and a car would represent Far-\ac{ood} semantic shift. As one might expect, detecting Near-\ac{ood} samples is much harder.
 
 % FPR95 is, as the name implies, the number of false positives (i.e the number of ID data points that the method falsely believes to be \ac{ood}) when 95\% of the \ac{ood} data points are correctly detected. AUROC can defined as the chance that a random ID data point has a higher ID-score than a random \ac{ood} data point \cite{openood}. An AUROC of 0.5 is equivalent to random guessing, while an AUROC of 1 is a perfect model that catches all \ac{ood} data points.
 
 
 In 2021, \cite{oodoverview} defined a generalized \ac{ood} detection framework, and in 2023 \cite{openood} introduced a comprehensive benchmark called OpenOOD, which evaluates all relevant \ac{ood} methods under this framework. Prior to this work, different methods were tested on different datasets, with different image preprocessing procedures, and with other externalities which inhibited effective comparison between methods \cite{openood}.
 
-OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and \ac{ood} detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for \ac{ood} detection, which are the ones I will be concerned with. Each benchmark is defined by an ID dataset, with 6 or more corresponding \ac{ood} datasets, separated into Near-\ac{ood} and Far-\ac{ood}. For each benchmark, \ac{auroc}, \ac{aupr} and \ac{fpr95} is reported over all \ac{ood} datasets, and Near-\ac{ood} \ac{auroc} is used to rank methods against each other.
+OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and \ac{ood} detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for \ac{ood} detection, which are the ones I will be concerned with. Each benchmark is defined by an \ac{id} dataset, with 6 or more corresponding \ac{ood} datasets, separated into Near-\ac{ood} and Far-\ac{ood}. For each benchmark, \ac{auroc}, \ac{aupr} and \ac{fpr95} is reported over all \ac{ood} datasets, and Near-\ac{ood} \ac{auroc} is used to rank methods against each other.
 
 \subsection{Methods}
 
@@ -1093,7 +1093,7 @@ The field of \ac{ood} is separated into four categories of methods \cite{oodover
   \item Reconstruction-based methods
 \end{itemize}
 
-All methods can also be categorized by whether they are post-hoc or training based. Post-hoc methods take an already trained network and attempt to extract information which separates ID and \ac{ood} samples out of the network during inference. These methods have the obvious advantage that they can work out of the box with large pre-trained network without requiring expensive training from scratch. Training based methods train the network in ways which maximize the difference between ID and \ac{ood} samples. These methods do not necessarily require \ac{ood} samples, but can train using auxiliary loss functions which amplify the differences in network behaviour when faced with \ac{ood} data as opposed to ID. Regardless, these methods come with a much higher computational requirement than post-hoc methods, as they require training from scratch or at least retraining using the new loss criterion. 
+All methods can also be categorized by whether they are post-hoc or training based. Post-hoc methods take an already trained network and attempt to extract information which separates \ac{id} and \ac{ood} samples out of the network during inference. These methods have the obvious advantage that they can work out of the box with large pre-trained network without requiring expensive training from scratch. Training based methods train the network in ways which maximize the difference between \ac{id} and \ac{ood} samples. These methods do not necessarily require \ac{ood} samples, but can train using auxiliary loss functions which amplify the differences in network behaviour when faced with \ac{ood} data as opposed to \ac{id}. Regardless, these methods come with a much higher computational requirement than post-hoc methods, as they require training from scratch or at least retraining using the new loss criterion. 
 
 Given the fact that post-hoc methods can be applied to trained networks out of the box, it is quite common to combine both post-hoc and training strategies to achieve the best performance.
 
@@ -1103,9 +1103,9 @@ Below follows a short explanation of each the four categories mentioned above.
 
 \subsubsection{Classification-based methods}
 
-Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish \ac{ood} and ID samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for ID samples as opposed to \ac{ood} samples. By using this simple distinction, they created a baseline model which separated \ac{ood} and ID samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of ID and \ac{ood} data. 
+Classification-based methods usually use the softmax score or logits of a model to attempt to distinguish \ac{ood} and \ac{id} samples. \cite{oodbaseline} made the observation that while the softmax score may be a poor indication of the actual confidence of the model on a single data point, it is still higher on average for \ac{id} samples as opposed to \ac{ood} samples. By using this simple distinction, they created a baseline model which separated \ac{ood} and \ac{id} samples. Using input perturbations and temperature scaling, \cite{odin} further improved on this method, by amplifying the difference in softmax score of \ac{id} and \ac{ood} data. 
 
-More generally, classification-based methods do not need to use the softmax score, but may attempt to find any metric which separates the distribution of ID samples from \ac{ood} samples. Figure \ref{fig:ood_metric} shows the probability density for an unspecified metric for both \ac{ood} and ID samples. The goal of classification-based \ac{ood} detection is to find metrics or training methods which make these probability densities have as little overlap as possible, such that they are easily separated by a threshold.
+More generally, classification-based methods do not need to use the softmax score, but may attempt to find any metric which separates the distribution of \ac{id} samples from \ac{ood} samples. Figure \ref{fig:ood_metric} shows the probability density for an unspecified metric for both \ac{ood} and \ac{id} samples. The goal of classification-based \ac{ood} detection is to find metrics or training methods which make these probability densities have as little overlap as possible, such that they are easily separated by a threshold. The threshold, often denoted as $\delta$, is a parameter that needs to be set at a specific value based on the values of a validation \ac{id} and validation \ac{ood} data set. Often, one sets the $\delta$ such that a certain percentage of \ac{ood} samples in the validation set are correctly detected, for example 95\%.
 
 There are several \ac{sota} methods which utilize a classification-based approach, and these make up a large part of the representative methodologies for \ac{ood} detection today \cite[8]{oodoverview}. As such, I shall devote the majority of section \ref{ood_specific} to classification-based methods.
 
@@ -1114,7 +1114,7 @@ There are several \ac{sota} methods which utilize a classification-based approac
     \begin{center}
         \input{figure/figure.pgf}
     \end{center}
-    \caption[Hypothetical ID/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical ID, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the ID and \ac{ood} samples.}
+    \caption[Hypothetical \ac{id}/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical \ac{id}, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the \ac{id} and \ac{ood} samples.}
 \end{figure}
 
 
@@ -1125,19 +1125,19 @@ Density-based methods explicitly try to model the in-distribution \cite{oodoverv
 
 \subsubsection{Distance-based methods} \label{section:distancebasedood}
 
-Distance-based methods attempt to detect \ac{ood} samples by calculating their distance to ID samples. Many different distance measures are used, such as Mahalanobis distance to estimated Gaussian distributions, cosine distance to the first singular vector of the data set or Euclidean distance in an embedding space.
+Distance-based methods attempt to detect \ac{ood} samples by calculating their distance to \ac{id} samples. Many different distance measures are used, such as Mahalanobis distance to estimated Gaussian distributions, cosine distance to the first singular vector of the data set or Euclidean distance in an embedding space.
 \\
 
 \subsubsection{Reconstruction-based methods}
 
-Reconstruction-based methods are based on encoder-decoder frameworks, where the core idea is that the model will be much worse at reconstructing \ac{ood} data than ID. By measuring the reconstruction loss, we can detect \ac{ood} samples.
+Reconstruction-based methods are based on encoder-decoder frameworks, where the core idea is that the model will be much worse at reconstructing \ac{ood} data than \ac{id}. By measuring the reconstruction loss, we can detect \ac{ood} samples.
 \\
 
 \subsection{Specific methods} \label{ood_specific}
 
 Below follows a more detailed look a selection of specific \ac{ood} detection methods.
 
-\subsubsection{Baseline model} \label{ood_baseline}
+\subsubsection{Baseline models} \label{ood_baseline}
 
 The baseline model created by \cite{oodbaseline} is extremely simple, yet effective. It simply compares the softmax score the predicted class to a threshold, and labels it as \ac{ood} if it falls below this threshold. Let us assume we have a model $f: \bm{x} \rightarrow \R^C$ that takes an input $\bm{x}$ (which may be an image, a vector of values, or something else) and returns a vector of logits with length equal to the number of classes $C$. If we define a softmax score function 
 
@@ -1156,7 +1156,9 @@ then the \ac{ood} detector has the following simple form, given a threshold $\de
    \end{cases},
 \end{align}
 
-This method reasonably well, because the softmax scores for ID data generally is higher than for \ac{ood} data. Two years later, \cite{mls} showed that this baseline could be improved in settings with larger datasets by forgoing the softmax normalization and instead only looking at the maximum logit, with the even simpler form
+As explained previously, the $\delta$ must be set by the user of the system based on results from a validation set of \ac{id} and \ac{ood} data.
+
+This method reasonably well, because the softmax scores for \ac{id} data generally is higher than for \ac{ood} data. Two years later, \cite{mls} showed that this baseline could be improved in settings with larger datasets by forgoing the softmax normalization and instead only looking at the maximum logit, with the even simpler form
 
 \begin{align}
 \label{eq:mls}
@@ -1171,7 +1173,7 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 
 % \subsubsection{Out-of-Distribution Detector for Neural Networks (ODIN)} \label{ood_odin}
 %
-% \cite{odin} improves on the work of \cite{oodbaseline} by introducing two simple modifications to the method which amplify the difference between the softmax score of ID and \ac{ood} samples. Firstly, they alter the input image slightly by adding small perturbations based on the gradients of the cross-entropy loss, as shown in equation \ref{perturb}
+% \cite{odin} improves on the work of \cite{oodbaseline} by introducing two simple modifications to the method which amplify the difference between the softmax score of \ac{id} and \ac{ood} samples. Firstly, they alter the input image slightly by adding small perturbations based on the gradients of the cross-entropy loss, as shown in equation \ref{perturb}
 %
 % \begin{equation}
 % \tilde{\bm{x}} = \bm{x} - \epsilon \, \text{sign}(-\nabla_{\bm{x}} \text{log}_{\hat{y}}(\bm{x};T))
@@ -1197,11 +1199,11 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 %
 % With these modifications, they report large improvements over the baseline \cite[4]{odin}. To explain this increase, we should look at the mathematical justification for these modifications.
 %
-% The idea behind perturbing the input image based on the gradient of the cross entropy loss is that ID data points have a higher gradient than \ac{ood} data in general. By moving our data point slightly in the direction of the negative gradient, we should expect to see a higher softmax score than if we did not move, regardless of whether the data point is ID or \ac{ood}. However, because the gradients are larger for ID data, we expect that the difference between the new softmax scores will be larger than they were before the perturbations, because the ID data point has moved further towards higher softmax values, as shown in figure \ref{softmaxmove}, taken from \cite[8]{odin}. Here we see two data points, one ID (red) and one ODD (blue), which are both perturbed. As we can see, the resulting softmax scores after the perturbations differ more than before the perturbation.
+% The idea behind perturbing the input image based on the gradient of the cross entropy loss is that \ac{id} data points have a higher gradient than \ac{ood} data in general. By moving our data point slightly in the direction of the negative gradient, we should expect to see a higher softmax score than if we did not move, regardless of whether the data point is \ac{id} or \ac{ood}. However, because the gradients are larger for \ac{id} data, we expect that the difference between the new softmax scores will be larger than they were before the perturbations, because the \ac{id} data point has moved further towards higher softmax values, as shown in figure \ref{softmaxmove}, taken from \cite[8]{odin}. Here we see two data points, one \ac{id} (red) and one ODD (blue), which are both perturbed. As we can see, the resulting softmax scores after the perturbations differ more than before the perturbation.
 %
 % \begin{figure}[h]
 % \centerline{\includegraphics[width=3.25in]{figure/gradient.png}}
-% \caption{Figure taken from \cite{odin}, showing the difference in gradients between ID and \ac{ood} data points}
+% \caption{Figure taken from \cite{odin}, showing the difference in gradients between \ac{id} and \ac{ood} data points}
 % \label{softmaxmove}
 % \end{figure}
 %
@@ -1218,11 +1220,11 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 %
 % $\hat{y}$ is the predicted class, and is thus also the index for the highest value in $f(\bm{x})$. Thus, $U_1$ represents "the extent to which the largest unnormalized output deviates from the remaining outputs", while $U_2$ measures how the remaining outputs deviate from each other \cite[6]{odin}.
 %
-% \cite{odin} makes the two following observations with regards to these two values: Firstly, they find that the largest unnormalized output tends to deviate more for ID samples, making $U_1$ larger than for \ac{ood} samples, because the model is more confident in its prediction. Secondly, they find that $E[U_2|U_1]$ is larger for ID data samples than for \ac{ood} samples, which shows that ID samples have more separation in the remaining unnormalized inputs than \ac{ood} samples. 
+% \cite{odin} makes the two following observations with regards to these two values: Firstly, they find that the largest unnormalized output tends to deviate more for \ac{id} samples, making $U_1$ larger than for \ac{ood} samples, because the model is more confident in its prediction. Secondly, they find that $E[U_2|U_1]$ is larger for \ac{id} data samples than for \ac{ood} samples, which shows that \ac{id} samples have more separation in the remaining unnormalized inputs than \ac{ood} samples. 
 %
-% Returning to the Taylor approximated softmax score ${S\propto {(U_{1}-U_{2}/2T)/T}}$, we see that $U_1$ contributes to making the softmax score higher, while $U_2$ reduces the softmax score. Given that both these values are higher for ID data, we will want to reduce the impact of $U_2$ and increase the impact of $U_1$. As $U_1$ is divided by $T$, while $U_2$ is divided by $2T^2$, increasing the temperature achieves this, as $U_2$ will decrease much faster than $U_1$. Thus, we can see how an increased temperature increases the softmax scores for ID data, and thus increases the gap between softmax scores for ID and \ac{ood} samples, making them easier to differentiate.
+% Returning to the Taylor approximated softmax score ${S\propto {(U_{1}-U_{2}/2T)/T}}$, we see that $U_1$ contributes to making the softmax score higher, while $U_2$ reduces the softmax score. Given that both these values are higher for \ac{id} data, we will want to reduce the impact of $U_2$ and increase the impact of $U_1$. As $U_1$ is divided by $T$, while $U_2$ is divided by $2T^2$, increasing the temperature achieves this, as $U_2$ will decrease much faster than $U_1$. Thus, we can see how an increased temperature increases the softmax scores for \ac{id} data, and thus increases the gap between softmax scores for \ac{id} and \ac{ood} samples, making them easier to differentiate.
 %
-% With these two modifications to the simple baseline proposed by \cite{oodbaseline}, \cite{odin} manages to increase the gap between the softmax scores of ID and \ac{ood} data and thus facilitates much more effective \ac{ood} detection.
+% With these two modifications to the simple baseline proposed by \cite{oodbaseline}, \cite{odin} manages to increase the gap between the softmax scores of \ac{id} and \ac{ood} data and thus facilitates much more effective \ac{ood} detection.
 % \\
 %
 % \subsubsection{Energy Based \ac{ood} Detection}
@@ -1248,16 +1250,16 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 %   E(\*x;f)=- T\cdot \text{log}\sum_i^K e^{f_i(\*x)/T}.
 % \end{equation}
 %
-% The authors show that when training with negative log likelihood loss, the optimization will reduce the free energy of ID data points, and that the difference  between ID and \ac{ood} energy scores is higher than the difference in softmax scores \cite{energy}. Thus, thresholding the free energy function is an effective way to separate ID and \ac{ood} data points. Furthermore, they also present a method for fine tuning a pre trained model using a loss function that is based on the energy score. By doing this, the gap between ID and \ac{ood} energy scores can be increased even further.
+% The authors show that when training with negative log likelihood loss, the optimization will reduce the free energy of \ac{id} data points, and that the difference  between \ac{id} and \ac{ood} energy scores is higher than the difference in softmax scores \cite{energy}. Thus, thresholding the free energy function is an effective way to separate \ac{id} and \ac{ood} data points. Furthermore, they also present a method for fine tuning a pre trained model using a loss function that is based on the energy score. By doing this, the gap between \ac{id} and \ac{ood} energy scores can be increased even further.
 % \\
 %
 % \subsubsection{ReAct}
 %
-% ReAct \cite{react} is a very simple method, which also aims to increase the difference in confidence scores between ID and \ac{ood} data. It does this by rectifying high activations in the penultimate layer, which surprisingly achieves this very effectively. Figure \ref{react} gives an intuition for why this is the case:
+% ReAct \cite{react} is a very simple method, which also aims to increase the difference in confidence scores between \ac{id} and \ac{ood} data. It does this by rectifying high activations in the penultimate layer, which surprisingly achieves this very effectively. Figure \ref{react} gives an intuition for why this is the case:
 %
 % \begin{figure}[h]
 % \centerline{\includegraphics[width=3.25in]{figure/react.pdf}}
-% \caption{Figure taken from \cite{react}, showing the activations for the nodes in the penultimate layer for ID and \ac{ood} data}
+% \caption{Figure taken from \cite{react}, showing the activations for the nodes in the penultimate layer for \ac{id} and \ac{ood} data}
 % \label{react}
 % \end{figure}
 %
@@ -1281,7 +1283,7 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 % f^{\text{ReAct}}(\*x;\theta) = \*W^\top \bar h(\*x) + \mathbf{b}.
 % \end{align}
 %
-% These logits can be used by any other \ac{ood} method which uses the output values to separate ID and \ac{ood} samples \cite{react}:
+% These logits can be used by any other \ac{ood} method which uses the output values to separate \ac{id} and \ac{ood} samples \cite{react}:
 %
 % \begin{align}
 % \label{eq:threshold}
@@ -1300,12 +1302,12 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 %
 % In this lower dimension space, previously intractable methods are now less computationally expensive. To synthesize outliers, \cite{vos} simply estimates class conditional Gaussian distributions by computing empirical class means and covariances, and sample outliers from the class boundaries between these Gaussians.
 %
-% Using these outliers, they present a "unknown-aware training objective", which can be used during training to maximize the separability between ID and \ac{ood} data during inference.
+% Using these outliers, they present a "unknown-aware training objective", which can be used during training to maximize the separability between \ac{id} and \ac{ood} data during inference.
 % \\
 %
 % \subsubsection{GradNorm}
 %
-% As opposed to using the feature or output space, GradNorm \cite{gradnorm} attempts to use the gradient space of a network to calculate \ac{ood}-ness. They find that the gradients of the weights actually contain valuable information that allows for effective separation of ID and \ac{ood} samples, and perform ablation studies which show that this methods outperforms many other methods, including the previously mentioned ODIN and Energy methods.
+% As opposed to using the feature or output space, GradNorm \cite{gradnorm} attempts to use the gradient space of a network to calculate \ac{ood}-ness. They find that the gradients of the weights actually contain valuable information that allows for effective separation of \ac{id} and \ac{ood} samples, and perform ablation studies which show that this methods outperforms many other methods, including the previously mentioned ODIN and Energy methods.
 %
 % The gradients are calculated with regards to the Kullback-Leibler divergence between the softmax values and a uniform distribution. An important distinction from other methods is that all the softmax values are used, as opposed to the {\it softmax score} which would be only the score of the predicted class. Thus, this method captures information about the uncertainty across all categories, as opposed to just the most likely class \cite[3]{gradnorm}. Once the gradients have been calculated, the threshold is simply done on the $L_p$-norm of these gradients, giving us the following thresholding function \cite{gradnorm}:
 %
@@ -1314,11 +1316,11 @@ Perhaps surprisingly, both these methods are quite good at detecting \ac{ood} sa
 %     S(\*x) = \lVert\frac{\partial D_\text{KL}(\*u~\lVert~\text{softmax}(f(\*x))}{\partial \*w}  \rVert_p
 % \end{equation}
 %
-% As shown in figure \ref{gradnorms}, we see that the gradient norms are consistently lower for \ac{ood} data (gray) than ID data (blue).
+% As shown in figure \ref{gradnorms}, we see that the gradient norms are consistently lower for \ac{ood} data (gray) than \ac{id} data (blue).
 %
 % \begin{figure}[h]
 % \centerline{\includegraphics[width=3.25in]{figure/gradnorm.pdf}}
-% \caption{Figure taken from \cite{gradnorm}, showing the difference in gradient norms between ID and \ac{ood} data}
+% \caption{Figure taken from \cite{gradnorm}, showing the difference in gradient norms between \ac{id} and \ac{ood} data}
 % \label{gradnorms}
 % \end{figure}
 %
@@ -1380,9 +1382,9 @@ This now takes part in the computation of the softmax values, and thus is affect
 
 While the combination of \ac{xai} and \ac{ood} detection has been explored in many previous works, the majority of them focus on explaining why a data point was marked as \ac{ood}, as opposed to using \ac{xai} to aid the detection itself. Works like \cite{uncertainty}, \cite{generalxaiforood} and \cite{tallon2020explainable} are papers which combine \ac{xai} and \ac{ood} for this purpose. Within network security, \ac{xai} has been as part of anomaly detection systems to detect malicious or faulty network traffic. Here, it has been used to explain detections (\cite{idsxai}, \cite{mahbooba}), but also to aid in detection itself by inspecting the explanations of the detection system (\cite{tcydenova2021detection}, \cite{dnsxai}). These methods thus use \ac{xai} to aid \ac{ood} detection in a similar manner to my work, however they are strictly focused on sequential network traffic data as opposed to images, and are mostly concerned with detection "unnatural" data samples such as intentionally malicious traffic or that generated by faulty equipment, as opposed to natural \ac{ood} data caused by semantic or covariate shift occurring when a model is deployed.
 
-\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use \ac{xai} to improve \ac{ood} detection on images. They do this by looking at saliency maps produced by a \ac{gradcam}-based \ac{xai} method (section \ref{section:gradcam}) during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class. Using these heatmaps, they perform distance-based \ac{ood} detection (section \ref{section:distancebasedood}): By collecting all explanations for each image in the ID dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform \ac{ood} detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as \ac{ood} if it has a distance which is over a certain threshold.
+\cite{martinez} is the most relevant previous work. Here, the authors explicitly aim to use \ac{xai} to improve \ac{ood} detection on images. They do this by looking at saliency maps produced by a \ac{gradcam}-based \ac{xai} method (section \ref{section:gradcam}) during inference, i.e the heatmaps that explain which parts of the image was most influential to classify the image as a specific class. Using these heatmaps, they perform distance-based \ac{ood} detection (section \ref{section:distancebasedood}): By collecting all explanations for each image in the \ac{id} dataset, they are able to construct archetypical explanations, and can make clusters of explanations. To perform \ac{ood} detection, they simply compare the explanation of a new data point to the clusters of archetypical explanations, and mark it as \ac{ood} if it has a distance which is over a certain threshold.
 
-This method performs decently on toy datasets, achieving scores similar to \ac{sota} methods when using {\it Fashin MNIST} as ID and {\it MNIST} as \ac{ood}. However, this method fails catastrophically in more complicated scenarios, achieving an AUROC score of only $52\%$ on {\it CIFAR10} vs {\it SVHN}, which is only marginally better than pure guessing and far below any other method. The paper thus ends with the authors concluding that "OoD detection approaches that are specifically designed for the purpose achieve in general better detection scores at the cost of an additional computational burden in the model’s construction" \cite{martinez}.
+This method performs decently on toy datasets, achieving scores similar to \ac{sota} methods when using {\it Fashin MNIST} as \ac{id} and {\it MNIST} as \ac{ood}. However, this method fails catastrophically in more complicated scenarios, achieving an AUROC score of only $52\%$ on {\it CIFAR10} vs {\it SVHN}, which is only marginally better than pure guessing and far below any other method. The paper thus ends with the authors concluding that "OoD detection approaches that are specifically designed for the purpose achieve in general better detection scores at the cost of an additional computational burden in the model’s construction" \cite{martinez}.
 
 For more potential related work, we can look to OpenOOD (\cite{openood}), which aims to provide a comprehensive benchmark of all relevant methods in the field of \ac{ood} detection. Out of all 41 \ac{ood} detection methods included in this benchmark, there are no methods which use \ac{xai}.
 
@@ -1396,7 +1398,7 @@ In this chapter, I have given a thorough introduction.
 
 The core of this work is the 
 
-As shown in the preceding chapter, there exists a plethora of \ac{xai} methods, which exploit gradient information, differences in output scores when altering model inputs, marginal contributions of input features, as well as many other intricacies of deep learning models. The core idea of this master thesis is that these methods, in their attempt to explain a model decision, may also inadvertently extract information which is valuable for \ac{ood} detection. Thus, there may be an unexplored potential in these methods to function not just as explanations, but also as classifiers which allow us to separate ID and \ac{ood} data. Intuitively, we might expect the explanations to be more spread out on \ac{ood} images, given that there are (by definition) no objects of interest in the image that the model can definitely be said to focus on. In contrast, we might expect an explanation on an ID image to be more focused on a specific area, which contains an object of interest. Furthermore, given that saliency methods give a numerical value to each region of the image, we might be able to extract information about the "\ac{ood}-ness" of an image by inspecting the magnitudes of these values. Intuitively, it makes sense that such values should be lower for \ac{ood} than ID, reflecting the higher uncertainty present in \ac{ood} data.
+As shown in the preceding chapter, there exists a plethora of \ac{xai} methods, which exploit gradient information, differences in output scores when altering model inputs, marginal contributions of input features, as well as many other intricacies of deep learning models. The core idea of this master thesis is that these methods, in their attempt to explain a model decision, may also inadvertently extract information which is valuable for \ac{ood} detection. Thus, there may be an unexplored potential in these methods to function not just as explanations, but also as classifiers which allow us to separate \ac{id} and \ac{ood} data. Intuitively, we might expect the explanations to be more spread out on \ac{ood} images, given that there are (by definition) no objects of interest in the image that the model can definitely be said to focus on. In contrast, we might expect an explanation on an \ac{id} image to be more focused on a specific area, which contains an object of interest. Furthermore, given that saliency methods give a numerical value to each region of the image, we might be able to extract information about the "\ac{ood}-ness" of an image by inspecting the magnitudes of these values. Intuitively, it makes sense that such values should be lower for \ac{ood} than \ac{id}, reflecting the higher uncertainty present in \ac{ood} data.
 
 As an example, let us consider \ac{gradcam}. As explained in section \ref{section:gradcam}, \ac{gradcam} uses the gradients of the weights within the final convolutional layer with regard to the output prediction, along with the final feature maps, to generate an explanation.
 
@@ -1404,17 +1406,15 @@ As an example, let us consider \ac{gradcam}. As explained in section \ref{sectio
 
 In this section, I introduce my proposed methods for \ac{ood} detection, which utilize \ac{xai} methods as part of their detection pipeline.
 
-\subsection{Stand-alone saliency methods}
+\subsection{Stand-alone saliency method: Aggregate of Saliency} \label{section:saliencyagg_method}
 
 As we have seen from section \ref{section:relatedwork}, there has been little research into using explanations for \ac{ood} detection, aside from the work of \cite{martinez}. Thus, I begin by presenting a simple baseline method which uses saliency values generated by \ac{xai} methods to calculate an \ac{ood} score.
 
-\subsubsection{Aggregate of Saliency}
+As mentioned previously, the field of \ac{ood} detection started with the simple baseline introduced by \cite{oodbaseline}, which simply uses the \ac{msp} (i.e the confidence score of the predicted class) as a way to measure \ac{ood}. Later, it was shown that using the \ac{mls} could also serve as an effective baseline. As such, I propose a similarly simple baseline when using explanations for \ac{ood} detection. The analogue of the maximum logit in an \ac{xai} context can reasonably be said to be the explanation generated of the predicted class (the class corresponding to the maximum logit). As explained previously, this explanation will take the form of an $n \times m$ saliency map. This saliency map is not a single scalar value, and does thus not make a suitable \ac{ood} score by itself. Instead, we may perform some form of aggregation on the saliency map (such as taking the mean, the vector norm, the variance or some other form), and use this as the \ac{ood} score.
 
-As mentioned previously, the field of \ac{ood} detection started with the simple baseline introduced by \cite{oodbaseline}, which simply uses the \ac{msp} (i.e the confidence score of the predicted class) as a way to measure \ac{ood}. As such, I propose a similarly simple baseline when using explanations for \ac{ood} detection. The analogue of the maximum logit in an \ac{xai} context can reasonably be said to be the explanation generated of the predicted class (the class corresponding to the maximum logit). As explained previously, this explanation will take the form of an $n \times m$ saliency map. This saliency map is not a single scalar value, and does thus not make a suitable \ac{ood} score by itself. Instead, we may perform some form of aggregation on the saliency map (such as taking the mean, the max, the variance or some other form), and use this as the \ac{ood} score.
+The intuition for this method is informed by the fact that there are many forms of aggregation over saliencies which one might reasonably expect to be different for \ac{id} and \ac{ood} data. As an example, let us consider the implications of aggregating in some way which captures the magnitude of the saliencies, such as the {\it mean}, the {\it vector norm}, or the {\it max value}. When we generate a saliency map using the predicted class, the \ac{xai} saliency method attempts to calculate a measure of importance for each region of the input image, with regard to this class. For \ac{id} data, as long as the model predicted correctly, we know that there really are regions of the input image which contain the predicted class. If we instead are looking at semantically shifted \ac{ood} data, we know that no input image contains any of the \ac{id} classes. Thus, when a neural network makes a prediction on such a data point, it will always be wrong, because it will always predict one of the \ac{id} classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to a false decision. Given that there are no objects of the predicted class, in any region, we may reasonably assume that the saliency values are very different than in an \ac{id} case, where such objects actually are present.
 
-The intuition for this method is informed by the fact that there are many forms of aggregation over saliencies which one might reasonably expect to be different for ID and \ac{ood} data. As an example, let us consider the implications of aggregating in some way which captures the magnitude of the saliencies, such as the {\it mean}, the {\it vector norm}, or the {\it max value}. When we generate a saliency map using the predicted class, the \ac{xai} saliency method attempts to calculate a measure of importance for each region of the input image, with regard to this class. For ID data, as long as the model predicted correctly, we know that there really are regions of the input image which contain the predicted class. If we instead are looking at semantically shifted \ac{ood} data, we know that no input image contains any of the ID classes. Thus, when a neural network makes a prediction on such a data point, it will always be wrong, because it will always predict one of the ID classes. By generating a saliency map of this prediction, we are asking a method to decide how each region contributed to a false decision. Given that there are no objects of the predicted class, in any region, we should expect the saliency values to be lower than in an ID case, where such objects actually are present.
-
-To further illustrate this theoretical justification, I present a simple example scenario (figure \ref{fig:meansaliency}). Here, I imagine a model which has been trained to differentiate between different breeds of dogs. In the first case, it is given an image of a dog, and a prediction of "English Foxhound" is made, which happens to be correct. Generating an explanation for this prediction, each region of the image is given a measure of importance, calculated using gradient information, differences in prediction score on counterfactual examples or by other means. As there actually is an English Foxhound in the image, we expect that these methods generate saliencies which have a magnitude which is higher than if there was no dog present.
+To further justify this intuition, I will present a simple example scenario (figure \ref{fig:meansaliency}) where one might expect the \ac{id} saliencies to be higher than the \ac{ood} saliencies. Here, I imagine a model which has been trained to differentiate between different breeds of dogs. In the first case, it is given an image of a dog, and a prediction of "English Foxhound" is made, which happens to be correct. Generating an explanation for this prediction, each region of the image is given a measure of importance, calculated using gradient information, differences in prediction score on counterfactual examples or by other means. As there actually is an English Foxhound in the image, we may expect that these methods generate saliencies which have a magnitude which is higher than if there was no dog present.
 
 \begin{figure}[H]
     \begin{center}
@@ -1438,7 +1438,7 @@ To further illustrate this theoretical justification, I present a simple example
     \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (idmean.north);
     \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (oodmean.north);
 
-    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
+    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as \ac{id}};
     \node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as \ac{ood}};
 
     \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
@@ -1464,9 +1464,58 @@ To further illustrate this theoretical justification, I present a simple example
 
 In the second case, the model is given an image without any dogs present. Given that there is no class for images without dogs in them, the model will classify the image as one of the possible dog breeds. In this case, the model predicted the class of "Samoyed", a decision which can be considered essentially arbitrary. When a explanation is generated for this decision, the methods for calculating importance scores will most likely assign saliencies to most regions, given that no region contains a dog. As such, if we calculate mean saliencies for both the image with the dog and the one without, we expect the image with the dog to have a higher mean saliency. As long as we work with semantically shifted \ac{ood} data, it will always be the case that the prediction on \ac{ood} data is wrong, and thus we may also expect that the generated explanations in general output smaller saliencies.
 
-Apart from aggregations which convey information about the magnitude of the saliencies, we may also expect the variation or dispersion of the saliencies to be different between ID and \ac{ood} data. The intuition is that one might expect the heatmap on \ac{ood} data to be less concentrated and more spread out, given that there are no actual objects of interest present.
+On the contrary, we could also expect that \ac{ood} saliency maps have {\it higher} magnitudes than \ac{id} saliency maps. As has been well documented, neural networks behave unpredictably when exposed to examples far from their training distribution \cite{nguyen2015deepneuralnetworkseasily, geirhos2020shortcut, goodfellow2015explainingharnessingadversarialexamples}. Thus, it is not unreasonable to expect that explanations based on this unpredictable behaviour may also be unstable and unpredictable. This instability could lead to large outliers in saliency maps, which would give larger magnitudes when compared to \ac{id} data points. Figure \ref{fig:meansaliencyless} shows an imagined example scenario where this could be the case. Here, we imagine that the same dog breed classifier is shown two images: the first an image of a Border Terrier in a park, an scenario which we could assume is quite common in the training dataset. The second is a night time picture of a illuminated archway, an image which is very far away from the training distribution of the model, and contains many sharp changes in pixel intensity. In such a scenario, it is possible that a network will behave unpredictably, which may be reflected in the saliency map of the model. As explained in section \ref{section:xaimethodsbackground}, methods such as \ac{gradcam}, \ac{gbp} and integrated gradients use gradient information from the network, which may be affected by sharp activations in the internals of the model.
 
-Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating the spread could be beneficial in \ac{ood} detection. Like in the previous case, we imagine a model trained on dogs, which is fed two images, one which contains a dog and one which does not. In this case, we do not care about the magnitudes, but instead only the spread of the values in relation to each other, and thus the heatmap is normalized. As we can see, the heatmap is more spread out in the explanation where there is no dog present than for the image with a dog. By calculating a suitable metric, such as the \ac{rmd}, \ac{cv} or another measure of statistical dispersion, we can get a single number which represents how spread out the heatmap is, regardless of its magnitude. Using these values, we can define a threshold which is below most \ac{id} data and above most \ac{ood} data, allowing us to separate these distributions.
+
+\begin{figure}[H]
+    \begin{center}
+
+    \begin{tikzpicture}[
+    SIR/.style={rectangle, draw=black!80, thick, minimum size=5mm},
+    ]
+
+    \node[SIR, label={[align=center]Image with dog present,\\correctly classified as\\"Border Terrier"}] (idimg) {\includegraphics[width=0.25\textwidth]{figure/meansaliencyless/id_less_magnitude-img0.png}};
+    \node[SIR, label={[align=center]Image without dog\\present, wrongly\\classified as "Dingo"}] (oodimg) [right=of idimg] {\includegraphics[width=0.25\textwidth]{figure/meansaliencyless/id_less_magnitude-img2}};
+
+    \node[SIR] (idsal) [below=1.5cm of idimg] {\includegraphics[width=0.25\textwidth]{figure/meansaliencyless/id_less_magnitude-img1.png}};
+    \node[SIR] (oodsal) [below=1.5cm of oodimg] {\includegraphics[width=0.25\textwidth]{figure/meansaliencyless/id_less_magnitude-img3.png}};
+
+    \node[SIR] (idmean) [below=1.5cm of idsal] {Mean saliency = $0.23$};
+    \node[SIR] (oodmean) [below=1.5cm of oodsal] {Mean saliency = $0.69$};
+
+    \draw[->, very thick] (idimg.south)  to node[midway, fill=white, align=center] {Generate \ac{xai} heatmap\\of model prediction} (idsal.north);
+    \draw[->, very thick] (oodimg.south)  to node[midway, fill=white, align=center] {Generate \ac{xai} heatmap\\of model prediction} (oodsal.north);
+
+    \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (idmean.north);
+    \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate average value\\of heatmap} (oodmean.north);
+
+    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Below threshold:\\classified as \ac{id}};
+    \node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Above threshold:\\classified as \ac{ood}};
+
+    \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
+    \draw[->, very thick] (oodmean.south)  to node[midway, fill=white] {Compare with threshold} (ooddecision.north);
+
+    \begin{scope}[shift={($(oodsal.east)+(0.1cm,0.25\textwidth / 2)$)}]
+        \pgfplotscolorbardrawstandalone[
+        colormap name=turbo,
+        point meta min=0,
+        point meta max=0.82,
+        colorbar style={
+            height=0.25\textwidth, % Match the height of the images
+            width=0.4cm, % Desired width of the colorbar
+            ytick={0, 0.41, 0.82},
+            % yticklabels={Low, Medium, High},
+        }]
+    \end{scope}
+    \end{tikzpicture}
+    \caption[Mean Saliency visual explanation]{Figure showing the functioning of the Aggregate of Saliency \ac{ood} detector, using mean as the aggregation, in a hypothetical scenario where a model trained on images of dogs is shown an image with no dogs present. As opposed to the previous figure, here we assume that \ac{id} samples have lower mean values on average, and as such the thresholding is inverted.}
+    \label{fig:meansaliencyless}
+    \end{center}
+\end{figure}
+
+Apart from aggregations which convey information about the magnitude of the saliencies, we may also expect the variation or dispersion of the saliencies to be different between \ac{id} and \ac{ood} data. We might expect the heatmap on \ac{ood} data to be less concentrated and more evenly spread out, given that there are no actual objects of interest present. This would give \ac{ood} data points a low variance, and \ac{id} data points a high variance. Alternatively, we might expect \ac{ood} saliency maps to have large outliers, which could give \ac{ood} saliency maps high variance.
+
+Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating the spread could be beneficial in \ac{ood} detection. Like in the previous case, we imagine a model trained on dogs, which is fed two images, one which contains a dog and one which does not. In this case, we do not care about the magnitudes, but instead only the spread of the values in relation to each other, and thus the heatmap is normalized. As we can see, in this case the heatmap is more spread out in the explanation where there is no dog present than for the image with a dog. By calculating a suitable metric, such as the \ac{rmd}, \ac{cv} or another measure of statistical dispersion, we can get a single number which represents how spread out the heatmap is, regardless of its magnitude. Using these values, we can define a threshold which is below most \ac{id} data and above most \ac{ood} data, allowing us to separate these distributions.
 
 \begin{figure}[H]
     \begin{center}
@@ -1490,7 +1539,7 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \draw[->, very thick] (idsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of normalized heatmap} (idmean.north);
     \draw[->, very thick] (oodsal.south)  to node[midway, fill=white, align=center] {Calculate variance\\of normalized heatmap} (oodmean.north);
 
-    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as ID};
+    \node[SIR, align=left, draw=id, fill=id!30] (iddecision) [below=of idmean] {Above threshold:\\classified as \ac{id}};
     \node[SIR, align=left, draw=far, fill=far!30] (ooddecision) [below=of oodmean] {Below threshold:\\classified as \ac{ood}};
 
     \draw[->, very thick] (idmean.south)  to node[midway, fill=white] {Compare with threshold} (iddecision.north);
@@ -1516,14 +1565,14 @@ Figure \ref{fig:varsaliency} shows a hypothetical scenario in which calculating 
     \end{center}
 \end{figure}
 
-With the intuition explained, we may now formalize the method. To define this detector mathematically, let us first define the necessary components. As in chapter \ref{chapter:background}, we assume we have a model $f: \bm{x} \to \R^C$. In this case, $\bm{x} \in \R^{D \times H \times W}$, i.e a $D$ channel image of height $H$ and width $W$. In addition, we define a \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$. This function takes the model $f$ and an input $\bm{x}$ and returns a $H_s$ by $W_s$ saliency map for the predicted class, i.e. the class corresponding to the highest logit. Finally, we define an aggregation function $A: \bm{x} \rightarrow \R$, where $\bm{x}$ can be of any shape.
+With the intuition explained, we may now formalize the method. To define this detector mathematically, let us first define the necessary components. As in chapter \ref{chapter:background}, we assume we have a model $f: \bm{x} \to \R^C$. In this case, $\bm{x} \in \R^{D \times H \times W}$, i.e a $D$ channel image of height $H$ and width $W$. In addition, we define a \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$. This function takes the model $f$ and an input $\bm{x}$ and returns a $H_s$ by $W_s$ saliency map for the predicted class, i.e. the class corresponding to the highest logit. We also define an aggregation function $A: \bm{x} \rightarrow \R$, where $\bm{x}$ can be of any shape. Given the fact that we do not know whether the saliency aggregation of a specific \ac{xai} method $s$ and a specific model $f$ will be larger or smaller for \ac{id} data, we must also decide whether larger or smaller values should be considered \ac{id}. To do this, we can calculate the mean value of the \ac{ood} detector over a validation \ac{id} and validation \ac{ood} dataset, and compare their values. Requiring the presence of a validation set does not impose any actual limitations on the method, as a validation set is required for all \ac{ood} detection methods, to be able to set the threshold $\delta$. If we denote the mean value of the aggregation over the \ac{id} validation dataset as $\mu_{id}$, and over the \ac{ood} dataset as $\mu_{ood}$, we can use $\text{sign}(\mu_{id} - \mu_{ood})$ to multiply the \ac{ood} detection score by $1$ or $-1$, respectively. This ensures that the \ac{ood} detector follows the convention of the \ac{ood} detection field, which is that \ac{id} samples should have higher scores than \ac{ood} samples on a given \ac{ood} detection metric.
 
 Thus, the \ac{ood} detector has the following form, given a threshold $\delta$:
 
 \begin{align}
     g(\bm{x}; s, A, \delta)=\begin{cases} 
-        \text{in } & A(s(\bm{x}, f)) \ge \delta \\
-        \text{out} & A(s(\bm{x}, f)) < \delta 
+        \text{in } & \text{sign}(\mu_{id} - \mu_{ood}) \cdot A(s(\bm{x}, f)) \ge \delta \\
+        \text{out} & \text{sign}(\mu_{id} - \mu_{ood}) \cdot A(s(\bm{x}, f)) < \delta 
    \end{cases}
 \label{eq:aggregate}
 \end{align}
@@ -1581,29 +1630,49 @@ In the experiments, the following aggregations have been used. \\
     \item \acf{rmd}
 \end{itemize}
 
-These two categories follow the intuition explained above, and will test the two hypotheses that (1) \ac{id} saliency maps have higher magnitude than \ac{ood}, and that (2) \ac{id} saliency maps are more concentrated and less evenly spread out than \ac{ood}, and thus have higher statistical dispersion.
+These two categories follow the intuition explained above, and will test whether either the magnitude or statistical spread of \ac{id} saliency maps differ substantially from those of \ac{ood} saliency maps.
 
 % The magnitude based aggregations are essentially self-explanatory. For the distribution based methods, some explanation is necessary. The \acf{cv} is an alternative to using standard deviation, which removes the effect of the magnitude of the values over which the standard deviation is calculated. The \ac{cv} of a set of values is simply the standard deviation divided by the mean: $CV(\mathbf{x}) = \sigma_x / \mu_x$. For exploring whether the saliencies of \ac{ood} data is more dispersed or spread out than \ac{id} data, such a normalization is required, given that we do not expect the saliencies of \ac{id} and \ac{ood} data to have the same magnitude. Skewness is a measure of asymmetry of a distribution, and can tell us something about the outliers of the saliency maps and their location in relation to the rest of the values. The Gini coefficient is another measure of statistical dispersion, most commonly used to measure income and wealth inequality. The Gini-coefficient of a data set where all values are the same is zero, while it is 1 for a data set where all values are 0 except for one. 
 
 \subsection{Saliency integrated into existing \ac{ood} detection algorithms}
 
-Given the poor results of \cite{martinez}, one might expect that saliency maps on their own are insufficient to differentiate ID and \ac{ood} data. As such, I further present a selection of methods which use both saliencies and traditional \ac{ood} detection metrics, to investigate if the addition of saliency values can enhance existing methods.
+Given the poor results of \cite{martinez}, one might expect that saliency maps on their own are insufficient to differentiate \ac{id} and \ac{ood} data. \cite{combood} has shown that by combining the \ac{ood} detection scores of two different methods, the total performance can be improved considerably. Furthermore, \cite{vim} has shown improvements by considering the softmax, logit and feature space in tandem. Thus, there is reason to believe that if \ac{xai} saliency maps have some discriminatory capabilities, these could be combined with traditional method \ac{ood}, resulting in a performance gain. As such, I further present a selection of methods which use both saliencies and traditional \ac{ood} detection metrics, to investigate if the addition of saliency values can enhance existing methods.
 
 \subsubsection{Maximum Logit + Saliency Aggregate}
 
-A simple and intuitive way to combine the information retrieved from \ac{xai} saliency methods and traditional \ac{ood} detection algorithms is to simply add them together. If we have two metrics, both of which are higher for \ac{id} data than \ac{ood} data, then a sum of these two could increase the separation further. This intuition has been utilized by \cite{combood}. Their method combines two distance metrics by a simple unweighted addition, and achieves \ac{sota} performance on ImageNet200. Thus, a similar approach with saliency and traditional \ac{ood} detection metrics could prove effective. As a baseline, I propose using the maximum logit and an aggregate of saliency. Let us define this method mathematically:
+In 2024, \cite{combood} introduced \texttt{COMBOOD}. This \ac{ood} detector combines the \ac{ood} detection scores of two different distance metrics; Mahalanobis distance and nearest neighbour distance. They do this by summing confidence scores computed from the log distributions of these two metrics. \texttt{COMBOOD} achieves \ac{sota} performance, and is (at the time of writing) by far the best performing method on ImageNet200 in the OpenOOD benchmark. Based on these results, I propose a similar method for combining \ac{xai}-based and traditional \ac{ood} detection metrics.
 
-As in the previous section, we assume we have a model $f: \bm{x} \to \R^C$, an \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$, and an aggregation function $A: \bm{x} \rightarrow \R$. Given that the logit and the aggregate of saliencies can have wildly different magnitudes, we should also normalize them so that they have about the same magnitude. 
+For this method, the \ac{ood} score is a sum of the maximum logit and a saliency aggregate. However, due to the fact that both the logit and saliency values can be of any arbitrary magnitude, we must normalize them before summing if we want each part to contribute equally to the final score. Thus, we can sum the Z-scores of each metric instead. This ensures that the values of the maximum logit and the saliency aggregate are distributed in about the same way. To calculate the Z-scores, we can simply subtract the mean and divide by the standard deviation over an entire \ac{id} validation dataset, for each metric. Thus, we calculate the mean and standard deviations of the max logit over an \ac{id} validation set $\mu_{\text{MLS}}^{id}$ and $\sigma_{\text{MLS}}^{id}$, as well as the mean and standard deviation of the aggregate of saliencies $\mu_{\text{Agg}}^{id}$ and $\sigma_{\text{Agg}}^{id}$. In addition, we must calculate the mean value of the aggregation metric over a validation \ac{ood} dataset, as we do not know whether a given aggregation is higher or lower for \ac{id} data. We denote this value as $\mu_{\text{Agg}}^{ood}$. We now have the necessary values required to define this method mathematically:
 
-% Normalization involves subtracting the mean and dividing by the standard deviation of the whole dataset. However, when doing \ac{ood} detection (or any form of binary classification) we are only concerned about 
+% A simple and intuitive way to combine the information retrieved from \ac{xai} saliency methods and traditional \ac{ood} detection algorithms is to simply add them together. If we have two metrics, both of which are higher for \ac{id} data than \ac{ood} data, then a sum of these two could increase the separation further. This intuition has been utilized by \cite{combood}. Their method combines two distance metrics by a simple unweighted addition, and achieves \ac{sota} performance on ImageNet200. Thus, a similar approach with saliency and traditional \ac{ood} detection metrics could prove effective. As a baseline, I propose using the maximum logit and an aggregate of saliency. Let us define this method mathematically:
 
-For this, we can divide each metric by the mean of that metric on an \ac{id} validation set. Thus, we further assume we have mean of the max logit $\mu_{\text{MLS}}$ and a mean of the aggregate of saliencies $\mu_{\text{Agg}}$. The \ac{ood} detector then has the following form, given a threshold $\delta$:
+As in the previous section, we assume we have a model $f: \bm{x} \to \R^C$, an \ac{xai} saliency mapping method $s: (f, \bm{x}) \to \R^{H_s \times W_s}$, and an aggregation function $A: \bm{x} \rightarrow \R$. Let us denote $\text{sign}(\mu_{\text{Agg}}^{id} - \mu_{\text{Agg}}^{ood})$ as $S$, for readability. The \ac{ood} detector then has the following form, given a threshold $\delta$:
 
 {\large
 \begin{align}
     g(\bm{x}; s, A, \delta)=\begin{cases} 
-        \text{in } & \frac{A(s(\bm{x}, f))}{\mu_{\text{Agg}}} + \frac{\max_i S(\bm{x})}{\mu_{\text{MLS}}} \ge \delta \\
-        \text{out} & \frac{A(s(\bm{x}, f))}{\mu_{\text{Agg}}} + \frac{\max_i S(\bm{x})}{\mu_{\text{MLS}}} < \delta 
+    \text{in } &  S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
+    \text{out} &  S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} < \delta \\
+   \end{cases}
+\label{eq:aggregate}
+\end{align}
+}
+
+In fact, this detector can be simplified somewhat. Consider the following:
+
+\begin{gather} 
+S \cdot \frac{A(s(\bm{x}, f)) - \mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x}) - \mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} = \\
+S \left( \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} - \frac{\mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} \right) + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} - \frac{\mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} = \\
+S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} - \left(S \cdot \frac{\mu_{\text{Agg}}^{id}}{\sigma_{\text{Agg}}^{id}} + \frac{\mu_{\text{MLS}}^{id}}{\sigma_{\text{MLS}}^{id}} \right)
+\end{gather}
+
+Notice how all the values in the third term of the above summation are constants; they do not depend on $\bm{x}$. Thus, we can disregard these terms, as all they do is shift all outputs by a constant value. The final \ac{ood} detector thus has the following form:
+
+{\large
+\begin{align}
+    g(\bm{x}; s, A, \delta)=\begin{cases} 
+    \text{in } &  S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} \ge \delta \\[10pt]
+    \text{out} &  S \cdot \frac{A(s(\bm{x}, f))}{\sigma_{\text{Agg}}^{id}} + \frac{\max_i S(\bm{x})}{\sigma_{\text{MLS}}^{id}} < \delta \\[10pt]
    \end{cases}
 \label{eq:aggregate}
 \end{align}
@@ -1703,7 +1772,7 @@ In addition, a sample of images from CIFAR10 and the corresponding \ac{ood} data
                 {\includegraphics[width=\cellwidth, height=\cellheight]{figure/cifar10_examples/image-img\imagenumber.png}};
         }
     }
-    \node [above=0.1cm of 1] {ID: CIFAR10};
+    \node [above=0.1cm of 1] {\ac{id}: CIFAR10};
     \node [above=0.1cm of 4] {Near-\ac{ood}: CIFAR100};
     \node [above=0.1cm of 7] {Near-\ac{ood}: TinyImageNet};
     \node [above=0.1cm of 10] {Far-\ac{ood}: MNIST};
@@ -1760,7 +1829,7 @@ In addition, a sample of images from CIFAR10 and the corresponding \ac{ood} data
                 {\includegraphics[width=\cellwidth, height=\cellheight]{figure/imagenet200_examples/image-img\imagenumber.png}};
         }
     }
-    \node [above=0.1cm of 1] {ID: ImageNet200};
+    \node [above=0.1cm of 1] {\ac{id}: ImageNet200};
     \node [above=0.1cm of 4] {Near-\ac{ood}: SSB-Hard};
     \node [above=0.1cm of 7] {Near-\ac{ood}: NINCO};
     \node [above=0.1cm of 10] {Far-\ac{ood}: iNaturalist};
@@ -1836,11 +1905,11 @@ For all saliency methods, one significant difference between my application and 
 
 \subsection{\ac{lime}}
 
-As is common when applying \ac{lime} to images, I have used segmentations of the input image to reduce the dimensionality of the input that is fed into the \ac{lime} algorithm. As superpixel segmentation algorithms such as \ac{slic} are CPU-bound and thus introduce a considerable computational overhead (which is problematic when tens of thousands of samples are to be evaluated), I have chosen to stick to a simple rectangular segmentation instead. Each image is simply split into $N \times N$ equally sized rectangular regions, with $N$ being set to 4 during the experiments unless otherwise specified.
+As is common when applying \ac{lime} to images, I have used segmentations of the input image to reduce the dimensionality of the input that is fed into the \ac{lime} algorithm. As explained in section \ref{section:saliencymapbackground}, superpixel segmentation algorithms such as \ac{slic} may increase the accuracy of the explanations, but are CPU-bound and thus introduce a considerable computational overhead (which is problematic when tens of thousands of samples are to be evaluated). Thus, I have chosen to stick to a simple rectangular segmentation instead. Each image is split into $N \times N$ equally sized rectangular regions, with $N$ being set to 4.
 
 \subsection{Occlusion}
 
-Like with \ac{lime}, I have used a rectangular segmentation approach, with each image being split into $N \times N$ regions. $N$ is set to 4 during the experiments. This ensures that accurate comparisons between \ac{lime} and occlusion can be made.
+Like with \ac{lime}, I have used a rectangular segmentation approach, with each image being split into $N \times N$ regions. As with \ac{lime}, $N$ is set to 4, which ensures that accurate comparisons between \ac{lime} and occlusion can be made.
 
 \subsection{\ac{gradcam}}
 
@@ -1890,20 +1959,22 @@ This section goes over the implementation details of my thesis.
 
 \subsection{Basic hardware and software}
 
-Python is the most popular programming language for data science and \ac{ml} research \cite{nguyen2019machine}, and as such it is my language of choice as well. Key libraries that I have used are {\it PyTorch}, {\it OpenOOD}, {\it Captum}, {\it Matplotlib}, and others. Below is a table of the key libraries and their version numbers.
+Python is the most popular programming language for data science and \ac{ml} research \cite{nguyen2019machine}, and as such it is my language of choice as well. Below is a table of the key libraries I have used.
 
 \begin{center}
     \begin{tabular}{ |c|c|c| } 
     \hline
     Library & Version number & Short description \\
     \hline
-    PyTorch & 2.4.1 & GPU-accelerated \ac{ml} library \\ 
     OpenOOD & 1.5 & Comprehensive \ac{ood} detection framework \cite{openood} \\ 
+    PyTorch & 2.4.1 & GPU-accelerated \ac{ml} library \\ 
     Captum & 0.7.1 & \ac{xai} methods integrated with PyTorch \\ 
     Scikit-Learn & 1.5.2 & Various \ac{ml} methods \\ 
     NumPy & 1.26.4 & Efficient matrix multiplication and scientific computing \\ 
     Matplotlib & 3.9.2  & Visualization library \\ 
-    Seaborn & 0.13.2 & Visualization library based on Matplotlib \\
+    Seaborn & 0.13.2 & Visualization library built on top of Matplotlib \\
+    Pandas & 2.2.3 & Data visualization and manipulation library \\
+    SciPy & 1.13.1 & Scientific computing library \\
     \hline
     \end{tabular}
 \end{center}
@@ -2345,9 +2416,9 @@ Table \ref{table:cifar10_occlusion_metrics} shows the results of using occlusion
     \rowcolor{far!50}
     Far-\ac{ood} \ac{auroc} & 91.4 & 90.8 & 61.4 & 63.1 &\textbf{ 74.6 }& 71.6 & 63.8 & 74.6 & 51.8 & 57.2 & 51.4  \\
     \hline
-    Correlation with \ac{mls}& - & - & 0.22 & 0.11 & 0.13 & 0.05 & 0.27 & 0.13 & 0.00 & 0.34 & -0.00  \\
+    Correlation with \ac{mls}& - & - & 0.22 & 0.11 & 0.13 & 0.05 & 0.27 & 0.13 & 0.00 & 0.34 & 0.00  \\
     \hline
-    Correlation with \ac{msp}& - & - & 0.22 & 0.12 & 0.14 & 0.07 & 0.25 & 0.15 & 0.01 & 0.26 & -0.00  \\
+    Correlation with \ac{msp}& - & - & 0.22 & 0.12 & 0.14 & 0.07 & 0.25 & 0.15 & 0.00 & 0.26 & 0.00  \\
     \hline
     \end{tabular}
     \caption[\ac{auroc} scores for Occlusion on CIFAR10]{\ac{auroc} scores for Occlusion on CIFAR10. The highest non-baseline value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
@@ -2399,7 +2470,6 @@ Saliency maps made from \ac{gradcam}, with their mathematical equivalence to the
 \setlength\tabcolsep{6pt}
 \end{table}
 
-
 \subsubsection{Integrated Gradients}
 
 With integrated gradients we see another surprising result. Here, the mean and median are higher for \ac{id} data, while the vector norm, range, maximum and third quartile are lower.
@@ -2442,7 +2512,7 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 
 \subsubsection{\ac*{gbp}}
 
-\ac{gbp} performs decently, with the best saliency aggregation method (vector norm) achieving scores which are a few percentage points below the baselines. The only surprise here is that the mean is lower on average for \ac{id} data, which it also was when applying \ac{gpb} to ImageNet200.
+\ac{gbp} performs decently, with the best saliency aggregation method (vector norm) achieving scores which are a few percentage points below the baselines. The only surprise here is that the mean is lower on average for \ac{id} data, which it also was when applying \ac{gbp} to ImageNet200.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2472,14 +2542,18 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 
 \subsubsection{Overall results on CIFAR10}
 
+% With the results from all \ac{xai} saliency methods reported, we may now look at the 
+Figure \ref{fig:cifar10_all_metrics_barplot} shows the average scores for each aggregation over the 5 differ \ac{xai} saliency methods. From this we see that again, vector norm performs the best overall, and occlusion the worst. We can also see that the drop in comparison to the baselines is higher on CIFAR10 than on ImageNet200, possibly due to the reduction in resolution.
+
 \begin{figure}[H]
     \begin{center}
         \input{figure/cifar10_all_metrics_barplot.pgf}
     \end{center}
-    \caption[Average scores]{Barplot of average \ac{auroc} scores on ImageNet200. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on CIFAR10. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
     \label{fig:cifar10_all_metrics_barplot}
 \end{figure}
 
+Table \ref{table:cifar10_all_metrics} shows the results in more detail. Here, we see that not only is the vector norm the best when averaging across Near and Far, but also individually on each of the categories as well.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2505,6 +2579,16 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 \setlength\tabcolsep{6pt}
 \end{table}
 
+Figure \ref{fig:cifar10_all_generators_barplot} shows the results when we instead look at the best aggregation for each \ac{xai} saliency method. Here we see that, as with ImageNet200, \ac{gradcam}, integrated gradients and \ac{gbp} perform reasonably well, while occlusion performs poorly. Unlike ImageNet200, \ac{lime} does not perform particularly well on CIFAR10, and lags behind the gradient based methods.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/cifar10_all_generators_barplot.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on CIFAR10. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:cifar10_all_generators_barplot}
+\end{figure}
+
 \subsection{CIFAR100}
 
 \begin{table}[H]
@@ -2524,10 +2608,6 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
     \hline
     Mean \ac{auroc} & 80.1 & 78.7 &\textbf{ 70.6 }& 66.4 & 68.1 & 64.7 & 65.7 & 69.3 & 60.3 & 57.3 & 56.3  \\
     \hline
-    Correlation with \ac{mls}& - & - & 0.46 & 0.30 & 0.41 & 0.30 & 0.36 & 0.38 & -0.07 & -0.03 & -0.06  \\
-    \hline
-    Correlation with \ac{msp}& - & - & 0.40 & 0.26 & 0.36 & 0.26 & 0.31 & 0.34 & -0.06 & -0.03 & -0.05  \\
-    \hline
     \end{tabular}
     \caption[Average \ac{auroc} scores over all \ac{xai} saliency methods on CIFAR100]{Average \ac{auroc} scores for all \ac{xai} saliency methods on CIFAR100. The highest non-baseline value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
     \label{table:cifar100_all_metrics}
@@ -2535,7 +2615,80 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 \setlength\tabcolsep{6pt}
 \end{table}
 
+\subsection{ImageNet1K}
+
+\begin{table}[H]
+\setlength\tabcolsep{3pt}
+\begin{center}
+\begin{tabular}{ |p{5.1em}|c c|c c c c c c|c c c| }
+    \hline
+     \centering Aggregation type & \multicolumn{2}{c|}{Baselines} & \multicolumn{6}{c|}{Magnitude of saliencies} & \multicolumn{3}{p{8em}|}{\centering Statistical dispersion} \\
+    \hline
+    Aggregate & \ac{mls} & \ac{msp} & Mean & Median & Norm & Range & Max & Q3 & CV & RMD & QCD  \\
+    \hline
+    \rowcolor{near!50}
+    Near-\ac{ood} \ac{auroc} & 76.4 & 75.8 &\textbf{ 66.4 }& 57.9 & 66.3 & 63.7 & 62.7 & 64.3 & 53.3 & 52.3 & 51.1  \\
+    \hline
+    \rowcolor{far!50}
+    Far-\ac{ood} \ac{auroc} & 89.6 & 85.3 & 76.2 & 61.6 & 84.8 &\textbf{ 85.2 }& 83.3 & 74.4 & 57.6 & 59.6 & 58.2  \\
+    \hline
+    Mean \ac{auroc} & 83.0 & 80.6 & 71.3 & 59.8 &\textbf{ 75.6 }& 74.5 & 73.0 & 69.3 & 55.5 & 56.0 & 54.6  \\
+    \hline
+    \end{tabular}
+    \caption[Average \ac{auroc} scores over all \ac{xai} saliency methods on Imagenet]{Average \ac{auroc} scores for all \ac{xai} saliency methods on Imagenet. The highest non-baseline value for Near- and Far-\ac{ood} is highlighted in bold. $\downarrow$ denotes that \ac{id} data points more often have a lower score with this aggregation, and thus the output values have been negated (as described in section \ref{section:aurocfpr95})}
+    \label{table:imagenet_all_metrics}
+\end{center}
+\setlength\tabcolsep{6pt}
+\end{table}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/imagenet_all_generators_barplot.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on CIFAR10. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:imagenet_all_generators_barplot}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{figure/imagenet_all_metrics_barplot.pgf}
+    \end{center}
+    \caption[Average scores]{Barplot of average \ac{auroc} scores on CIFAR10. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
+    \label{fig:imagenet_all_metrics_barplot}
+\end{figure}
+
+
+\subsection{Overall conclusion from Data Analysis}
+
+From the results above, we have found that saliency aggregations have definite potential to differentiate \ac{id} and \ac{ood} data. Based on the overall results, it seems that the vector norm performs the best on both datasets, while the maximum and range also perform reasonably well, although their performance on CIFAR10 was below that of the vector norm. In terms of \ac{xai} saliency methods, it seems that all gradient based methods perform well on both datasets.
+
+% TODO: put in all methods averaged over both datasets
+
 \section{Evaluation of XAI OOD detectors} \label{section:results}
+
+This section contains the final tests conducted on the test set, using the \ac{xai} methods that performed the best on the validation set, as reported in the previous section. Based on those results, a reasonable choice will be to use \ac{gradcam}, \ac{gbp} and integrated gradients as the \ac{xai} saliency generators, with the vector norm as the aggregation. This section will be divided into three parts, corresponding to the three proposed \ac{ood} detection methods introduced in the methodology: Saliency Aggregation, Saliency Aggregation plus Logits and SaliencyVIM. Each of these sections will detail the performance of the corresponding method on the test set, and statistically compare the results to the baseline methods.
+
+\subsection{Results for Saliency Aggregation} \label{section:salagg_results}
+
+Saliency Aggregation, as described in \ref{section:saliencyagg_method}, is the first \ac{ood} detection method that will be tested. As we have seen from the validation set, saliency aggregation on its own can sometimes compete with the baselines on Near-\ac{ood} and 
+
+\subsubsection{ImageNet200}
+
+\subsubsection{CIFAR10}
+
+\subsection{Results for Saliency Aggregation Plus Logits} \label{section:salagglogits_results}
+
+\subsubsection{ImageNet200}
+
+\subsubsection{CIFAR10}
+
+\subsection{Results for SaliencyVIM}
+
+\subsubsection{ImageNet200}
+
+\subsubsection{CIFAR10}
+
+
 
 \section{Summary}
 
@@ -2581,9 +2734,9 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 %
 % Many \ac{ood}-detection methods use the final features of the network, i.e the values right before we generate logits for each class. In convolutional neural networks values typically contain a lot of semantic information, but little spatial information. For example, the ResNet family of convolutional networks use global average pooling on the feature map generated by the last convolutional layer to generate the penultimate features. When doing this, all positional information is lost, as we average over the pixel values in each channel, so that a 512 channel 7 by 7 feature map becomes a vector of 512 values. Thus, we have only the average activation of each channel, which gives us information about what is in the image, but not where.
 %
-% Explainability methods, especially local saliency methods, give information about where a model is focused when making a prediction. Such information could be valuable to deciding whether a data point is \ac{ood}. For example, by comparing explanations for \ac{ood} and ID data, we may find that the model is focused on several different areas of the image in an \ac{ood} data point, while it is focused on a single area in ID samples. The reasoning for this is that if a data point is ID, it must contain an object of the class the model has been trained on. It is then likely that this object will generate a higher response from the network than other parts of the image, which will be picked up by \ac{xai} algorithms. For an \ac{ood} data point, there is, by definition, no object of any of the classes that the model has been trained on. In this case, the predicted class will be essentially random, and it is less likely that there is a single object which elicits a very high response from the network. Thus, we expect to see an explanation which is more spread out.
+% Explainability methods, especially local saliency methods, give information about where a model is focused when making a prediction. Such information could be valuable to deciding whether a data point is \ac{ood}. For example, by comparing explanations for \ac{ood} and \ac{id} data, we may find that the model is focused on several different areas of the image in an \ac{ood} data point, while it is focused on a single area in \ac{id} samples. The reasoning for this is that if a data point is \ac{id}, it must contain an object of the class the model has been trained on. It is then likely that this object will generate a higher response from the network than other parts of the image, which will be picked up by \ac{xai} algorithms. For an \ac{ood} data point, there is, by definition, no object of any of the classes that the model has been trained on. In this case, the predicted class will be essentially random, and it is less likely that there is a single object which elicits a very high response from the network. Thus, we expect to see an explanation which is more spread out.
 %
-% Furthermore, the explanations also contain magnitude information about the saliencies of different regions of the image, which one might expect to be higher for ID data, where there should be clear regions which contribute greatly to the final prediction. In \ac{ood} data points, we would expect there to be no region which is particularly important to the predicted class the model happened to output, given that (in the case of semantic shift) this class is not even present in the image.
+% Furthermore, the explanations also contain magnitude information about the saliencies of different regions of the image, which one might expect to be higher for \ac{id} data, where there should be clear regions which contribute greatly to the final prediction. In \ac{ood} data points, we would expect there to be no region which is particularly important to the predicted class the model happened to output, given that (in the case of semantic shift) this class is not even present in the image.
 %
 % \section{Proof of Concept, preliminary investigations: ImageWoof}
 %
@@ -2594,7 +2747,7 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 %
 % \section{Combine \ac{xai} and \ac{ood}}
 %
-% Given the poor results of \cite{martinez} in their attempt to perform \ac{ood} detection using only explanations, it is likely that explanations on their own will not be sufficient to discriminate between ID and \ac{ood} samples. Instead, I believe that by integrating explanations into \ac{ood} methods which use other features of the network, we could increase the gap between \ac{ood} and ID and increase the discriminatory power of these methods.
+% Given the poor results of \cite{martinez} in their attempt to perform \ac{ood} detection using only explanations, it is likely that explanations on their own will not be sufficient to discriminate between \ac{id} and \ac{ood} samples. Instead, I believe that by integrating explanations into \ac{ood} methods which use other features of the network, we could increase the gap between \ac{ood} and \ac{id} and increase the discriminatory power of these methods.
 %
 % \subsection{Virtual Logit Matching (ViM)}
 %
@@ -2613,7 +2766,7 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 % \section{Analysis of \ac{xai} methods}
 %
 %
-% In this chapter, I will conduct a thorough analysis of the explanations generated by different \ac{xai} methods. The focus will be on the possible differences between explanations made on ID and \ac{ood} data points. With this in mind, I will compare and contrast the different methods, attempting to identify possible candidate methods for use in \ac{ood} detection.
+% In this chapter, I will conduct a thorough analysis of the explanations generated by different \ac{xai} methods. The focus will be on the possible differences between explanations made on \ac{id} and \ac{ood} data points. With this in mind, I will compare and contrast the different methods, attempting to identify possible candidate methods for use in \ac{ood} detection.
 %
 % \section{Choice of \ac{xai} methods}
 %
@@ -2644,7 +2797,7 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 %
 % \section{Analysis of methods on a proof of concept dataset}
 %
-% To investigate the potential for \ac{xai} methods to aid in separating ID from \ac{ood} data, I introduce a simple collection of datasets, which form an \ac{ood} detection problem. This collection consists of an ID, Near-\ac{ood} and Far-\ac{ood} dataset. The ID dataset is ImageWoof \cite{imagewoof}, a subset of ImageNet which contains ten different breeds of dogs which are to be classified. For Near-\ac{ood} data points, the obvious choice would be pictures of dogs which are of different breeds than the 10 breeds used in ImageWoof. Thus, I use the Stanford Dog Dataset \cite{stanforddogs}, and simply remove any classes which overlap with the 10 from ImageWoof. Given that dogs from two different breeds can have many similarities in terms of size, colour, texture and body and face structure, the Stanford Dog Dataset represents a very small semantic shift and consequently, a difficult \ac{ood} detection task.
+% To investigate the potential for \ac{xai} methods to aid in separating \ac{id} from \ac{ood} data, I introduce a simple collection of datasets, which form an \ac{ood} detection problem. This collection consists of an \ac{id}, Near-\ac{ood} and Far-\ac{ood} dataset. The \ac{id} dataset is ImageWoof \cite{imagewoof}, a subset of ImageNet which contains ten different breeds of dogs which are to be classified. For Near-\ac{ood} data points, the obvious choice would be pictures of dogs which are of different breeds than the 10 breeds used in ImageWoof. Thus, I use the Stanford Dog Dataset \cite{stanforddogs}, and simply remove any classes which overlap with the 10 from ImageWoof. Given that dogs from two different breeds can have many similarities in terms of size, colour, texture and body and face structure, the Stanford Dog Dataset represents a very small semantic shift and consequently, a difficult \ac{ood} detection task.
 %
 % For a far-\ac{ood} dataset, I use Places365 \cite{places365}, a dataset used for scene recognition. This dataset has categories such as {\it Classroom}, {\it Forest road} or {\it Conference Room}, and thus does not contain anything resembling dogs or even any animal at all. 
 %
@@ -2656,7 +2809,7 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 % \label{fig:imagewoof_examples}
 % \end{figure}
 %
-% With this collection, I train a ResNet-50 model on the ID dataset and subsequently run inference on all three datasets, generating explanations for all data points.
+% With this collection, I train a ResNet-50 model on the \ac{id} dataset and subsequently run inference on all three datasets, generating explanations for all data points.
 %
 % \section{Results}
 %
@@ -2673,15 +2826,15 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 %
 % % \section{Hypothetical \ac{ood} Detection Problem: Dog Breed Classification Neural Network}
 % %
-% % Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the ID dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
+% % Complicated concepts are often more easily understood when the reader is given examples. Thus, to aid the reader in their understanding of my methodology, I will introduce a simple hypothetical \ac{ood} detection task, which will be used as the context whenever I illustrate a method with an example. This \ac{ood} detection task consists of a Neural Network which is trained on a dataset of ten different dog breeds, henceforth known as {\it Dogs10}. The task of the network is to correctly classify an image of a dog into one of the ten classes. In addition to the \ac{id} dataset Dogs10, I imagine a Near-\ac{ood} dataset called {\it DifferentDogs} which contains dogs of different breeds than the 10 the model is trained on. Finally I imagine a Far-\ac{ood} dataset called {\it NoDogs}, which contain images where no dog is present.
 % %
 % % \section{Data Analysis of Explanations}
 % %
-% % As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on ID and \ac{ood} data.
+% % As part of my effort to integrate \ac{xai} methods into \ac{ood} detection, I plan to perform detailed data analysis on the properties of explanations generated by different \ac{xai} methods. The core of this analysis will be comparisons between explanations generated on \ac{id} and \ac{ood} data.
 % %
 % % \subsection{Data Generation}
 % %
-% % As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire ID dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both ID and \ac{ood}.
+% % As explained previously, I limit myself to the study of saliency mapping \ac{xai} methods. This means that each explanation is a two-dimensional grid of real values, which denote the importance of each region, as determined by the \ac{xai} method used. By iterating over the entire \ac{id} dataset, as well as all associated \ac{ood} datasets, we thus have explanations corresponding to all data points, both \ac{id} and \ac{ood}.
 % %
 % % Specifically, given a trained model $f$, an \ac{xai} saliency mapping method $s$ and a data set $D$ containing images $\{ \mathbf{x} \mid \mathbf{x} \in \R^{c, h, w} \}$, I will generate a dataset of explanations $D_{sal}$ in the following way:
 % %
