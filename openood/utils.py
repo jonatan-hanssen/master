@@ -1400,13 +1400,17 @@ def prettify(label):
         return 'NINCO'
     if label == 'inaturalist':
         return 'iNaturalist'
+    if label == 'nearood':
+        return 'Near-OOD'
+    if label == 'farood':
+        return 'Far-OOD'
 
     if label == 'gradcam':
-        return '\\ac{gradcam}'
+        return 'GradCAM'
     if label == 'gbp':
-        return '\\ac{gbp}'
+        return 'GBP'
     if label == 'lime':
-        return '\\ac{lime}'
+        return 'LIME'
     if label == 'integratedgradients':
         return 'IntegratedGradients'
     if label == 'occlusion':

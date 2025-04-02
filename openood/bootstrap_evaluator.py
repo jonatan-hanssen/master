@@ -102,7 +102,7 @@ for i in range(10):
     all_metrics.append(metrics)
     all_scores.append(evaluator.scores)
 
-if args.postprocessor == 'salagg':
+if args.postprocessor == 'salagg' or args.postprocessor == 'salpluslogit':
     with open(
         f'saved_metrics/{args.dataset}_{args.postprocessor}_{args.generator}_{args.aggregator}_bootstrapped.pkl',
         'wb',

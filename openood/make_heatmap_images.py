@@ -64,7 +64,7 @@ net = get_network(id_name)
 saliency_dict = dict()
 
 generator_func = get_saliency_generator(
-    args.generator, net, args.repeats, do_relu=args.relu
+    args.generator, net, args.repeats, relu=args.relu
 )
 
 for i in range(args.skips):
@@ -103,12 +103,18 @@ while True:
         plt.title(f'{labels[id_labels[0]]}, {torch.mean(id_saliencies[0]):.3f}')
     else:
         plt.title(f'{torch.mean(id_saliencies[0]):.3f}')
-    overlay_saliency(
-        id_images[0],
-        id_saliencies[0],
-        normalize=normalize,
-        interpolation=interpolation,
-        opacity=opacity,
+    # overlay_saliency(
+    #     id_images[0],
+    #     torch.abs(torch.mean(id_saliencies[0]) - id_saliencies[0]),
+    #     normalize=normalize,
+    #     interpolation=interpolation,
+    #     opacity=opacity,
+    #     previous_maxval=1,
+    # )
+    plt.imshow(
+        torch.abs(torch.mean(id_saliencies[0]) - id_saliencies[0]),
+        vmax=0.3,
+        cmap='turbo',
     )
 
     plt.subplot(2, 2, 3)
@@ -119,13 +125,17 @@ while True:
         plt.title(f'{labels[ood_labels[0]]}, {torch.mean(ood_saliencies[0]):.3f}')
     else:
         plt.title(f'{torch.mean(ood_saliencies[0]):.3f}')
-    overlay_saliency(
-        ood_images[0],
-        ood_saliencies[0],
-        normalize=normalize,
-        interpolation=interpolation,
-        opacity=opacity,
-        previous_maxval=torch.max(id_saliencies[0]),
+    # overlay_saliency(
+    #     ood_images[0],
+    #     torch.abs(torch.mean(ood_saliencies[0]) - ood_saliencies[0]),
+    #     normalize=normalize,
+    #     interpolation=interpolation,
+    #     opacity=opacity,
+    # )
+    plt.imshow(
+        torch.abs(torch.mean(ood_saliencies[0]) - ood_saliencies[0]),
+        vmin=0,
+        cmap='turbo',
     )
 
     plt.tight_layout()
