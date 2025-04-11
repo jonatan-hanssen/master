@@ -14,6 +14,9 @@ from openood.evaluation_api import Evaluator
 from openood.postprocessors.saliency_aggregate_postprocessor import (
     SaliencyAggregatePostprocessor,
 )
+from openood.postprocessors.saliencyvim_postprocessor import (
+    SaliencyVIMPostprocessor,
+)
 from openood.postprocessors.saliency_plus_logit_postprocessor import (
     SaliencyPlusLogitPostprocessor,
 )
@@ -73,6 +76,11 @@ if postprocessor_name == 'salpluslogit':
     )
     postprocessor_name = None
 
+if postprocessor_name == 'salvim':
+    generator = get_saliency_generator(args.generator, net)
+    postprocessor = SaliencyVIMPostprocessor(None, saliency_generator=generator)
+    postprocessor_name = None
+
 
 print(f'ID Dataset: {id_name}')
 print(f'Postprocessor: {args.postprocessor}')
@@ -105,6 +113,12 @@ for i in range(10):
 if args.postprocessor == 'salagg' or args.postprocessor == 'salpluslogit':
     with open(
         f'saved_metrics/{args.dataset}_{args.postprocessor}_{args.generator}_{args.aggregator}_bootstrapped.pkl',
+        'wb',
+    ) as file:
+        pickle.dump([all_metrics, all_scores], file)
+elif args.postprocessor == 'salvim':
+    with open(
+        f'saved_metrics/{args.dataset}_{args.postprocessor}_{args.generator}_bootstrapped.pkl',
         'wb',
     ) as file:
         pickle.dump([all_metrics, all_scores], file)

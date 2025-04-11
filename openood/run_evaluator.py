@@ -13,6 +13,12 @@ from openood.postprocessors.saliency_aggregate_postprocessor import (
 from openood.postprocessors.saliency_plus_logit_postprocessor import (
     SaliencyPlusLogitPostprocessor,
 )
+from openood.postprocessors.saliencyvim_postprocessor import (
+    SaliencyVIMPostprocessor,
+)
+from openood.postprocessors.saliencyvim2_postprocessor import (
+    SaliencyVIM2Postprocessor,
+)
 from openood.postprocessors.logit_mean_saliency_postprocessor import (
     LogitMeanSaliencyPostprocessor,
 )
@@ -78,6 +84,16 @@ if postprocessor_name == 'salpluslogit':
     postprocessor = SaliencyPlusLogitPostprocessor(
         None, saliency_generator=generator, aggregator=aggregator
     )
+    postprocessor_name = None
+
+if postprocessor_name == 'salvim':
+    generator = get_saliency_generator(args.generator, net)
+    postprocessor = SaliencyVIMPostprocessor(None, saliency_generator=generator)
+    postprocessor_name = None
+
+if postprocessor_name == 'salvim2':
+    generator = get_saliency_generator(args.generator, net)
+    postprocessor = SaliencyVIM2Postprocessor(None, saliency_generator=generator)
     postprocessor_name = None
 
 

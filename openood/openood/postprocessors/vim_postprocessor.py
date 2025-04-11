@@ -27,10 +27,9 @@ class VIMPostprocessor(BasePostprocessor):
                 self.w, self.b = net.get_fc()
                 print('Extracting id training feature')
                 feature_id_train = []
-                for batch in tqdm(id_loader_dict['train'],
-                                  desc='Setup: ',
-                                  position=0,
-                                  leave=True):
+                for batch in tqdm(
+                    id_loader_dict['val'], desc='Setup: ', position=0, leave=True
+                ):
                     data = batch['data'].cuda()
                     data = data.float()
                     _, feature = net(data, return_feature=True)
@@ -43,13 +42,13 @@ class VIMPostprocessor(BasePostprocessor):
             ec.fit(feature_id_train - self.u)
             eig_vals, eigen_vectors = np.linalg.eig(ec.covariance_)
             self.NS = np.ascontiguousarray(
-                (eigen_vectors.T[np.argsort(eig_vals * -1)[self.dim:]]).T)
+                (eigen_vectors.T[np.argsort(eig_vals * -1)[self.dim :]]).T
+            )
 
-            vlogit_id_train = norm(np.matmul(feature_id_train - self.u,
-                                             self.NS),
-                                   axis=-1)
-            self.alpha = logit_id_train.max(
-                axis=-1).mean() / vlogit_id_train.mean()
+            vlogit_id_train = norm(
+                np.matmul(feature_id_train - self.u, self.NS), axis=-1
+            )
+            self.alpha = logit_id_train.max(axis=-1).mean() / vlogit_id_train.mean()
             print(f'{self.alpha=:.4f}')
 
             self.setup_flag = True
@@ -63,8 +62,9 @@ class VIMPostprocessor(BasePostprocessor):
         logit_ood = feature_ood @ self.w.T + self.b
         _, pred = torch.max(logit_ood, dim=1)
         energy_ood = logsumexp(logit_ood.numpy(), axis=-1)
-        vlogit_ood = norm(np.matmul(feature_ood.numpy() - self.u, self.NS),
-                          axis=-1) * self.alpha
+        vlogit_ood = (
+            norm(np.matmul(feature_ood.numpy() - self.u, self.NS), axis=-1) * self.alpha
+        )
         score_ood = -vlogit_ood + energy_ood
         return pred, torch.from_numpy(score_ood)
 

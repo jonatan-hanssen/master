@@ -304,6 +304,67 @@ class GradCAMWrapper(torch.nn.Module):
             handle.remove()
 
 
+class InputGradientWrapper(torch.nn.Module):
+    def __init__(
+        self,
+        model=None,
+        do_relu=False,
+        subtype=None,
+        normalize=False,
+    ):
+        super().__init__()
+        self.model = model
+        self.do_relu = do_relu
+        self.normalize = normalize
+
+        self.subtype = subtype
+
+        self.grads = None
+        self.acts = None
+
+        self.outputs = None
+
+        self.handles = list()
+
+        self.handles.append(
+            self.model.conv1.register_full_backward_hook(self.grad_hook)
+        )
+
+    def grad_hook(self, module, grad_input, grad_output):
+        self.grads = grad_input[0]
+
+    def forward(self, x, return_feature=False):
+        x.requires_grad = True
+        batch_size = x.shape[0]
+
+        if return_feature:
+            preds, feature = self.model(x, return_feature=True)
+
+        else:
+            preds = self.model(x)
+
+        self.outputs = preds
+
+        self.model.zero_grad(set_to_none=True)
+
+        idxs = torch.argmax(preds, dim=1)
+
+        # backward pass, this gets gradients for each prediction
+        torch.sum(preds[torch.arange(batch_size), idxs]).backward()
+
+        saliency = self.grads
+
+        if return_feature:
+            return saliency.cpu().detach(), feature
+
+        else:
+            return saliency.cpu().detach()
+
+    def __del__(self):
+        for handle in self.handles:
+            handle.remove()
+
+
 def segmented_occlusion(net, batch, do_relu=False, device='cuda'):
     batch_size = batch.shape[0]
 
@@ -424,6 +485,9 @@ def get_saliency_generator(
         else:
             raise ValueError()
         generator_func = cam_wrapper
+
+    elif name == 'grad':
+        generator_func = InputGradientWrapper(model=net)
 
     elif name == 'occlusion':
         # generator_func = lambda data: occlusion(
