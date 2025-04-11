@@ -2101,16 +2101,13 @@ However, this lack of dimensionality reduction also poses a technical challenge 
 
 \chapter{Experiments and Results} \label{chapter:experiments}
 
-This chapter contains my findings. In section \ref{section:saliencyagg}, I show how different forms of aggregation over saliency maps separate \ac{id} and \ac{ood} data points. This step is important, because it informs the choice of aggregation used in the Aggregation-of-Saliency \ac{ood} detection method. I report \ac{auroc} for different forms of aggregation over the three datasets. This is done on the validation sets, to avoid biasing the final results.
+This chapter contains the results of experiments as described in chapter \ref{chapter:methodology}. In section \ref{section:saliencyagg}, I show how different forms of aggregation over saliency maps separate \ac{id} and \ac{ood} data points. This step is important, because it informs the choice of aggregation used in the Saliency Aggregation and Saliency Aggregation+Logits \ac{ood} detection methods. I report \ac{auroc} for different forms of aggregation over CIFAR10 and ImageNet200. This is done on the validation sets, to avoid biasing the final results.
 
-In section \ref{section:results}, \ac{ood} detection on the test sets is performed using the three methods I have introduced in section \ref{section:methods}. The \ac{auroc} and \ac{fpr95} for each method on each dataset is reported. The choice of aggregation and \ac{xai} method is informed by the findings from the preceding section. In addition, I perform statistical analyses to investigate whether my \ac{xai} \ac{ood} detection methods outperform baseline methods.
+In section \ref{section:results}, \ac{ood} detection on the test sets is performed using the three methods I have introduced in section \ref{section:methods}. The choice of aggregation and \ac{xai} method is informed by the findings from the preceding section. The \ac{auroc} for each method is calculated over ten bootstraps for each dataset, enabling statistical analyses which investigate whether \ac{xai} \ac{ood} detection methods outperform baseline methods.
 
 \section{Data Analysis of Saliency Maps} \label{section:saliencyagg}
 
 This section will detail how various \ac{xai} methods generate explanations which differ between \ac{id} and \ac{ood}. The section considers each dataset individually. For each dataset, I first present the level of separation achieved by the two baseline methods \ac{msp} and \ac{mls}, to give a general intuition about how easily the \ac{id} and \ac{ood} datasets are to separate. Following this, I go through the different \ac{xai} methods and their different statistical qualities.
-
-% I present graphs of a selection of aggregations, giving a broad overview of what type of statistical qualities of explanations work best for separating \ac{id} and \ac{ood} data points. Finally, I present a table of all aggregations for all forms of saliency generation
-
 
 \subsection{ImageNet200}
 
@@ -3013,7 +3010,9 @@ Finally, we inspect the results for \ac{gbp}Norm+Logits, which are very impressi
 
 \subsection{Results for SaliencyVIM}
 
-For the final tests, we consider SaliencyVIM, the method described in section \ref{section:saliencyvim_method}. In this case, it does not make sense to use \ac{mls} or \ac{msp} as the baselines to compare against, since the method is based on \ac{vim}. Instead, we compare our results \ac{vim}, to see whether the addition of saliencies can improve this method.
+For the final tests, we consider SaliencyVIM, the method described in section \ref{section:saliencyvim_method}. As described in section \ref{section:saliencyvim_method}, SaliencyVIM requires saliency methods which output lower dimensional saliency maps, as opposed to methods such as \ac{gbp} and integrated gradients, which output a value for each pixel. Thus, the applicable \ac{xai} methods included in this thesis are occlusion, \ac{lime} and \ac{gradcam}. Although occlusion performed very poorly on the validation set when aggregating saliencies, SaliencyVIM uses every saliency value and could thus capture information from this \ac{xai} method which has not been captured by aggregation methods. Thus, I include occlusion in the testing. 
+
+In this case, it does not make sense to use \ac{mls} or \ac{msp} as the baselines to compare against, since the method is based on \ac{vim}. Instead, we compare our results with \ac{vim}, to see whether the addition of saliencies can improve this method.
 
 \subsubsection{ImageNet200}
 
@@ -3026,6 +3025,8 @@ We start with ImageNet200. From figure \ref{fig:imagenet200_salvim_bootstrap_bar
     \caption[Average scores]{Barplot of average \ac{auroc} scores on CIFAR10. Note that the y-axis starts at 0.50, the practical floor for an \ac{auroc} score.}
     \label{fig:imagenet200_salvim_bootstrap_barplot}
 \end{figure}
+
+From table \ref{table:imagenet200_salvim_ttest}, we see that both Occlusion\ac{vim} and \ac{lime}\ac{vim} outperform \ac{vim} on Far-\ac{ood}. These results are interesting, because they show that even though aggregation of occlusion saliencies had very little discriminative power, their inclusion directly into the \ac{pca} based \ac{vim} method leads to increased performance.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -3065,17 +3066,11 @@ We start with ImageNet200. From figure \ref{fig:imagenet200_salvim_bootstrap_bar
 \setlength\tabcolsep{6pt}
 \end{table}
 
-
-As we see from table \ref{table:imagenet200_lime_Norm_salvim_ttest}, SaliencyVIM using \ac{lime} to generate saliencies leads to a statistically significant increase in performance on Far-\ac{ood}, but not on Near-\ac{ood}. These results mirror those of the previous sections, which in general have found that \ac{xai} saliency maps more often lead to improvements on Far-\ac{ood} than Near-\ac{ood}.
-
-
-Next, we inspect the results of the t-test when using \ac{gradcam} with Saliency\ac{vim}. Here, we see no improvements on either Near- or Far-\ac{ood}, showing that the choice of saliency generator is important when integrating \ac{xai} methods with traditional \ac{ood} detectors.
-
-
+We see that for ImageNet200, \ac{gradcam}\ac{vim} sees no increases in performance over the baseline, and no method shows any statistically significant improvement over the baseline on Near-\ac{ood}. At this point, we can note a clear pattern emerging over the three methods, where it seems that \ac{xai} methods perform far better on Far-\ac{ood} than Near-\ac{ood}.
 
 \subsubsection{CIFAR10}
 
-For the final tests of this chapter, we perform \ac{ood} detection using \ac{vim} and Saliency\ac{vim} on CIFAR10. From figure \ref{fig:cifar10_salvim_bootstrap_barplot}, Saliency\ac{vim} with \ac{gradcam} as the saliency generator seems to be the best performer here, above the baseline. \ac{lime} on the other hand, seems to perform worse.
+For the final tests of this chapter, we perform \ac{ood} detection using \ac{vim} and Saliency\ac{vim} on CIFAR10. From figure \ref{fig:cifar10_salvim_bootstrap_barplot}, Saliency\ac{vim} with \ac{gradcam} as the saliency generator seems to be the best performer here, above the baseline. Occlusion and \ac{lime} on the other hand, seems to perform worse. These results are surprising, as they are reversed when compared to ImageNet200. Clearly, \ac{xai} saliency methods are not entirely consistent over different datasets, as was noted with the previous methods as well. We turn our attention to the results of the t-tests.
 
 \begin{figure}[H]
     \begin{center}
@@ -3085,7 +3080,7 @@ For the final tests of this chapter, we perform \ac{ood} detection using \ac{vim
     \label{fig:cifar10_salvim_bootstrap_barplot}
 \end{figure}
 
-As we see from table \ref{table:cifar10_lime_Norm_salvim_ttest}, \ac{vim} integrated with \ac{lime} saliencies is indeed worse than the original \ac{vim}, on all \ac{ood} datasets. This is interesting, given the superior performance of Saliency\ac{vim} with \ac{lime} on Far-\ac{ood} datasets in ImageNet200. However, as mentioned previously, \cite{openood15} has found that this is quite common for \ac{ood} detectors, with no method outperforming all others on all benchmarks.
+As we see from table \ref{table:cifar10_salvim_ttest}, \ac{gradcam}\ac{vim} outperforms the baseline on both Near- and Far-\ac{ood}. Both occlusion and \ac{lime} see drops in performance across the board, contrary to the results on ImageNet200.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -3125,22 +3120,21 @@ As we see from table \ref{table:cifar10_lime_Norm_salvim_ttest}, \ac{vim} integr
 \setlength\tabcolsep{6pt}
 \end{table}
 
-Finally, Saliency\ac{vim} with \ac{gradcam} outperforms \ac{vim} on both Near- and Far-\ac{ood}, with statistically significant improvements on all \ac{ood} datasets except for SVHN and Texture.
-
-
 \subsubsection{Overall results of SaliencyVIM}
 
-Overall, the results of integrating \ac{xai} saliencies directly into the already developed \ac{vim} \ac{ood} detector shows potential, but is not consistently better on both datasets.
+Overall, the results of integrating \ac{xai} saliencies directly into the already developed \ac{vim} \ac{ood} detector shows potential, but is not consistently better across both datasets.
 
 \section{Summary}
 
-In this chapter, I have presented the results from inspecting saliency aggregation over the validation dataset, as well results from the three different \ac{xai} based \ac{ood} detection algorithms I introduced in chapter \ref{chapter:methodology}. As we have seen, the results are very promising, and show that there is definite potential for using \ac{xai} methods for \ac{ood} detection. \ac{gbp}Norm+Logits is a particularly interesting example, performing far above the baseline on ImageNet200 and almost at the level of \ac{sota} methods on CIFAR10 (amongst methods which do not require retraining).
+In this chapter, I have presented the results from inspecting saliency aggregation over the validation dataset, as well results from the three different \ac{xai} based \ac{ood} detection algorithms I introduced in chapter \ref{chapter:methodology}. As we have seen, the results are very promising, and show that there is definite potential for using \ac{xai} methods for \ac{ood} detection. In general, \ac{xai} methods show better performance on Far-\ac{ood} than Near-\ac{ood}, but impressive performance is attained in both scenarios on several occasions. \ac{gbp}Norm+Logits is one such example, performing far above the baseline on ImageNet200 and almost at the level of \ac{sota} methods on CIFAR10 (amongst methods which do not require retraining).
 
 \chapter{Discussion} \label{chapter:discussion}
 
 This chapter will discuss the findings of chapter \ref{chapter:experiments} in more depth. As we have now seen, \ac{xai} methods can indeed perform \ac{ood} detection at a level competitive with \ac{ood} detection baselines, and can in some cases even perform close to \ac{sota} models amongst methods which do not retrain the underlying classifying network. The computational overhead of such methods is minimal, and good performance can be achieved without retraining.
 
 \chapter{Conclusion} \label{chapter:conclusion}
+
+To conclude, it really does work.
 
 \section{Future work}
 
