@@ -245,37 +245,38 @@ Generative \ac{ai} has \textbf{not} been used to generate or enhance any written
 
 \section{Motivation}
 
-\ac{ml} generally, and \ac{dl} specifically, have seen a tremendous increase in performance in recent years, performing comparable to humans in tasks such as image classification, speech and handwriting recognition, as well as many others \cite{performance}. Consequently, \ac{dl} methods have been deployed in a multitude of fields and have become a part of our daily lives through their role in web search, text translation, computer vision, and in many other technologies which are taken for granted. In medicine, deep learning has the potential to provide faster and more accurate detection of diseases by being trained on cases from thousands of previous patients \cite{xaisurvey}. Despite this, the adoption \ac{dl} in high impact fields, such as the medical field, has been slow, with \cite{dlmed} stating that: "surprisingly little in health care is driven by machine learning".
+\ac{ml} generally, and \ac{dl} specifically, have seen a tremendous increase in performance in recent years, performing comparable to humans in tasks such as image classification, speech and handwriting recognition, as well as many others \cite{performance}. Consequently, \ac{dl} methods have been deployed in a multitude of fields and have become a part of our daily lives through their role in web search, text translation, computer vision, and in many other technologies which are taken for granted. In the medical field, deep learning has the potential to provide faster and more accurate detection of diseases by being trained on cases from thousands of previous patients \cite{xaisurvey}. Despite this, the adoption \ac{dl} in high impact fields, such as medicine, has been slow, with \cite{dlmed} stating that: "surprisingly little in health care is driven by machine learning".
 
 % TODO: make these citations more specific
 
-To explain this discrepancy, we should consider that despite their impressive performance, the application of deep learning methods is not without drawbacks. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. \ac{sota} models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made \cite{tingsim}. In other high-impact fields, such as autonomous driving, this lack of transparency also has serious practical and legal ramifications. % TODO cite this
+To explain this discrepancy, we should consider that, despite their impressive performance, the application of deep learning methods is not without drawbacks. Firstly, deep neural networks are inherently unexplainable due to the large number of parameters that any non-trivial network has. \ac{sota} models will perform millions of operations to evaluate a single data point, and it is therefore impossible for humans to comprehend and explain the entire process which lead the model to make a particular decision. In medicine, this is a major limitation of deep learning methods, as both doctors and patients expect to be able to understand why a decision was made \cite{tingsim}. In other high-impact fields, such as autonomous driving, this lack of transparency also has serious practical and legal ramifications. % TODO cite this
 
 Secondly, although neural networks may attain high accuracy on test data and appear to have learned great insights about the tasks they are employed in, they often lack robustness and can suffer large drops in performance on data points which are slightly different from the training data. As \cite{intriguing} has shown, it is possible to create data points which are imperceptibly different from normal data points, yet still fool otherwise high performing models. More problematically, unlike humans, who recognize when they are faced with a novel situation where their expertise might be lacking, \ac{dl} methods will predict equally confidently on data points which are far outside the data they have been trained on \cite{tingsim}.
 
-These two problems lead to the fields of \ac{xai}, and \ac{ood} detection. \ac{xai} attempts to explain the reasons why a model came to a decision, which helps to remedy the black-box nature of complicated \ac{dl} models. In a healthcare setting, such explanations can be inspected by medical practitioners to confirm the diagnosis, and can be used to give patients information about why decisions regarding their health were made. In autonomous driving or other automated high impact fields, \ac{xai} can be used to detect failure modes or to understand and improve deployed models. \ac{ood} detection attempts to uncover when a data point is too different from the training data to be classified reliably. These methods could alert medical practitioners when such data points occur, thus avoiding potentially fatal misclassifications. In autonomous driving, the system could detect novel situations and cede control back to the user, avoiding accidents.
+These two problems lead to the fields of \ac{xai}, and \ac{ood} detection. \ac{xai} attempts to explain the reasons why a model came to a decision, which helps to remedy the black-box nature of complicated \ac{dl} models. In a healthcare setting, such explanations can be inspected by medical practitioners to confirm the diagnosis, and can be used to give patients information about why decisions regarding their health were made. In autonomous driving or other automated high impact fields, \ac{xai} can be used to detect failure modes or to understand and improve trained models. \ac{ood} detection attempts to uncover when a data point is too different from the training data to be classified reliably. These methods could alert medical practitioners when such data points occur, thus avoiding potentially fatal misclassifications. In autonomous driving, the system could detect novel situations and cede control back to the user, avoiding accidents.
 
-Both of these fields have seen increased interest in recent years, and are vital parts of any integration of \ac{dl} in high impact settings. As two vibrant fields of study, there is great potential to combining insights from one field to improve performance in the other, an area which is underexplored. This thesis will focus on \ac{ood} detection, but will attempt to use \ac{xai} methods to improve detection performance. The overarching intuition is that by inspecting the explanation of a model on a specific data point, we may be able to uncover flaws or irregularities in the explanation which could help us determine whether the data point is \ac{ood}.
+Both of these fields have seen increased interest in recent years, and are vital parts of any integration of \ac{dl} in high impact settings. As two vibrant fields of study, there is great potential to combining insights from one field to improve performance in the other, an area which is underexplored. This thesis will focus on \ac{ood} detection, but will attempt to use \ac{xai} methods to improve detection performance. The overarching intuition is that by inspecting the explanation of a model on a specific data point, we may be able to uncover flaws or irregularities in the explanation which could help us determine whether the data point is \ac{ood}. This methodology is essentially non-existent in the literature: OpenOOD, the standard \ac{ood} detection benchmarking framework which includes over 40 different methods, contains no methods which use \ac{xai} as part of their functioning.
 
 \section{Problem Statement} \label{section:problemstatement}
 
-As explained in the previous segment, \ac{ood} detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection, autonomous driving or infrastructure inspection. Finding novel methods which improve a model's ability to detect when input is \ac{ood} is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The field of \ac{xai} is concerned with understanding the inner workings of a model, and could thus offer insights which can help us detect unusual behaviour in the model as a result of \ac{ood} data points. The problem statement is thus as follows:
+As explained in the previous segment, \ac{ood} detection is a developing field, which has become more important in recent years as machine learning is being used for higher impact tasks, such as disease detection, autonomous driving or infrastructure inspection. As reported by \ac{openood15}, there are to date no \ac{ood} detection methods which outperform all others on different benchmarks, which means that there is great potential for further research. Finding novel methods which improve a model's ability to detect when input is \ac{ood} is important to increase the robustness of machine learning models as they are used in these real-world scenarios. The field of \ac{xai} is concerned with understanding the inner workings of a model, and could thus offer insights which can help us detect unusual behaviour in the model as a result of \ac{ood} data points. The problem statement is thus as follows:
 
-\textbf{Can methods from the field of Explainable Artificial Intelligence be used to improve Out-of-Distribution Detection?}
+\textbf{To what degree can methods from the field of Explainable Artificial Intelligence be used to improve Out-of-Distribution Detection?}
 \\
 
-To answer this question, I introduce 2 objectives:
+To answer this question, I introduce 3 objectives:
 
 \begin{enumerate}
-    \item Develop an \ac{ood} detection framework which relies solely on \ac{xai} explanations, and compare methods developed under this framework to traditional \ac{ood} detection methods.
-    \item Develop one or more \ac{ood} detection frameworks that combine traditional and \ac{xai} based methods in different ways, and compare methods developed under this framework to traditional \ac{ood} detection methods.
+    \item Develop one or more \ac{ood} detection frameworks which utilize \ac{xai} as part of their functionality, either by combining traditional \ac{ood} detection methods and \ac{xai} explanations, or by using \ac{xai} explanations on their own.
+    \item Analyse the behaviour of different \ac{xai} methods on \ac{id} and \ac{ood} data, to be able to develop effective \ac{ood} detectors under the benchmarks created as part of objective 1.
+    \item Perform comprehensive tests on the developed \ac{ood} detectors on \ac{sota} \ac{ood} detection benchmarks, to be able to accurately assess the performance of \ac{xai} based \ac{ood} detection in comparison with existing \ac{ood} detection methods.
 \end{enumerate}
 
 \section{Scope} \label{section:scope}
 
 As we will see in chapter \ref{chapter:background}, both the fields of \ac{xai} and \ac{ood} detection are very large, which makes it impossible to explore all the possible ways one might combine \ac{xai} and \ac{ood} detection. Thus, it is necessary to restrict the scope of both the \ac{xai} and \ac{ood} detection methods used. In this section, I will describe the choices I've made and give a short explanation. In later chapters, the choices will be justified more thoroughly.
 
-The field of \ac{ood} detection is primarily concerned with image classification tasks. Thus, my project will also deal exclusively with image classification datasets. Given this type of data, the choice of \ac{xai} algorithms naturally gravitates towards post-hoc, saliency based methods. The choice of \ac{ood} detection methods is not significantly restricted by the choice to deal exclusively with image data, but I will exclude methods which use outlier exposure to improve performance, or which require retraining of the model. These choices are informed by \cite{openood}, which have found that outlier data is not necessary to achieve \ac{sota} performance, and that "post-hoc methods [...] are generally no worse than methods that require training". For image classifiers, I limit myself to \ac{cnn} based models, as they are compatible with a far larger amount of \ac{xai} methods than, for example, vision transformers.
+The field of \ac{ood} detection is primarily concerned with image classification tasks. Thus, my project will also deal exclusively with image classification datasets. Given this type of data, the choice of \ac{xai} algorithms naturally gravitates towards post-hoc, saliency based methods. The choice of \ac{ood} detection methods is not significantly restricted by the choice to deal exclusively with image data, but I will exclude methods which use outlier exposure to improve performance, or which require retraining of the model. These choices are informed by \cite{openood}, which have found that outlier data is not necessary to achieve \ac{sota} performance, and that "post-hoc methods [...] are generally no worse than methods that require training". Excluding methods which require training drastically decreases the time required for development and testing of new methods, and is thus suitable for an exploratory thesis such as this one. For image classifiers, I limit myself to \ac{cnn} based models, as they are compatible with a far larger amount of \ac{xai} methods than other computer vision models, such as vision transformers.
 
 \section{Research Methods}
 
@@ -293,22 +294,22 @@ Ethics of using ai for high impact tasks
 
 \section{Main Contributions}
 
-In this thesis, the goal has been to investigate whether \ac{xai} methods can be used for \ac{ood} detection, and to introduce proof-of-concept \ac{ood} detection models which use \ac{xai} explanations as part of their functioning. As part of this work, I have introduced three forms of \ac{xai} inspired \ac{ood} detection models, which use the saliency maps (heatmaps) generated by \ac{xai} methods applied to images: {\it Saliency Aggregation}, {\it Saliency Aggregation+Logits} and {\it Saliency\acs*{vim}}.
+In this thesis, the goal has been to investigate whether \ac{xai} methods can be used for \ac{ood} detection, and to introduce proof-of-concept \ac{ood} detection frameworks which use \ac{xai} explanations as part of their functioning. As part of this work, I have developed three frameworks for \ac{xai} based \ac{ood} detection methods, which use the saliency maps (heatmaps) generated by \ac{xai} methods applied to images: {\it Saliency Aggregation}, {\it Saliency Aggregation+Logits} and {\it Saliency\acs*{vim}}. These three frameworks have been thoroughly tested on all four \ac{ood} detection benchmarks included in OpenOOD \cite{openood, openood15}, the de-facto standard \ac{ood} detection benchmarking tool.
 
 Through the testing of these three methods, I show that \ac{xai} methods can indeed be used for \ac{ood} detection, contrary to the results found by previous research \cite{martinez}. The key takeaways of this thesis are as follows:
 
 \begin{itemize}
     \item \ac{xai} saliency mapping methods generate values which can be used to predict \ac{ood} samples comparable to baseline methods. However, most \ac{xai} methods output normalized saliencies, which removes valuable information necessary to perform \ac{ood} detection. By removing this normalization and using raw saliency values, I show substantial improvements over previous methods \cite{martinez}.
     \item A simple aggregation of raw saliency values performs slightly below the baseline methods of \ac{mls} and \ac{msp} on Near-\ac{ood} datasets, and sometimes outperforms the baselines on Far-\ac{ood} datasets. This shows that \ac{xai} saliency maps, on their own, capture enough information about a network's response to a data sample to effectively discriminate between \ac{id} and \ac{ood} data points.% Aggregations which are effective in this regard consider the magnitude of the saliencies, such as the mean or vector norm. Aggregations which capture the statistical dispersion of the saliencies do not differ very much between \ac{id} and \ac{ood} data points.
-    \item Depending on the choice of \ac{xai} method, \ac{xai} saliency maps output values which are relatively uncorrelated with traditional baseline \ac{ood} methods. This means that their outputs can be combined with other \ac{ood} detection methods to increase \ac{ood} detection performance. By combining \ac{xai} saliency aggregates with \ac{mls} by a simple addition of metrics, I find that the performance is increased by several percentage points over the baselines in several cases, and in one case performs quite close to the \ac{sota} amongst \ac{ood} detection models which do not retrain the underlying classifier.
-    \item Saliency values can also be appended directly to the model logits in \ac{ood} detection methods such as \ac{vim}, leading to statistically significant improvements over using the method without \ac{xai} saliency values in some cases. However, the improvement in this case is not a strong as when using saliency aggregation.
+    \item Depending on the choice of \ac{xai} method, \ac{xai} saliency maps output values which are relatively uncorrelated with traditional baseline \ac{ood} methods. This means that their outputs can be combined with other \ac{ood} detection methods to increase \ac{ood} detection performance. Inspired by the work of \cite{combood}, I combine \ac{xai} saliency aggregates with \ac{mls} by a simple addition. Under this framework, I find that the performance is increased by several percentage points over the baselines in several cases, and in one case performs quite close to the \ac{sota} amongst \ac{ood} detection models which do not retrain the underlying classifier.
+    \item Saliency values can also be appended directly to the model logits in \ac{ood} detection methods such as \ac{vim} \cite{vim}, leading to statistically significant improvements over using the method without \ac{xai} saliency values in some cases. However, the improvement in this case is not a strong as when using saliency aggregation.
 \end{itemize}
 
-The three methods are highly general and function as frameworks for further research into the integration of \ac{xai} and \ac{ood} detection. In addition, I have had code merged into the codebase for OpenOOD, the definitive \ac{ood} detection framework and benchmarking tool. By improving the code used when benchmarking new \ac{ood} detection methods, I have contributed to the broader field of \ac{ood} detection.
+These three frameworks are highly general and enable further research into the integration of \ac{xai} and \ac{ood} detection. In addition, I have had code merged into the codebase for OpenOOD, the definitive \ac{ood} detection framework and benchmarking tool. By improving the code used when benchmarking new \ac{ood} detection methods, I have contributed to the broader field of \ac{ood} detection.
 
 \section{Thesis Outline}
 
-Chapter \ref{chapter:background} gives a short introduction to machine learning, followed by a deeper look at the fields of \ac{xai} and \ac{ood} detection. Chapter \ref{chapter:methodology} introduces my methodology; the methods I will use to compare and contrast \ac{xai} explanations on \ac{id} and \ac{ood} data, as well as a three general \ac{ood} detection methods which integrate explanations into their functioning. Furthermore, I introduce the different benchmarks which will be used to test each method, the statistical methods used to ensure that the results are statistically significant and the software and hardware architecture used. \ref{chapter:experiments} will first go into the results of the comparison between \ac{id} and \ac{ood} explanations, detailing the differences between different \ac{xai} methods, these investigations will be done on a validation set. Based on these results, I will make a selection of parameters for the \ac{ood} detection frameworks introduced in chapter \ref{chapter:methodology}. These frameworks will then be tested on a bootstrapped testing benchmarks and compared against baseline methods using statistical analysis. After the experiments follow a discussion (chapter \ref{chapter:discussion}), where I reflect on the benefits and drawbacks of using \ac{xai} methods for \ac{ood} detection, and summarize the results from \ref{chapter:experiments}. Finally, the conclusion (chapter \ref{chapter:conclusion}) gives a short conclusion of my findings, and envisions a way forward for future work.
+Chapter \ref{chapter:background} gives a short introduction to machine learning, followed by a deeper look at the fields of \ac{xai} and \ac{ood} detection. Chapter \ref{chapter:methodology} introduces my methodology; the methods I have used to compare and contrast \ac{xai} explanations on \ac{id} and \ac{ood} data, as well as the three general \ac{ood} detection frameworks which integrate explanations into their functioning. Furthermore, I introduce the different benchmarks which have been used to test each method, the statistical methods used to ensure that the results are statistically significant and the software and hardware architecture used. \ref{chapter:experiments} first goes into the results of the comparison between \ac{id} and \ac{ood} explanations, detailing the differences between different \ac{xai} methods. These investigations have been done on validation benchmarks which are not used during testing, to ensure unbiased results. Based on these results, I have chosen a selection of \ac{xai} \ac{ood} detection methods under these frameworks. These frameworks are then tested on bootstrapped testing benchmarks and compared against baseline methods using statistical analysis. After the experiments follow a discussion (chapter \ref{chapter:discussion}), where I reflect on the benefits and drawbacks of using \ac{xai} methods for \ac{ood} detection, and summarize the results from \ref{chapter:experiments}. Furthermore, the discussion also uses the results from chapter \ref{chapter:experiments} to answer the research question stated in the preceding section. Finally, the conclusion (chapter \ref{chapter:conclusion}) gives a short conclusion of my findings, and envisions a way forward for future work.
 
 \chapter{Background} \label{chapter:background}
 
@@ -338,11 +339,11 @@ In unsupervised learning, we do not have any labels. In these cases, we might no
 
 \subsection{Reinforcement Learning}
 
-Reinforcement Learning deals with problems where we do not know exactly what the correct solution is, but we are able to assess whether a given solution is good or not. For example, when controlling a robot arm, it is difficult to say exactly what angles each joint should be for every millisecond when picking up an object, but if the arm does not pick up the object, we know the algorithm has failed. In these problems, the algorithm is trained through reinforcement, where good attempts are rewarded and bad attempts punished.
+Reinforcement Learning deals with problems where we do not know exactly what the correct solution is, but we are able to assess whether a given solution is good or not. For example, when controlling a robot arm, it is difficult to say exactly what angles each joint should be for every millisecond when picking up an object, but if the arm does not pick up the object, we know the algorithm has failed. In these problems, the algorithm is trained through reinforcement, where good attempts are rewarded and bad attempts are punished.
 
 \section{Neural Networks}
 
-Neural Networks are a class of machine learning algorithms, which have become the clear \ac{sota} in almost all fields where machine learning is applied. Notable examples are computer vision, image classification, speech recognition, text and image generation and machine translation. Neural networks are loosely inspired by our own brains, where neurons are connected together and send information between each other. By connecting thousands of neurons together, neural networks are able to learn complicated relationships between the input and output.
+Neural Networks constitute a class of machine learning algorithms which have become the clear \ac{sota} in almost all fields where machine learning is applied. Notable examples are computer vision, image classification, speech recognition, text and image generation and machine translation. Neural networks are loosely inspired by our own brains, where neurons are connected together and send information between each other. By connecting thousands of neurons together, neural networks are able to learn complicated relationships between the input and output.
 
 \subsection{Feed Forward Neural Networks}
 
@@ -405,7 +406,7 @@ Here, the input $\bm{x_i}$ is linearly transformed by the weights of the matrix 
 
 \subsection{Convolutional Neural Networks} \label{section:cnn}
 
-\acp{ffnn} have some inherent flaws which make them unsuitable for working with high dimensional, spatially connected data, such as the pixels which make up an image. Firstly, each input of a \ac{ffnn} is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately. Consider a network attempting to detect the presence of a cat in an image. We would want the network to detect the cat regardless of whether it is in the middle, the right corner, or any other position in the image. In an \ac{ffnn}, the weights connected to any of these positions in the image would then have to encode a cat detector separately from all the others.
+\acp{ffnn} have some inherent flaws which make them unsuitable for working with high dimensional, spatially connected data, such as the pixels which make up an image. Firstly, each input of a \ac{ffnn} is connected to every output of the following layer. If we want to connect the input pixels of a $224$ by $224$ image to a layer of 100 nodes, our first layer will have over 5 million weights, which is already quite a lot for a relatively small image. Furthermore, these weights will have to encode redundant information, because each pixel is considered separately. Consider a network attempting to detect the presence of a cat in an image: We would want the network to detect the cat regardless of whether it is in the middle, the right corner, or any other position in the image. In an \ac{ffnn}, the weights connected to any of these positions in the image would then have to encode a cat detector separately from all the others.
 
 \acp{cnn} solve both these issues by using small kernels of weights which are "slid" across the entire input. By using the same weights across all positions of the image, we do not need to train separate detectors for different positions, giving us translation invariance. Figure \ref{fig:conv} shows the functioning of a convolutional kernel on a 3-channel image. Each value in the output is a weighted sum of a neighbourhood of values in the input image, where the weights are defined by the kernel. As we can see, the same weights are used on all positions, drastically reducing the number of parameters that need to be tuned. In a 2d-convolution, the kernel has the same number of channels as the input, and is only slid across the height and width dimension. The kernel in this figure is a {\it Sobel Operator}, and detects vertical edges. In a \ac{cnn}, the weights of each kernel are not specified manually, but rather learned through backpropagation.
 
@@ -688,7 +689,7 @@ After several such convolutions, we can flatten the output, either by aggregatin
 
 \subsection{Metrics}
 
-\ac{ood} detection is essentially simply a binary classification problem. Thus, the metrics I will use in this thesis are those used for such problems. In the field of \ac{ood} detection, \ac{auroc} and \ac{fpr} are most commonly used. As such I shall focus on these metrics, as opposed to for example the \ac{aupr}.
+\ac{ood} detection is essentially a binary classification problem. Thus, the metrics I will use in this thesis are those used for such problems. In the field of \ac{ood} detection, \ac{auroc} and \ac{fpr} are most commonly used. As such I shall focus on these metrics, as opposed to for example the \ac{aupr}.
 
 \subsubsection{Accuracy}
 
@@ -761,11 +762,11 @@ The previous metrics are a clear improvement over simply using accuracy. However
     \begin{center}
         \input{figure/auroc.pgf}
     \end{center}
-    \caption[Hypothetical \ac{id}/\ac{ood} distributions for an \ac{ood} detection metric]{Graph showing the distribution of hypothetical \ac{id}, Near-\ac{ood} and Far-\ac{ood} data for an unspecified metric. The shaded region shows the overlap between the \ac{id} and \ac{ood} samples.}
+    \caption[AUROC example figure]{Figure showing the \ac{auroc} curve for two imagined classifiers; one which has an \ac{auroc} of 0.97 and one which has an \ac{auroc} of 0.80. In addition, the \ac{auroc} curve of pure guessing is shown in gray.}
     \label{fig:auroc}
 \end{figure}
 
-Once we have done this, we can calculate the integral under this curve, giving us the \ac{auroc}. If a binary classification model can perfectly separate the two classes, then all possible thresholds will either have 100\% \ac{tpr} or 0\% \ac{fpr}, giving an area under the curve of 1. If instead a model has no discriminative power, then the predicted values of positive and negative classes are entirely random, and all changes to the threshold will increase one of the metrics at the expense of the other. Such a model would have \acp{tpr} and \acp{fpr} making a straight line of points, and an \ac{auroc} of 0.5. In between these extremes, we can evaluate different models, without having to consider different thresholds. \ref{fig:auroc} shows what the \ac{roc}-curve of a model with either 0.97 or 0.80 \ac{auroc} looks like, as well as that of a random classifier with \ac{auroc} = 0.50. 
+Once we have done this, we can calculate the integral under this curve, giving us the \ac{auroc}. If a binary classification model can perfectly separate the two classes, then all possible thresholds will either have 100\% \ac{tpr} or 0\% \ac{fpr}, giving an area under the curve of 1. If instead a model has no discriminative power, then the predicted values of positive and negative classes are entirely random, and all changes to the threshold will increase one of the metrics at the expense of the other. Such a model would have \acp{tpr} and \acp{fpr} making a straight line of points, and an \ac{auroc} of 0.5. In between these extremes, we can evaluate different models, without having to consider different thresholds. Figure \ref{fig:auroc} shows what the \ac{roc}-curve of a model with either 0.97 or 0.80 \ac{auroc} looks like, as well as that of a random classifier with \ac{auroc} = 0.50. 
 
 One important thing to note about the \ac{auroc} is that values lower than 0.50 do not mean that a model is worse than random guessing. This is because if a model is consistently wrong, we can simply choose the opposite category of what the model outputs, and gain a new model which is better than random guessing. For example, if a cat versus dog detector gave an actual image dog a higher chance of being a cat than an actual image of a cat in 95\% of cases, it would have an \ac{auroc} of only 0.05. However, if we simply multiplied all outputs of the model by -1, we would suddenly have a model which correctly gives a cat a higher chance of being a cat in 95\% of the cases, and an \ac{auroc} of 0.95. Thus, we really only care about getting \ac{auroc} scores far away from 0.50.\\
 
@@ -784,7 +785,7 @@ Below follows a thorough introduction to \ac{xai}, as well as detailed look at s
 
 \subsection{The motivation for Explainable Artificial Intelligence}
 
-Given the impressive performance of \ac{dl} methods, one might be convinced that these models do not need to be explainable or interpretable, and that we instead should just place our faith in the model without knowing exactly how it came to a decision. However, as \cite{doshivelez} points out, "a single metric, such as classification accuracy, is an incomplete description of most real-world tasks". Small differences between the data distribution when the test data was collected and when the model is deployed may have a large impact on the model's performance, or the model may have learned artifacts or specificities in the training dataset which were also present in the test dataset, leading to a false belief that the model has gained generalizable knowledge when it has not. By using explainable methods, we may reveal these shortcomings. In my case, this may also have the secondary effect of separating \ac{id} and \ac{ood} data points.
+Given the impressive performance of \ac{dl} methods, one might be convinced that these models do not need to be explainable or interpretable, and that we instead should just place our faith in the model without knowing exactly how it came to a decision. However, as \cite{doshivelez} points out, "a single metric, such as classification accuracy, is an incomplete description of most real-world tasks". Small differences between the data distribution when the test data was collected and when the model is deployed may have a large impact on the model's performance, or the model may have learned artifacts or specificities in the training dataset which were also present in the test dataset, leading to a false belief that the model has gained generalizable knowledge when it has not. By using explainable methods, we may reveal these shortcomings. Relevant to this thesis, this may also have the secondary effect of separating \ac{id} and \ac{ood} data points.
 
 \ac{xai} is also especially important whenever the model is used in settings where its decisions have a high impact. If a model is used by a hospital for disease detection, both the patient and doctor will probably want to be able to understand why the model has found that a disease is present. For them, high performance on a test set of different cases may not be enough. As \cite{xaisurvey} states, "for the regulated healthcare domain, it is utmost important to comprehend, justify, and explain the AI model predictions for a wider adoption of automated diagnosis". In other high impact areas, such as autonomous driving, the impact of wrong decisions by the network can have fatal consequences, and customers and regulators will want to be absolutely sure that the models used are robust and base their decisions on relevant factors as opposed to quirks in the training data. Furthermore, the right to an explanation of an automated decision affecting a person is included in the EU's General Data Protection Regulation, which states that "In any case, such processing should be subject to suitable safeguards, which should include specific information to the data subject and the right [...] to obtain an explanation of the decision reached after such assessment and to challenge the decision." \cite{gdpr}.
 
@@ -809,7 +810,7 @@ Post hoc methods are methods which are applied to the model after training. Thes
 
 \subsubsection{Model dependent versus model agnostic methods}
 
-Model dependence/agnosticity denotes whether an \ac{xai} method uses specifics of a particular type of model to generate the explanation, or whether the method can generate an explanation without using specifics of the model at all. Explanations based intrinsically explainable models are clearly model dependent, while methods that only use the input and output of the model instead of looking at the internal operations are model agnostic. An example of a model dependent method (which is not simply an intrinsically explainable model) is Class Activation Mapping, which requires a \ac{cnn} with a specific architecture to function, while an example of a model agnostic method are Shapley values, which use the inputs and outputs to calculate the marginal effect of a single feature on the output value.
+Model dependence/agnosticity denotes whether an \ac{xai} method uses specifics of a particular type of model to generate the explanation, or whether the method can generate an explanation without using specifics of the model at all. Explanations based intrinsically explainable models are clearly model dependent, while methods that only use the input and output of the model instead of looking at the internal operations are model agnostic. An example of a model dependent method (which is not simply an intrinsically explainable model) is Class Activation Mapping, which requires a \ac{cnn} with a specific architecture to function, while an example of a model agnostic method is Shapley \cite{shapley}, which treats the underlying model as a black box and uses the inputs and outputs to calculate the marginal effect of a single feature on the output value.
 
 \subsubsection{Global versus local explanations}
 
@@ -867,7 +868,7 @@ A solution to this is to segment the image into larger regions, which are treate
 
 Regions of pixels can be created in different ways. The simplest option is consider a window of a specific height and width, and slide this window over the image with a specific stride. By adjusting the stride and size, the number of dimensions can be adjusted. The benefit of such a simple approach is that the segmentation itself introduces no extra computation. However, a substantial downside is that each region can contain completely unrelated objects, because the regions are created without considering the underlying image. For example, if a 60 by 60 pixel region contains in its lower right corner a part of a dog, occluding this region could lead to a large change in confidence and thus high importance. However, it is not just the lower right corner that is awarded high importance, but the entire region, which may contain other objects or parts of the background which are not actually important.
 
-By using more sophisticated segmentation methods, we can avoid this problem. Methods such as \ac{slic} \cite{slic} create regions which can be considered more intuitive than simply using a rectangular sliding window. \ac{slic} performs an iterative clustering of pixels, grouping similar pixels into larger regions called superpixels. The downside to this method is that the iterative, CPU-bound process introduces a considerable computational overhead. Figure \ref{fig:segmentationcomp} shows a comparison between the saliency map of the \ac{lime} algorithm applied to an image segmented using rectangular regions and to an image segmented using \ac{slic}. As we can see, the rectangular segmentation means that the some of the grass in the background is given a high saliency, because it happens to be in the same region as the dogs head. Using \ac{slic}, there are few regions which contain both grass and the dog, and thus the high saliency of the dog's face does not affect other parts of the image.
+By using more sophisticated segmentation methods, we can avoid this problem. Methods such as \ac{slic} \cite{slic} create regions which can be considered more intuitive than simply using a rectangular sliding window. \ac{slic} performs an iterative clustering of pixels, grouping similar pixels into larger regions called superpixels. The downside to this method is that the iterative, CPU-bound process introduces a considerable computational overhead. Figure \ref{fig:segmentationcomp} shows a comparison between the saliency map of the \ac{lime} algorithm applied to an image segmented using rectangular regions and to an image segmented using \ac{slic}. As we can see, the rectangular segmentation means that the some of the grass in the background is given a high saliency, because it happens to be in the same region as the dog's head. Using \ac{slic}, there are few regions which contain both grass and the dog, and thus the high saliency of the dog's face does not affect other parts of the image.
 
 \begin{figure}[H]
     \begin{center}
@@ -906,7 +907,7 @@ By using more sophisticated segmentation methods, we can avoid this problem. Met
 \subsection{Specific methods} \label{section:xaimethodsbackground}
 
 
-The following section goes through several specific \ac{xai} methods. This serves two purposes: Firstly, by explaining how commonly used \ac{xai} methods function in more detail, it is easier to understand how \ac{xai} methods work in practice. Secondly, this section also covers the specific methods that will be analyzed and evaluated as part of the rest of the thesis. By thoroughly detailing the functions of these methods in this chapter, it becomes easier to analyse and explain the proposed methods in chapter \ref{chapter:methodology} and the results in chapter \ref{chapter:experiments}.
+The following section goes through several specific \ac{xai} methods. This serves two purposes: Firstly, by explaining how commonly used \ac{xai} methods function in more detail, it is easier to understand how \ac{xai} methods work in practice. Secondly, this section also covers the specific methods that will be integrated into the three \ac{ood} detection frameworks. By thoroughly detailing the functions of these methods in this chapter, it becomes easier to analyse and explain the proposed methods in chapter \ref{chapter:methodology} and the results in chapter \ref{chapter:experiments}.
 \\
 
 
@@ -916,13 +917,13 @@ The following section goes through several specific \ac{xai} methods. This serve
 
 To create a locally interpretable model, we need a neighbourhood of data points around our point of interest. To do this, we can sample a number of points from our dataset and weigh them by their distance to our original point. This sampling can be done in many ways, for example by calculating a mean and variance for each feature and sampling from a normal distribution. For image data, we can create new points similar to the image by masking out different regions of the image \cite{molnar}. The distance measure depends on the type of data we are dealing with. Regardless, the distance values are passed through a smoothing kernel which can be tuned to adjust the size of the "neighbourhood".
 
-With these new data points, we can generate new predictions using the original, complex model. Thus, we now have a series of points, each with a weighting based on their distance to our original point, and each with a predicted score from our original model. With such a dataset, we can train a simpler model, which will then approximate the complex model around the point of interest. By inspecting this simple model (for example the learned weights of a linear regression model, or the structure of a decision tree), we can learn approximately how the complex model functions in a region around this single data point.
+With these new data points, we can generate new predictions using the original, complex model. Thus, we now have a series of points, each with a weighting based on their distance to our original point, and each with a predicted score from our original model. With such a dataset, we can train a simpler model, which will then approximate the complex model around the point of interest. By inspecting this simple model (for example: the learned weights of a linear regression model, or the structure of a decision tree), we can learn approximately how the complex model functions in a region around this single data point.
 
 \subsubsection{Occlusion methods}
 
-Occlusion methods are a family of post-hoc model independent \ac{xai} methods. They function by masking different parts of the image and inspecting the change in output score. If an area leads to a large drop in softmax score for the predicted class when masked, this area must have been important for the network when making the prediction. The mask can be as simple as replacing all masked pixels with a single color, such as gray \cite{occlusion}, or they could use more advanced inpainting methods using generative models, for example by replacing a masked tumor with generated healthy tissue. 
+Occlusion methods are a family of post-hoc, model independent \ac{xai} methods. They function by masking different parts of the image and inspecting the change in output score. If an area leads to a large drop in softmax score for the predicted class when masked, this area must have been important for the network when making the prediction. The mask can be as simple as replacing all masked pixels with a single color, such as gray \cite{occlusion}, or they could use more advanced inpainting methods using generative models, for example by replacing a masked tumor with generated healthy tissue. 
 
-Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image. Figure \ref{fig:occlusion} shows the process visually.
+Regardless of the mask, one can easily calculate the importance of any pixel for a prediction by calculating the average change in the output score for all masks which contain the specific pixel \cite{diagnostic}. Occlusion methods have the advantage of being completely model independent, since they do not consider the internals of the model. However, the computation can be expensive, because we need to run a forward pass for each position of the mask on the image. % Figure \ref{fig:occlusion} shows the process visually.
 
 \subsubsection{Class Activation Mapping (CAM)}
 
@@ -984,7 +985,7 @@ Figure \ref{camimg} shows the process visually. From this we can see that the re
     \label{fig:cam2}
 \end{figure}
 
-Although \ac{cam} is an intuitive and effective method of visualizing the inner workings of a \ac{cnn}, it has some downsides. Firstly, it is highly model dependent, requiring that the model only have a single dense layer after the convolutions. Although there are some \ac{sota} models which only use a single dense layer, this still places a limit on what models can be used, or requires the simplification of models that use more than a single dense layer. \cite[4]{cam} notes a 1-2\% drop in classification performance when performing this simplification. Secondly, the output of \ac{cam} is simply a weighted sum of all the feature maps after the final convolutional layer. As we move deeper in a \ac{cnn}, we reduce the spatial resolution by downsampling, while increasing the number of channels (increasing the depth of the output while reducing the height and width). Because of this, the \ac{cam} will have a drastically lower resolution than the original image, often less than $10 \, x \, 10$, while the input image may be hundreds of pixels in both dimensions. Because of this, \ac{cam} can only show general areas, as opposed to pixel wise explanations.
+Although \ac{cam} is an intuitive and effective method of visualizing the inner workings of a \ac{cnn}, it has some downsides. Firstly, it is highly model dependent, requiring that the model only have a single dense layer after the convolutions. Although there are some \ac{sota} models which only use a single dense layer, this still places a limit on what models can be used, or requires the simplification of models that use more than a single dense layer. \cite[4]{cam} notes a 1-2\% drop in classification performance when performing this simplification. Secondly, the output of \ac{cam} is simply a weighted sum of all the feature maps after the final convolutional layer. As we move deeper in a \ac{cnn}, we reduce the spatial resolution by downsampling, while increasing the number of channels (increasing the depth of the output while reducing the height and width). Because of this, the \ac{cam} will have a drastically lower resolution than the original image, often less than $10 \times 10$, while the input image may be hundreds of pixels in both dimensions. Because of this, \ac{cam} can only show general areas, as opposed to pixel wise explanations.
 \\
 
 \subsubsection{Gradient Class Activation Mapping (GradCAM)} \label{section:gradcam}
@@ -998,7 +999,7 @@ Like the simplicity of the \ac{cam} method, the calculation of the weights using
 \label{gradcameq}
 \end{equation}
 
-Here, $c$ represents the index of the class we are interested in, $k$ the index of the feature map, and $i$ and $j$ the width and height of the image. $y^c$ is the element of the output vector $y$ which corresponds to the class $c$, while $A^k$ is the $k$'th feature map. $Z$ is equal to $i * j$, and simply normalizes the sum. Thus, we are actually just performing global average pooling of the gradients of $A^k$ with respect to $y^c$, which gives us a single value we can use as the weight for this feature map. Doing this for all feature maps for a specific class gives us all the weights we need to calculate a weighted sum, which we can upsample and visualize to get an explanation for the decision of the \ac{cnn}.
+Here, $c$ represents the index of the class we are interested in, $k$ the index of the feature map, and $i$ and $j$ the width and height of the image. $y^c$ is the element of the output vector $y$ which corresponds to the class $c$, while $A^k$ is the $k$'th feature map. $Z$ is equal to the number of elements in each channel of the feature map, and simply normalizes the sum. Thus, we are actually just performing global average pooling of the gradients of $A^k$ with respect to $y^c$, which gives us a single value we can use as the weight for this feature map. Doing this for all feature maps for a specific class gives us all the weights we need to calculate a weighted sum, which we can upsample and visualize to get an explanation for the decision of the \ac{cnn}.
 
 Thus, \ac{gradcam} improves upon \ac{cam} by making the method less model dependent. However, the explanations are still the same low resolution, which may not be ideal in all cases.
 \\
@@ -1028,13 +1029,13 @@ If we then choose a baseline which has $f(\mathbf{x'}) \approx 0$, we see that i
 
 \section{Out-of-Distribution Detection} \label{ood_intro}
 
-This section discusses \ac{ood} detection, the field which attempts to tackle the second problem discussed in the introduction; that \ac{ml} models have significantly worse performance on \ac{ood} data points and will often "fail silently", making completely wrong predictions with apparent high confidence \cite{adversarial}. \ac{ood} detection is a developing field, and still in an initial stage \cite{ooddl}. In 2017, \cite{oodbaseline} proposed a baseline \ac{ood} detection method. This section will discuss this method and the methods which follow it.
+This section discusses \ac{ood} detection, the field which attempts to tackle the second problem discussed in the introduction and which is the main focus of this thesis; that \ac{ml} models have significantly worse performance on \ac{ood} data points and will often "fail silently", making completely wrong predictions with apparent high confidence \cite{adversarial}. \ac{ood} detection is a developing field, and still in an initial stage \cite{ooddl}. In 2017, \cite{oodbaseline} proposed a baseline \ac{ood} detection method. This section will discuss this method and the methods which follow it.
 
 \subsection{Motivation for Out-of-Distribution Detection}
 
-When training a model using supervised learning, we implicitly use the "closed-world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without \ac{ood} detection, the model will behave in the exact same way when encountering \ac{ood} samples or in distribution (\ac{id}) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a model to claim high confidence when predicting if a woman has lung cancer if the model has only been trained on men, nor do we want a model to attempt to classify a rare disease that was not part of the training data. Thus, \ac{ood} detection methods are necessary, so that \ac{ood} samples can be caught before the model makes a prediction and dealt with correctly.
+When training a model using supervised learning, we implicitly use the "closed-world assumption", which means that we assume that test data will be drawn from the same distribution as the training data \cite{oodoverview}. However, when a model is deployed, the data we see may not obey this assumption. Without \ac{ood} detection, the model will behave in the exact same way when encountering \ac{ood} samples or in distribution (\ac{id}) samples, and may even claim to be highly confident in its prediction although the sample is far away from the distribution of the training data \cite[1]{energy}. In any system where models make high impact decisions, this is a huge problem. We do not want a medical \ac{ai} system to attempt to classify a rare disease that was not part of the training data, nor do we want an autonomous car to continue to drive on snowy dirt roads if its training data only contains the sunny streets of San Francisco. Thus, \ac{ood} detection methods are necessary, so that \ac{ood} samples can be caught before the model takes any (potentially catastrophic) action.
 
-Intuitively, one might assume that distinguishing \ac{id} and \ac{ood} samples from each other can be solved by simple binary classification using a dataset of \ac{id} samples and one of \ac{ood} samples. Indeed, if one has sufficient amount of high quality \ac{ood} samples, this can be done. However, this can be difficult to obtain in practice \cite[15]{oodoverview}, thus requiring more sophisticated methods of \ac{ood} detection.
+Intuitively, one might assume that distinguishing \ac{id} and \ac{ood} samples from each other can be solved by simple binary classification using a dataset of \ac{id} samples and one of \ac{ood} samples. Indeed, if one has sufficient amount of high quality \ac{ood} samples, this can be done. However, this can be difficult to obtain in practice \cite[15]{oodoverview}. A key problem is that \ac{ood} data is, almost by definition, data which we do not have at development and training time of a specific model. \ac{ood} data is unexpected and surprising data, which cannot be predicted before hand; we cannot possibly predict all situations a self-driving car could end up in, nor account for every single disease in the world when developing a medicinal \ac{ai} system. Thus, we require more sophisticated methods of \ac{ood} detection, which catch \ac{ood} data points in a general manner and do not rely on explicit examples of \ac{ood} data. Indeed, the majority of methods developed in the field of \ac{ood} detection do not rely on such auxiliary datasets \cite{openood}. % TODO check this citation
 
 \subsection{Semantic versus covariate shift}
 
@@ -1085,14 +1086,14 @@ Given that the detection of semantic shift has been the main focus of most \ac{o
 
 \subsection{Benchmarking}
 
-The performance of an \ac{xai} is hard to quantify, because the quality of an explanation is not easily reduced to a number. For \ac{ood} detection, performance is much easier to measure, as the problem can be described as a binary classification problem, with \ac{ood} and \ac{id} samples as the positive and negative class, respectively. Thus, we can calculate many different metrics and compare methods against each other. For \ac{ood} methods, the two most common metrics to report are \ac{fpr95} and the \ac{auroc} (see section \ref{section:aurocfpr95}). It is common to use ImageNet or CIFAR as the \ac{id} dataset, and calculate \ac{fpr95} and \ac{auroc} on other datasets which contain no overlapping class labels. When selecting \ac{ood} datasets, it is common to differentiate between \textbf{Near-\ac{ood}} and \textbf{Far-\ac{ood}}. Far-\ac{ood} samples are samples which are drastically different from the \ac{id} samples, while Near-\ac{ood} samples only differ slightly. For a cat-versus-dog classifier, a tiger and a wolf would represent Near-\ac{ood} semantic shift, while a plane and a car would represent Far-\ac{ood} semantic shift. As one might expect, detecting Near-\ac{ood} samples is much harder.
+The performance of an \ac{xai} is hard to quantify, because the quality of an explanation is not easily reduced to a number. For \ac{ood} detection, performance is much easier to measure, as the problem can be described as a binary classification problem, with \ac{ood} and \ac{id} samples as the positive and negative class, respectively. Thus, we can calculate many different metrics and compare methods against each other. For \ac{ood} methods, the two most common metrics to report are \ac{fpr95} and the \ac{auroc} (see section \ref{section:aurocfpr95}). It is common to use ImageNet or CIFAR as the \ac{id} dataset, and calculate \ac{fpr95} and \ac{auroc} on other datasets which contain no overlapping class labels. When selecting \ac{ood} datasets, it is common to differentiate between \textbf{Near-\ac{ood}} and \textbf{Far-\ac{ood}}. Far-\ac{ood} samples are samples which are drastically different from the \ac{id} samples, while Near-\ac{ood} samples only differ slightly. For a cat-versus-dog classifier, a tiger and a wolf would represent Near-\ac{ood} semantic shift, while a plane and a car would represent Far-\ac{ood} semantic shift. As one might expect, detecting Near-\ac{ood} samples is much harder than Far-\ac{ood}.
 
 % FPR95 is, as the name implies, the number of false positives (i.e the number of ID data points that the method falsely believes to be \ac{ood}) when 95\% of the \ac{ood} data points are correctly detected. AUROC can defined as the chance that a random ID data point has a higher ID-score than a random \ac{ood} data point \cite{openood}. An AUROC of 0.5 is equivalent to random guessing, while an AUROC of 1 is a perfect model that catches all \ac{ood} data points.
 
 
 In 2021, \cite{oodoverview} defined a generalized \ac{ood} detection framework, and in 2023 \cite{openood} introduced a comprehensive benchmark called OpenOOD, which evaluates all relevant \ac{ood} methods under this framework. Prior to this work, different methods were tested on different benchmarks, with different image preprocessing procedures, and with other externalities which inhibited effective comparison between methods \cite{openood}.
 
-OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and \ac{ood} detection, three fields which are very closely related. Of these, 6 benchmarks are used to test methods for \ac{ood} detection, which are the ones I will be concerned with. Each benchmark is defined by an \ac{id} dataset, with 6 or more corresponding \ac{ood} datasets, separated into Near-\ac{ood} and Far-\ac{ood}. For each benchmark, \ac{auroc}, \ac{aupr} and \ac{fpr95} is reported over all \ac{ood} datasets, and Near-\ac{ood} \ac{auroc} is used to rank methods against each other.
+OpenOOD includes 11 different benchmarks across Anomaly Detection, Open Set Recognition and \ac{ood} detection, three fields which are very closely related. Of these, 4 benchmarks are used to test methods for standard \ac{ood} detection, which are the ones I will be concerned with. Each benchmark is defined by an \ac{id} dataset, with 6 or more corresponding \ac{ood} datasets, separated into Near-\ac{ood} and Far-\ac{ood}. For each benchmark, \ac{auroc}, \ac{aupr} and \ac{fpr95} is reported over all \ac{ood} datasets, and Near-\ac{ood} \ac{auroc} is used to rank methods against each other.
 
 \subsection{Methods}
 
@@ -1994,7 +1995,7 @@ Because of this, I have separated all benchmarks into validation and test benchm
 
 \section{Networks}
 
-While it may be interesting to see how these new methods function on different network architectures, the combination of several different novel \ac{ood} detection algorithms and \ac{xai} saliency methods, as well as four different benchmarks, already presents a considerable amount of evaluation. Thus, to focus the thesis on comparing different \ac{ood} detection methods against each other, I believe it is best to fix other parameters such as network architecture. With this in mind, I choose to limit myself to the ResNet \cite{resnet} family of neural networks. In particular, I use ResNet18 for evaluation on CIFAR10, CIFAR100 and ImageNet200, and ResNet50 for evaluation on ImageNet1K.
+While it may be interesting to see how these new methods function on different network architectures, the combination of several different novel \ac{ood} detection algorithms and \ac{xai} saliency methods, as well as four different benchmarks, already presents a considerable amount of evaluation. Thus, to focus the thesis on comparing different \ac{ood} detection methods against each other, I believe it is best to fix other parameters such as network architecture. With this in mind, I choose to limit myself to the ResNet \cite{resnet} family of neural networks. In particular, I use ResNet18 for evaluation on CIFAR10, CIFAR100 and ImageNet200, and ResNet50 for evaluation on ImageNet1K. Given the scope of the of the thesis as described in section \ref{section:scope}, I do not use methods which require retraining of the network. As such, all networks are pretrained and I do not perform any training as part of this thesis.
 
 Aside from \acp{cnn}, Vision Transformers also perform exceptionally on computer vision tasks, and achieve \ac{sota} results in many settings \cite{vit}. On ImageNet, they are even dominant, and the top 10 models when considering (top-1) accuracy are all based on vision transformers, as opposed to \acp{cnn}.\footnote{https://paperswithcode.com/sota/image-classification-on-imagenet} As such one might question the choice of a \ac{cnn} model, when newer and better models have been developed.
 
@@ -2769,15 +2770,15 @@ To get a more precise understanding of the performance of the different models, 
     \rowcolor{near!50}
     Near-OOD & 80.95 & -1.792 & 1.000 & -2.329 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 92.39 & +1.113 & 5.3e-07 *** & +2.195 & 7.1e-12 *** \\
+    Far-OOD & 92.39 & +1.113 & 0.001 ** & +2.195 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 83.26 & +0.511 & 0.002 ** & -0.026 & 0.567 \\
+    Near-OOD & 83.26 & +0.511 & 0.001 ** & -0.026 & 0.839 \\
     \rowcolor{far!50}
-    Far-OOD & 92.62 & +1.339 & 6.7e-08 *** & +2.421 & 2.8e-12 *** \\
+    Far-OOD & 92.62 & +1.339 & 0.001 ** & +2.421 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{IGMean} \\
@@ -2785,7 +2786,7 @@ To get a more precise understanding of the performance of the different models, 
     \rowcolor{near!50}
     Near-OOD & 81.59 & -1.156 & 1.000 & -1.694 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 90.38 & -0.894 & 1.000 & +0.188 & 0.142 \\
+    Far-OOD & 90.38 & -0.894 & 1.000 & +0.188 & 0.002 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GBPNorm} \\
@@ -2793,7 +2794,7 @@ To get a more precise understanding of the performance of the different models, 
     \rowcolor{near!50}
     Near-OOD & 76.90 & -5.845 & 1.000 & -6.382 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 91.98 & +0.706 & 6.6e-05 *** & +1.788 & 7.3e-11 *** \\
+    Far-OOD & 91.98 & +0.706 & 0.001 ** & +1.788 & 0.001 ** \\
     \hline
     \end{tabular}
     \caption[]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
@@ -2895,15 +2896,15 @@ Looking at table \ref{table:imagenet_salagg_ttest}, the three methods mentioned 
     \rowcolor{near!50}
     Near-OOD & 68.84 & -7.492 & 1.000 & -7.199 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 91.24 & +1.721 & 2.3e-15 *** & +6.225 & 1.9e-24 *** \\
+    Far-OOD & 91.24 & +1.721 & 0.001 ** & +6.225 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 76.15 & -0.185 & 0.890 & +0.107 & 0.234 \\
+    Near-OOD & 76.15 & -0.185 & 0.999 & +0.107 & 0.065 \\
     \rowcolor{far!50}
-    Far-OOD & 92.10 & +2.587 & 8.4e-19 *** & +7.091 & 1.0e-25 *** \\
+    Far-OOD & 92.10 & +2.587 & 0.001 ** & +7.091 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{IGMean} \\
@@ -2911,7 +2912,7 @@ Looking at table \ref{table:imagenet_salagg_ttest}, the three methods mentioned 
     \rowcolor{near!50}
     Near-OOD & 73.95 & -2.386 & 1.000 & -2.093 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 87.54 & -1.973 & 1.000 & +2.531 & 1.2e-16 *** \\
+    Far-OOD & 87.54 & -1.973 & 1.000 & +2.531 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GBPNorm} \\
@@ -2919,7 +2920,7 @@ Looking at table \ref{table:imagenet_salagg_ttest}, the three methods mentioned 
     \rowcolor{near!50}
     Near-OOD & 72.20 & -4.136 & 1.000 & -3.843 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 91.34 & +1.825 & 4.4e-17 *** & +6.329 & 1.4e-25 *** \\
+    Far-OOD & 91.34 & +1.825 & 0.001 ** & +6.329 & 0.001 ** \\
     \hline
     \end{tabular}
     \caption[]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
@@ -3024,33 +3025,33 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we indeed see f
     \multicolumn{6}{|c|}{LIMENorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 83.46 & +0.715 & 1.6e-04 *** & +0.178 & 0.136 \\
+    Near-OOD & 83.46 & +0.715 & 0.001 ** & +0.178 & 0.007 * \\
     \rowcolor{far!50}
-    Far-OOD & 93.12 & +1.845 & 4.6e-10 *** & +2.927 & 9.8e-14 *** \\
+    Far-OOD & 93.12 & +1.845 & 0.001 ** & +2.927 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 83.15 & +0.407 & 0.010 * & -0.130 & 0.791 \\
+    Near-OOD & 83.15 & +0.407 & 0.001 ** & -0.130 & 0.968 \\
     \rowcolor{far!50}
-    Far-OOD & 92.09 & +0.808 & 6.7e-05 *** & +1.890 & 3.4e-10 *** \\
+    Far-OOD & 92.09 & +0.808 & 0.001 ** & +1.890 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{IGMean} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 82.36 & -0.384 & 0.982 & -0.922 & 1.000 \\
+    Near-OOD & 82.36 & -0.384 & 1.000 & -0.922 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 91.04 & -0.233 & 0.899 & +0.848 & 4.6e-05 *** \\
+    Far-OOD & 91.04 & -0.233 & 1.000 & +0.848 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GBPNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 82.96 & +0.217 & 0.099 & -0.320 & 0.971 \\
+    Near-OOD & 82.96 & +0.217 & 0.010 * & -0.320 & 0.990 \\
     \rowcolor{far!50}
-    Far-OOD & 93.95 & +2.677 & 4.3e-13 *** & +3.759 & 5.0e-16 *** \\
+    Far-OOD & 93.95 & +2.677 & 0.001 ** & +3.759 & 0.001 ** \\
     \hline
     \end{tabular}
     \caption[]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
@@ -3094,33 +3095,33 @@ Like in the previous sections, let look at the results of the t-tests to gain a 
     \multicolumn{6}{|c|}{LIMENorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 87.80 & +0.831 & 9.7e-07 *** & +0.116 & 0.193 \\
+    Near-OOD & 87.80 & +0.831 & 0.001 ** & +0.116 & 0.053 \\
     \rowcolor{far!50}
-    Far-OOD & 93.35 & +1.532 & 6.6e-12 *** & +2.120 & 1.1e-13 *** \\
+    Far-OOD & 93.35 & +1.532 & 0.001 ** & +2.120 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 86.92 & -0.046 & 0.643 & -0.760 & 1.000 \\
+    Near-OOD & 86.92 & -0.046 & 1.000 & -0.760 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 91.81 & -0.013 & 0.550 & +0.575 & 4.1e-05 *** \\
+    Far-OOD & 91.81 & -0.013 & 1.000 & +0.575 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{IGMean} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 87.21 & +0.240 & 0.028 & -0.475 & 0.999 \\
+    Near-OOD & 87.21 & +0.240 & 0.001 ** & -0.475 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 92.47 & +0.647 & 1.9e-06 *** & +1.236 & 5.7e-10 *** \\
+    Far-OOD & 92.47 & +0.647 & 0.001 ** & +1.236 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GBPNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 89.91 & +2.940 & 2.0e-15 *** & +2.225 & 9.4e-13 *** \\
+    Near-OOD & 89.91 & +2.940 & 0.001 ** & +2.225 & 0.001 ** \\
     \rowcolor{far!50}
-    Far-OOD & 94.68 & +2.858 & 3.3e-17 *** & +3.446 & 7.0e-18 *** \\
+    Far-OOD & 94.68 & +2.858 & 0.001 ** & +3.446 & 0.001 ** \\
     \hline
     \end{tabular}
     \caption[]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
@@ -3165,15 +3166,15 @@ Looking at table \ref{table:imagenet_salpluslogit_ttest}, we see that the perfor
     \rowcolor{near!50}
     Near-OOD & 74.23 & -2.098 & 1.000 & -1.806 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 92.17 & +2.656 & 4.5e-19 *** & +7.160 & 7.7e-26 *** \\
+    Far-OOD & 92.17 & +2.656 & 0.001 ** & +7.160 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 76.68 & +0.348 & 0.015 & +0.641 & 1.9e-04 *** \\
+    Near-OOD & 76.68 & +0.348 & 0.001 ** & +0.641 & 0.001 ** \\
     \rowcolor{far!50}
-    Far-OOD & 91.25 & +1.739 & 1.2e-15 *** & +6.243 & 1.3e-24 *** \\
+    Far-OOD & 91.25 & +1.739 & 0.001 ** & +6.243 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{IGMean} \\
@@ -3181,15 +3182,15 @@ Looking at table \ref{table:imagenet_salpluslogit_ttest}, we see that the perfor
     \rowcolor{near!50}
     Near-OOD & 75.37 & -0.960 & 1.000 & -0.668 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 88.85 & -0.665 & 1.000 & +3.839 & 2.6e-20 *** \\
+    Far-OOD & 88.85 & -0.665 & 1.000 & +3.839 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GBPNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 78.25 & +1.920 & 1.6e-11 *** & +2.212 & 1.4e-12 *** \\
+    Near-OOD & 78.25 & +1.920 & 0.001 ** & +2.212 & 0.001 ** \\
     \rowcolor{far!50}
-    Far-OOD & 93.83 & +4.320 & 1.2e-23 *** & +8.824 & 4.3e-28 *** \\
+    Far-OOD & 93.83 & +4.320 & 0.001 ** & +8.824 & 0.001 ** \\
     \hline
     \end{tabular}
     \caption[]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
@@ -3197,6 +3198,7 @@ Looking at table \ref{table:imagenet_salpluslogit_ttest}, we see that the perfor
 \end{center}
 \setlength\tabcolsep{6pt}
 \end{table}
+
 
 \subsubsection{CIFAR100}
 
@@ -3225,23 +3227,23 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     \rowcolor{near!50}
     Near-OOD & 78.92 & -2.316 & 1.000 & -1.763 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 82.13 & +2.273 & 3.9e-11 *** & +4.214 & 1.9e-15 *** \\
+    Far-OOD & 82.13 & +2.273 & 0.001 ** & +4.214 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 81.24 & +0.006 & 0.486 & +0.559 & 0.003 * \\
+    Near-OOD & 81.24 & +0.006 & 0.116 & +0.559 & 0.001 ** \\
     \rowcolor{far!50}
-    Far-OOD & 79.93 & +0.066 & 0.335 & +2.007 & 1.0e-10 *** \\
+    Far-OOD & 79.93 & +0.066 & 0.001 ** & +2.007 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{IGMean} \\
     \hline
     \rowcolor{near!50}
-    Near-OOD & 80.58 & -0.662 & 0.999 & -0.108 & 0.708 \\
+    Near-OOD & 80.58 & -0.662 & 1.000 & -0.108 & 0.981 \\
     \rowcolor{far!50}
-    Far-OOD & 81.95 & +2.089 & 9.0e-11 *** & +4.030 & 2.4e-15 *** \\
+    Far-OOD & 81.95 & +2.089 & 0.001 ** & +4.030 & 0.001 ** \\
     \hline
     \hline
     \multicolumn{6}{|c|}{GBPNorm} \\
@@ -3249,7 +3251,7 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     \rowcolor{near!50}
     Near-OOD & 77.70 & -3.542 & 1.000 & -2.989 & 1.000 \\
     \rowcolor{far!50}
-    Far-OOD & 80.46 & +0.599 & 0.002 ** & +2.540 & 2.7e-11 *** \\
+    Far-OOD & 80.46 & +0.599 & 0.001 ** & +2.540 & 0.001 ** \\
     \hline
     \end{tabular}
     \caption[]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
@@ -3260,18 +3262,17 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
 
 \subsubsection{Overall results of Saliency Aggregation plus Logits}
 
-Overall, the results build on the Saliency Aggregation framework and improve the performance considerably. While the results of Saliency Aggregation showed a clear deficit on Near-\ac{ood}, the addition of the \ac{mls} into the \ac{ood} detector consistently reduced this deficit and equalized the performance when compared to the baselines. These results concur with \cite{combood} which also found a similar stabilizing effect when combining two different metrics. The performance of \ac{gbp}Norm+Logits is a particularly interesting example, beating both baselines on all four benchmarks on Far-\ac{ood}.
-
+Overall, the results build on the Saliency Aggregation framework and improve the performance considerably. While the results of Saliency Aggregation showed a clear deficit on Near-\ac{ood}, the addition of the \ac{mls} into the \ac{ood} detector consistently reduced this deficit and equalized the performance when compared to the baselines. These results concur with \cite{combood} which also found a similar stabilizing effect when combining two different metrics. The performance of \ac{gbp}Norm+Logits is a particularly interesting example, beating both baselines by several percentage points on all four benchmarks on Far-\ac{ood}.
 
 \subsection{Results for SaliencyVIM}
 
-For the final tests, we consider SaliencyVIM, the method described in section \ref{section:saliencyvim_method}. As described in section \ref{section:saliencyvim_method}, SaliencyVIM requires saliency methods which output lower dimensional saliency maps, as opposed to methods such as \ac{gbp} and integrated gradients, which output a value for each pixel. Thus, the applicable \ac{xai} methods included in this thesis are occlusion, \ac{lime} and \ac{gradcam}. Although occlusion performed very poorly on the validation set when aggregating saliencies, SaliencyVIM uses every saliency value and could thus capture information from this \ac{xai} method which has not been captured by aggregation methods. Thus, I include occlusion in the testing. 
+For the final tests, we consider SaliencyVIM, the method described in section \ref{section:saliencyvim_method}. As described in section \ref{section:saliencyvim_method}, SaliencyVIM requires saliency methods which output lower dimensional saliency maps, as opposed to methods such as \ac{gbp} and integrated gradients, which output a value for each pixel. Thus, the applicable \ac{xai} methods included in this thesis are occlusion, \ac{lime} and \ac{gradcam}. Although occlusion performed very poorly on the validation set when aggregating saliencies, SaliencyVIM uses every saliency value and could thus capture information which has not been captured by aggregation methods. Thus, I include occlusion in the testing. 
 
 In this case, it does not make sense to use \ac{mls} or \ac{msp} as the baselines to compare against, since the method is based on \ac{vim}. Instead, we compare our results with \ac{vim}, to see whether the addition of saliencies can improve this method.
 
 \subsubsection{ImageNet200}
 
-We start with ImageNet200. From figure \ref{fig:imagenet200_salvim_bootstrap_barplot}, we see that the differences are extremely small between the baseline and the \ac{xai} methods. However, the confidence intervals are also very small, which might mean that there are statistically significant performance increases. Thus, we look to the results of the t-tests.
+We start with the ImageNet200 benchmark. From figure \ref{fig:imagenet200_salvim_bootstrap_barplot}, we see that the differences are extremely small between the baseline and the \ac{xai} methods. However, the confidence intervals are also very small, which might mean that there are statistically significant performance increases. Thus, we look to the results of the t-tests.
 
 \begin{figure}[H]
     \begin{center}
@@ -3376,6 +3377,8 @@ As we see from table \ref{table:cifar10_salvim_ttest}, \ac{gradcam}\ac{vim} outp
 \end{table}
 
 \subsubsection{ImageNet1K}
+
+Next, we look at the results on the ImageNet1K testing benchmark.
 
 \begin{figure}[H]
     \begin{center}
