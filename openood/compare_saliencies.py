@@ -1,5 +1,6 @@
 import torch
 import argparse
+import os
 import matplotlib.pyplot as plt
 import matplotlib
 import seaborn as sns
@@ -26,6 +27,7 @@ parser.add_argument('--pgf', action=argparse.BooleanOptionalAction, default=Fals
 parser.add_argument('--full', '-f', action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument('--ood', '-o', type=str, default='near')
 parser.add_argument('--batch_size', '-b', type=int, default=8)
+parser.add_argument('--directory', type=str, required=True)
 parser.add_argument(
     '--normalize', '-n', action=argparse.BooleanOptionalAction, default=False
 )
@@ -129,10 +131,13 @@ while True:
         )
         # plt.colorbar()
 
+    if not os.path.exists(f'../master/figure/{args.directory}'):
+        os.makedirs(f'../master/figure/{args.directory}')
+
     plt.tight_layout()
     if args.pgf:
         plt.savefig(
-            f'../master/figure/imagenet_heatmaps/{args.dataset}_{args.generator}_heatmaps_{"" if args.normalize else "un"}normalized.pgf'
+            f'../master/figure/{args.directory}/{args.dataset}_{args.generator}_heatmaps_{"" if args.normalize else "un"}normalized.pgf'
         )
         exit()
     else:
