@@ -71,6 +71,7 @@ generator_func = get_saliency_generator(
 )
 
 for i in range(args.skips):
+    print(i)
     id_batch = next(dataloaders['id'][0])
     ood_batch = next(dataloaders[args.ood][0])
 
