@@ -11,6 +11,7 @@ import pandas as pd
 from utils import calculate_auc, get_palette
 import utils
 import matplotlib
+from utils import prettify
 
 
 parser = argparse.ArgumentParser()

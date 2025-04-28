@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', '-d', type=str, default='cifar10')
 parser.add_argument('--generator', '-g', type=str, default='gradcam')
 parser.add_argument('--repeats', '-r', type=int, default=4)
+parser.add_argument('--skips', type=int, default=0)
 parser.add_argument('--opacity', type=float, default=1.6)
 parser.add_argument('--relu', action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--shuffle', action=argparse.BooleanOptionalAction, default=False)
@@ -66,8 +67,13 @@ net = get_network(id_name)
 saliency_dict = dict()
 
 generator_func = get_saliency_generator(
-    args.generator, net, args.repeats, do_relu=args.relu
+    args.generator, net, args.repeats, relu=args.relu
 )
+
+for i in range(args.skips):
+    id_batch = next(dataloaders['id'][0])
+    ood_batch = next(dataloaders[args.ood][0])
+
 
 while True:
     id_batch = next(dataloaders['id'][0])
@@ -93,14 +99,11 @@ while True:
     opacity = args.opacity
 
     for i in range(args.batch_size):
-        plt.subplot(4, args.batch_size, i * 2 + 1)
-        plt.title('id')
-        display_pytorch_image(id_images[i])
-        plt.subplot(4, args.batch_size, i * 2 + 2)
+        plt.subplot(args.batch_size, 2, i + 1)
         if labels is not None:
-            plt.title(f'{labels[id_labels[i]]}, {torch.std(id_saliencies[i]):.3f}')
+            plt.title(f'{labels[id_labels[i]]}, {torch.mean(id_saliencies[i]):.3f}')
         else:
-            plt.title(f'{torch.std(id_saliencies[i]):.3f}')
+            plt.title(f'{torch.mean(id_saliencies[i]):.3f}')
         overlay_saliency(
             id_images[i],
             id_saliencies[i],
@@ -110,14 +113,11 @@ while True:
         )
         # plt.colorbar()
 
-        plt.subplot(4, args.batch_size, i * 2 + args.batch_size * 2 + 1)
-        plt.title('ood')
-        display_pytorch_image(ood_images[i])
-        plt.subplot(4, args.batch_size, i * 2 + args.batch_size * 2 + 2)
+        plt.subplot(args.batch_size, 2, i + args.batch_size + 1)
         if labels is not None:
-            plt.title(f'{labels[ood_labels[i]]}, {torch.std(ood_saliencies[i]):.3f}')
+            plt.title(f'{labels[ood_labels[i]]}, {torch.mean(ood_saliencies[i]):.3f}')
         else:
-            plt.title(f'{torch.std(ood_saliencies[i]):.3f}')
+            plt.title(f'{torch.mean(ood_saliencies[i]):.3f}')
         overlay_saliency(
             ood_images[i],
             ood_saliencies[i],
@@ -131,7 +131,7 @@ while True:
     plt.tight_layout()
     if args.pgf:
         plt.savefig(
-            f'../master/figure/{args.dataset}_{args.generator}_heatmaps_{"" if args.normalize else "un"}normalized.pgf'
+            f'../master/figure/imagenet_heatmaps/{args.dataset}_{args.generator}_heatmaps_{"" if args.normalize else "un"}normalized.pgf'
         )
         exit()
     else:

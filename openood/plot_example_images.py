@@ -22,6 +22,7 @@ from utils import (
     get_network,
     get_saliency_generator,
     set_fontsize,
+    pp,
 )
 import matplotlib
 
@@ -86,10 +87,10 @@ for i, keypair in enumerate(keypairs):
             )
             display_pytorch_image(images[j], save_path=file_path)
 
-    Key, Second_key = key.capitalize(), second_key.capitalize()
+    Key, Second_key = pp(key), pp(second_key)
 
     if key == 'near' or key == 'far':
-        axes[i][cols // 2].set_title(f'{Key}-OOD: {Second_key}')
+        axes[i][cols // 2].set_title(f'{Key}: {Second_key}')
     else:
         axes[i][cols // 2].set_title(f'{Key}: {Second_key}')
 

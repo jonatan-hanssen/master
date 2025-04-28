@@ -70,6 +70,7 @@ for key in ('id', 'near', 'far'):
             preds = net(data).detach().cpu()
             scores.append(preds)
             saliencies.append(generator_func(data))
+            breakpoint()
 
         saliencies = torch.cat(saliencies)
         if args.return_dim == 2:

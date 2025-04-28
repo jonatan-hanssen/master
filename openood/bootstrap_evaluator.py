@@ -35,6 +35,11 @@ parser.add_argument('--aggregator', '-a', type=str, default='Norm')
 parser.add_argument('--split', '-s', type=str, default='val')
 
 args = parser.parse_args(sys.argv[1:])
+
+if args.dataset == 'imagenet' and args.generator == 'integratedgradients':
+    torch.multiprocessing.set_sharing_strategy('file_system')
+
+
 net = get_network(args.dataset)
 
 postprocessor = None
