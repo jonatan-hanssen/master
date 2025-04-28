@@ -99,7 +99,7 @@ while True:
     opacity = args.opacity
 
     for i in range(args.batch_size):
-        plt.subplot(args.batch_size, 2, i + 1)
+        plt.subplot(2, args.batch_size, i + 1)
         if labels is not None:
             plt.title(f'{labels[id_labels[i]]}, {torch.mean(id_saliencies[i]):.3f}')
         else:
@@ -113,7 +113,7 @@ while True:
         )
         # plt.colorbar()
 
-        plt.subplot(args.batch_size, 2, i + args.batch_size + 1)
+        plt.subplot(2, args.batch_size, i + args.batch_size + 1)
         if labels is not None:
             plt.title(f'{labels[ood_labels[i]]}, {torch.mean(ood_saliencies[i]):.3f}')
         else:
