@@ -57,7 +57,7 @@ id_name = args.dataset
 device = 'cuda'
 
 dataloaders = get_dataloaders(
-    id_name, batch_size=args.batch_size, full=False, shuffle=args.shuffle
+    id_name, batch_size=args.batch_size, full=True, shuffle=args.shuffle
 )
 labels = get_labels(id_name)
 
@@ -70,15 +70,15 @@ generator_func = get_saliency_generator(
     args.generator, net, args.repeats, relu=args.relu
 )
 
-for i in range(args.skips):
-    print(i)
-    id_batch = next(dataloaders['id'][0])
-    ood_batch = next(dataloaders[args.ood][0])
+# for i in range(args.skips):
+#     print(i)
+#     id_batch = next(dataloaders['id'][0])
+#     ood_batch = next(dataloaders[args.ood][0])
 
 
 while True:
-    id_batch = next(dataloaders['id'][0])
-    ood_batch = next(dataloaders[args.ood][0])
+    id_batch = next(iter(dataloaders['id']['imagenet']))
+    ood_batch = next(iter(dataloaders[args.ood]['openimage_o']))
 
     id_images = id_batch['data'].to(device)
     ood_images = ood_batch['data'].to(device)
