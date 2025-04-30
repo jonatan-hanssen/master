@@ -180,7 +180,7 @@ coordinate(-front-bottom-right) -- cycle;
 
 \uiomasterfp[dept={Department of Informatics},
 program={Robotics and Intelligent Systems},
-supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette}, long]
+supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette \and Michael Riegler}, long]
 
 \frontmatter{}
 \begin{abstract}
@@ -323,7 +323,7 @@ Through the testing of these three methods, I show that \ac{xai} methods can ind
     \item Saliency values can also be appended directly to the model logits in \ac{ood} detection methods such as \ac{vim} \cite{vim}, leading to statistically significant improvements over using the method without \ac{xai} saliency values across several benchmarks.
 \end{itemize}
 
-These three frameworks are highly general and enable further research into the integration of \ac{xai} and \ac{ood} detection. The performance attained methods under these frameworks show immense potential, and comes close \ac{sota} methods in several instances.
+These three frameworks are highly general and enable further research into the integration of \ac{xai} and \ac{ood} detection. The performance attained methods under these frameworks show great potential, and comes close \ac{sota} methods in several instances.
 
 In addition, I have had code merged into the codebase for OpenOOD, the definitive \ac{ood} detection framework and benchmarking tool. By improving the code used when benchmarking new \ac{ood} detection methods, I have contributed to the broader field of \ac{ood} detection.
 
@@ -2082,9 +2082,9 @@ With the baselines reported, we turn our attention to the first \ac{xai} salienc
     \label{fig:imagenet200limemeangini}
 \end{figure}
 
-From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. Using the vector norm to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.814 on Near-\ac{ood}, which is slightly lower than the baseline methods, and 0.925 on Far-\ac{ood}, which is actually higher than the baselines. These results are far better than those attained by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on benchmark which did not just contain small toy datasets, which is for all practical purposes equivalent to guessing. This large improvement suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) could be highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
+From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. Using the vector norm to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.814 on Near-\ac{ood}, which is slightly lower than the baseline methods, and 0.925 on Far-\ac{ood}, which is actually higher than the baselines. These results far more discriminatory power than those reported by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on benchmark which did not just contain small toy datasets, which is for all practical purposes equivalent to guessing. This large increase in separability suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) could be highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
 
-Measuring the statistical spread using \ac{rmd}, we find that there is indeed also a higher spread in \ac{id} data when compared to \ac{ood} data. However, in this case the overlap is substantial, which is reflected in the \ac{auroc} scores attained when discriminating using \ac{rmd}: The Near-\ac{ood} \ac{auroc} score was 0.594, and the Far-\ac{ood} score was 0.695. In both cases, the scores attained are far lower than the both of the baselines.
+Measuring the statistical spread using \ac{rmd}, we find that there is indeed also a higher spread in \ac{id} data when compared to \ac{ood} data. However, in this case the overlap is substantial, which is reflected in the \ac{auroc} scores attained when discriminating using \ac{rmd}: The Near-\ac{ood} \ac{auroc} score was 0.594, and the Far-\ac{ood} score was 0.695. In both cases, the degree of separability is far lower than both of the baselines.
 
 Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all forms of aggregation on \ac{lime}, as well as the previously mentioned \ac{auroc} of the baseline methods. The \ac{auroc} scores are reported as percentages, to avoid having a redundant leading zero in all cells. In addition to the \ac{auroc}, the correlation between the aggregates and the maximum logit and maximum softmax score is reported, which gives insight into how \ac{xai} saliency maps are related to the prediction confidence of the model.
 
@@ -2115,11 +2115,11 @@ Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all f
 \end{table}
 
 
-From this table, we can note several interesting observations. Firstly, we see that the magnitude based aggregations in general perform quite well, with vector norm in this case being the best. In contrast, the methods based on statistical dispersion perform poorly, putting into question the hypothesis that the saliency maps of \ac{id} data is more concentrated and less spread out than those on \ac{ood} data. Indeed, we see that while the \ac{rmd} is higher on average for \ac{id} data, the \ac{qcd} and \ac{cv} is lower on average when generating saliencies using \ac{lime}. This further puts doubt on the idea that the spread of saliency maps is a reliable indicator of \ac{ood}-ness.
+From this table, we can note several interesting observations. Firstly, we see that the magnitude based aggregations are all able to separate \ac{id} and \ac{ood} quite well, with vector norm in this case being the most discriminatory. In contrast, the methods based on statistical dispersion perform poorly, putting into question the idea that the saliency maps of \ac{id} data could be more concentrated and less evenly spread out than those on \ac{ood} data. Indeed, we see that while the \ac{rmd} is higher on average for \ac{id} data, the \ac{qcd} and \ac{cv} is lower on average when generating saliencies using \ac{lime}. This further puts doubt on the idea that the spread of saliency maps is a reliable indicator of \ac{ood}-ness.
 
 Secondly, the aggregates which capture information about the magnitude of the saliencies are highly correlated with both the maximum logit and the maximum softmax score of the predicted class. This is not unexpected, as \ac{lime} generates saliencies using differences in prediction values as different parts of the image is masked. If the predicted value is higher on average for \ac{id} data, then it is likely that the drop in predicted value when masking parts of the image is larger as well, leading to higher saliencies. Regardless, it seems clear that it is not only the correlation to the model output which explains the discriminative power of these aggregates, as we see that vector norm aggregation has lower correlation with \ac{mls} and equal correlation with \ac{msp} when compared to the mean, but has higher scores.
 
-In general, the results from these aggregations are promising, and show that there is definite potential for \ac{ood} detection algorithms based on \ac{xai} outputs. However, the reader should note that these results are done on the validation set, and that no statistical tests have been done at this point. The statistical significance of using \ac{xai} saliency maps for \ac{ood} detection will be revealed in section \ref{section:results}, when the final testing is done on the testing benchmarks and bootstrapping is performed.
+In general, the results from these aggregations are promising, and show that there is definite potential for \ac{ood} detection algorithms based on \ac{xai} outputs. However, the reader should note that these results are done on the validation set, and that no statistical tests have been done at this point. The statistical significance of using \ac{xai} saliency maps for \ac{ood} detection will be revealed in section \ref{section:results}, when methods under the frameworks introduced in chapter \ref{chapter:methodology} are developed based on the results reported here.
 
 \subsubsection{Occlusion}
 
@@ -2663,7 +2663,7 @@ To get a more precise understanding of the performance of the different models, 
     Far-OOD & 91.98 & +0.706 & 0.001 ** & +1.788 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salagg on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet200_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2724,7 +2724,7 @@ From this plot, we do not expect to see many statistically significant improveme
     Far-OOD & 89.92 & -1.898 & 1.000 & -1.310 & 1.000 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salagg on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar10_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2787,7 +2787,7 @@ Looking at table \ref{table:imagenet_salagg_ttest}, the three methods mentioned 
     Far-OOD & 91.34 & +1.825 & 0.001 ** & +6.329 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salagg on Imagenet]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on Imagenet]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2847,7 +2847,7 @@ From table \ref{table:cifar100_salagg_ttest}, we see that both \ac{gradcam}Norm 
     Far-OOD & 71.35 & -8.509 & 1.000 & -6.568 & 1.000 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salagg on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar100_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2926,7 +2926,7 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we see far more
     Far-OOD & 93.95 & +2.677 & 0.001 ** & +3.759 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salpluslogit on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation plus Logit methods on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet200_salpluslogit_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -3063,7 +3063,7 @@ Looking at table \ref{table:imagenet_salpluslogit_ttest}, we see that the perfor
     Far-OOD & 93.83 & +4.320 & 0.001 ** & +8.824 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salpluslogit on Imagenet]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation plus Logit methods on Imagenet]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet_salpluslogit_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -3124,7 +3124,7 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     Far-OOD & 80.46 & +0.599 & 0.001 ** & +2.540 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salpluslogit on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for Saliency Aggregation plus Logit methods on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar100_salpluslogit_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -3192,7 +3192,7 @@ From table \ref{table:imagenet200_salvim_ttest}, we see that both Occlusion\ac{v
     Far-OOD & 88.51 & -0.022 & 0.993 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salvim on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for SaliencyVIM on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet200_salvim_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -3244,7 +3244,7 @@ As we see from table \ref{table:cifar10_salvim_ttest}, \ac{gradcam}\ac{vim} outp
     Far-OOD & 93.37 & +0.280 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salvim on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for SaliencyVIM on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar10_salvim_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -3296,7 +3296,7 @@ From table \ref{table:imagenet_salvim_ttest}, we see that both \ac{lime}\ac{vim}
     Far-OOD & 92.65 & -0.063 & 1.000 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salvim on Imagenet]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for SaliencyVIM on Imagenet]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on Imagenet, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet_salvim_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -3348,7 +3348,7 @@ Looking at table \ref{table:cifar100_salvim_ttest}, we see that both \ac{lime}\a
     Far-OOD & 78.97 & -0.048 & 1.000 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for salvim on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for SaliencyVIM on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{vim}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar100_salvim_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
