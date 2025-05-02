@@ -248,6 +248,10 @@ supervisors={Hugo Lewi Hammer \and Kyrre Harald Glette \and Michael Riegler}, lo
 
 \begin{preface}
 Generative \ac{ai} has \textbf{not} been used to generate or enhance any written text contained in this thesis. However, generative \ac{ai} has been used for some programmatic tasks. Services such as GPT UiO have been used for code debugging, for generating TikZ code used for creating diagrams, and for generating some boilerplate Python code. All data and personal information have been processed in accordance with the University of Oslo's regulations, and I, as the author of the document, take full responsibility for the validity of any generated code used as part of this work.
+
+\vspace{5mm}
+
+I would like to thank my supervisors Hugo Hammer, Kyrre Glette and Michael Riegler for their excellent guidance and support throughout the writing of this thesis.
 \end{preface}
 
 \mainmatter{}
@@ -1712,7 +1716,7 @@ We have now shown that \ac{xai} saliency mapping methods, although they have bee
 
 \section{Benchmarks} \label{section:benchmarks}
 
-After having introduced the three novel \ac{ood} detection methods that I plan to test, I will now introduce the \ac{ood} detection benchmarks that will be used. To best align this thesis with the broader \ac{ood} detection field, I will use the OpenOOD framework, and their collection of \ac{id} and \ac{ood} datasets. Each \ac{ood} detection benchmark is defined by an \ac{id} dataset, and a selection of corresponding \ac{ood} datasets. As described in \cite{openood15}, the four standard \ac{ood} detection benchmarks included in OpenOOD are CIFAR10, CIFAR100, ImageNet200, and ImageNet1K. I have used all four benchmarks in this thesis, to ensure that the results are robust and easily comparable to the \ac{sota} within the field of \ac{ood} detection.
+After having introduced the three novel \ac{ood} detection frameworks that I plan to test, I will now introduce the \ac{ood} detection benchmarks that will be used. To best align this thesis with the broader \ac{ood} detection field, I will use the OpenOOD framework, and their collection of \ac{id} and \ac{ood} datasets. Each \ac{ood} detection benchmark is defined by an \ac{id} dataset, and a selection of corresponding \ac{ood} datasets. As described in \cite{openood15}, the four standard \ac{ood} detection benchmarks included in OpenOOD are CIFAR10, CIFAR100, ImageNet200, and ImageNet1K. I have used all four benchmarks in this thesis, to ensure that the results are robust and easily comparable to the \ac{sota} within the field of \ac{ood} detection.
 
 \subsection{CIFAR10/CIFAR100}
 
@@ -1934,12 +1938,18 @@ For integrated gradients, the only choice that must be made is the choice of bas
 
 \section{Evaluation}
 
-This section describes the details of how I have evaluated my methods on the four OpenOOD benchmarks.
+This section describes the details of how I have evaluated my frameworks on the four OpenOOD benchmarks.
+
+\subsection{Experiment structure}
+
+My experiments are conducted in two parts. The first part is concerned with analysing the discriminatory power of different aggregations of saliency maps for the five \ac{xai} methods. The purpose of this part is two-fold: First, this analysis gives a good overview of how different \ac{xai} methods extract information which can be used for \ac{ood} detection. As described in section \ref{section:saliencyagg_method}, it is desirable to cast a wide net when we investigate the different statistical qualities that \ac{xai} saliency maps may have, requiring an analysis of a wide array of aggregations. Secondly, through the analysis of different aggregations on different \ac{xai} methods, a choice of methods under the Saliency Aggregation and Saliency Aggregation plus Logit can be made. These frameworks are highly general, and the total amount of methods which are possible with the number of aggregations and \ac{xai} saliency mapping mentioned in this thesis is 45. Clearly, performing 45 statistical tests is not necessary to investigate whether \ac{xai} methods can be used for \ac{ood} detection, nor is it desirable, as it leads to the {\it multiple comparison problem}. Instead, I choose the best performing aggregation overall for each \ac{xai} method, leading to five methods under test for the Saliency Aggregation and Saliency Aggregation plus Logit framework. Selecting in this way, rather than simply selecting the $N$ highest performing combinations out of the 45, is better suited to the goals of this thesis: This thesis is concerned with investigating the discriminatory power of \ac{xai} methods in an \ac{ood} detection context, not how different aggregations of \ac{xai} saliency maps compare to each other. This part of the experiments is conducted on the two validation benchmarks, as described in section \ref{section:benchmarks}.
+
+The second part of the experiments consists of the evaluation of the three frameworks on the testing benchmarks. This evaluation consists of testing a selection of methods under each framework against baseline methods. For Saliency Aggregation and Saliency Aggregation plus Logit, five methods will be chosen, corresponding to the five \ac{xai} methods introduced in section \ref{section:methodology_xai}, and the best performing aggregation on the validation set (as described in the previous section). For the Saliency\ac{vim} framework, three methods are tested, corresponding to the three compatible \ac{xai} methods \ac{lime}, occlusion and \ac{gradcam}. These methods are tested on each of the four benchmarks across ten bootstraps, enabling statistical analysis.
 
 
-\subsection{Metrics}
+\subsubsection{Metrics}
 
-\ac{auroc} and \ac{fpr95} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD \cite{openood}, \ac{auroc} is chosen as the primary metric used to rank methods against each other, as mentioned previously. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods. Although \ac{fpr95} is reported quite often in \ac{ood} detection literature, I have chosen to omit this metric when reporting the results. Due to the large number of tests that have been performed as part of this thesis, this has been necessary to limit the amount of information conveyed in chapter \ref{chapter:experiments}, which would otherwise be extremely long. When comparing all \ac{ood} detection methods against each other, the \ac{fpr95} is similarly omitted by \cite{openood15}. %TODO put it in the appendix and say here that it is in the appendix
+\ac{auroc} and \ac{fpr95} are the most common metrics used for \ac{ood} detection \cite{oodbaseline, odin, oodoverview, openood, vim}. In OpenOOD \cite{openood, openood15}, \ac{auroc} is chosen as the primary metric used to rank methods against each other, as mentioned previously. As \cite{openood} by far presents the most comprehensive complete benchmark of all \ac{ood} detection methods to date, I have followed their methodology and used \ac{auroc} when evaluating my methods. Although \ac{fpr95} is reported quite often in \ac{ood} detection literature, I have chosen to omit this metric when reporting the results. Due to the large number of tests that have been performed as part of this thesis, this has been necessary to limit the amount of information conveyed in chapter \ref{chapter:experiments}, which would otherwise be extremely long. When comparing all \ac{ood} detection methods against each other, the \ac{fpr95} is similarly omitted by \cite{openood15}. %TODO put it in the appendix and say here that it is in the appendix
 
 When performing \ac{ood} detection, we must make a choice about whether \ac{ood} samples belong to the positive or negative class. There is no correct answer, but \cite{openood} chooses to consider \ac{ood} samples as the positive class, to "align with ML convention": It is common to consider abnormalities, anomalies, or the unexpected as the positive class (for example, a cancer detection system would consider the presence of cancer to be part of the positive class). This aligns with the goal of \ac{ood} detection, which is to detect abnormal inputs with regard to the data the model is trained on. Thus, I have also followed this convention and considered \ac{ood} samples as positive, and \ac{id} samples as negative.
 
@@ -1959,11 +1969,11 @@ The \ac{auroc} calculations are done on each \ac{ood} dataset individually, as o
 %
 % Thus, I have split all the datasets mentioned in \ref{section:datasets} into development and test sets, and have performed all development of the methods exclusively on the development set. Only when calculating the final metrics have I used the test set, to remove any bias associated with performing multiple experiments on the same data. Due to the large amount of data available in the CIFAR10 and ImageNet200 datasets, and their associated \ac{ood} datasets, I have simply split all datasets into two equally large parts.
 
-\subsection{Statistical Analysis of Results} \label{section:ttest_methodology}
+\subsubsection{Statistical Analysis of Results} \label{section:ttest_methodology}
 
-When evaluating a new method, it is not enough to simply report the results from a single experiment. Instead one should run the same experiment multiple times and perform statistical analysis to ensure that the results are robust. Therefore, I have bootstrapped each testing benchmark ten times during the calculation of the final test results. This makes it possible to report means and standard deviations of the results as opposed to a single point estimate. With these repeated experiments, it is also possible to perform statistical tests comparing the new methods against baseline \ac{ood} detection methods. If we compute the scores for the baseline methods and the new methods on the same bootstraps, we get paired samples. In this case, we should conduct a paired difference test. The t-test is a natural choice, however, we do not have any reason to assume that the differences in performance between paired samples is normally distributed, nor is the number of bootstraps high enough to assume approximate normality. The Wilcoxon signed-rank test is thus a better choice, and is the one I have used.
+When evaluating a new method, it is not enough to simply report the results from a single experiment. Instead one should run the same experiment multiple times and perform statistical analysis to ensure that the results are robust. Therefore, I have bootstrapped each testing benchmark ten times during the calculation of the final test results. This makes it possible to report means and standard deviations of the results as opposed to a single point estimate. With these repeated experiments, it is also possible to perform statistical tests comparing the new methods against baseline \ac{ood} detection methods. If we compute the scores for the baseline methods and the new methods on the same bootstraps, we get paired samples. In this case, we should conduct a paired difference test. The t-test is a natural choice, however, we do not have any reason to assume that the differences in performance between paired samples are normally distributed, nor is the number of bootstraps high enough to assume approximate normality. The Wilcoxon signed-rank test is thus a better choice. For all experiments, I perform a one-sided test, with the null-hypothesis that the tested method is not better than the baseline. I consider a p-value of 0.05 as sufficient to reject the null-hypothesis.
 
-Given that I have designed my methods to be general frameworks for integrating \ac{xai} saliencies, it is possible to test the same method with many different \ac{xai} algorithms. Doing this, however, will introduce the {\it multiple comparison problem}, where a p-value of 0.05 will no longer be sufficient for each test, as the chance of randomly receiving results that seem statistically significant is increased by the presence of multiple tests. Thus, I use Bonferroni corrected p-values whenever multiple tests are conducted on the same method. I set the threshold for statistical significance at 0.05, leading to a Bonferroni corrected p-value of $0.05 / n$ for a given method, where $n$ is the number of experiments conducted for a single method.
+Given that I introduce three general frameworks as opposed to specific methods, it is possible to test several methods under a particular frameworks. Doing this, however, will introduce the {\it multiple comparison problem}, where a p-value of 0.05 will no longer be sufficient for each test, as the chance of randomly receiving results that seem statistically significant is increased by the presence of multiple tests. Thus, I use Bonferroni corrected p-values whenever multiple methods are tested on the same benchmark. I set the threshold for statistical significance at 0.05, leading to a Bonferroni corrected p-value of $0.05 / n$ for a given method, where $n$ is the number of methods tested.
 
 \section{Implementation}
 
@@ -2087,17 +2097,19 @@ In this chapter, I have introduced the methodology that has been used in this th
 
 \chapter{Experiments and Results} \label{chapter:experiments}
 
-This chapter contains the results of experiments as described in chapter \ref{chapter:methodology}. The chapter is split into two main sections: In section \ref{section:saliencyagg}, I show how different forms of aggregation over saliency maps separate \ac{id} and \ac{ood} data points. This step is important, because it informs the choice of aggregation and \ac{xai} saliency mapping methods used in the Saliency Aggregation and Saliency Aggregation plus Logit \ac{ood} detection frameworks. I report \ac{auroc} for different forms of aggregation over CIFAR10 and ImageNet200. This is done on the validation sets, to avoid biasing the final results.
+This chapter contains the results the of experiments described in chapter \ref{chapter:methodology}. The chapter is split into two main sections, corresponding to the two parts: In section \ref{section:saliencyagg}, I show how different forms of aggregation over saliency maps separate \ac{id} and \ac{ood} data points. The results from this part informs the choice of aggregation used in the Saliency Aggregation and Saliency Aggregation plus Logit \ac{ood} detection frameworks. This is done on the validation sets, to avoid biasing the final results.
 
-Section \ref{section:results} contains the final results of applying methods from the three frameworks introduced in section \ref{section:methods} on the testing benchmarks. For Saliency Aggregation and Saliency Aggregation plus Logit, the choice of aggregation and \ac{xai} method is informed by the findings from section \ref{section:saliencyagg}. For SaliencyVIM, the testing is done using the three \ac{xai} methods which are compatible with the methodology as described in section \ref{section:saliencyvim_method}. These are \ac{lime}, occlusion and \ac{gradcam}. The \ac{auroc} for each method is calculated over ten bootstraps for each benchmark, enabling statistical analyses which investigate whether \ac{xai} \ac{ood} detection methods outperform baseline methods. For each framework, the results are first presented for all four benchmarks in an objective manner, after which the performance of the framework is analyzed and discussed.
+Section \ref{section:results} contains the results of applying methods from the three frameworks introduced in section \ref{section:methods} on the four testing benchmarks contained in OpenOOD. For Saliency Aggregation and Saliency Aggregation plus Logit, each of the five \ac{xai} methods are tested in combination with the best performing aggregation, informed by the findings from section \ref{section:saliencyagg}. For SaliencyVIM, the testing is done using the three \ac{xai} methods which are compatible with the methodology as described in section \ref{section:saliencyvim_method}. The \ac{auroc} for each method is calculated over ten bootstraps for each benchmark, enabling statistical analyses which investigate whether \ac{xai} \ac{ood} detection methods outperform baseline methods. For each framework, the results are first presented for all four benchmarks in an objective manner, after which the performance of the framework is analyzed and discussed.
 
 \section{Data Analysis of Saliency Maps} \label{section:saliencyagg}
 
-This section will detail how various \ac{xai} methods generate explanations which differ between \ac{id} and \ac{ood}. The section considers each validation benchmark individually. For each benchmark, I first present the level of separation achieved by the two baseline methods \ac{msp} and \ac{mls}, to give a general intuition about how easily the \ac{id} and \ac{ood} datasets are to separate. Following this, I go through the different \ac{xai} methods and their different statistical qualities.
+This section will detail how various \ac{xai} methods generate explanations which differ between \ac{id} and \ac{ood}. This is done by generating \ac{xai} explanations using the five methods described in section \ref{section:xaimethodsbackground}, and then using different aggregations to inspect statistical qualities of the generated explanations. The section considers each validation benchmark individually. For each benchmark, I first present the level of separation achieved by the two baseline methods \ac{msp} and \ac{mls}, to give a general intuition about how easily the \ac{id} and \ac{ood} datasets are to separate. Following this, I go through the different \ac{xai} methods and their different statistical qualities.
+
+Given the simplicity of my baseline Saliency Aggregation framework, which simply uses such aggregations to perform \ac{ood} detection, this section also serves as a form of hyperparameter search. Based on the findings of this chapter, a suitable choice of aggregations are chosen for the methods tested in section \ref{section:results}. These aggregations will also be used for methods under the Saliency Aggregation plus Logit framework.
 
 \subsection{ImageNet200}
 
-The ImageNet200 benchmark is a suitable benchmark to begin with, given ImageNet's ubiquity in \ac{ai} research. Figure \ref{fig:imagenet200logits} shows the distribution of the maximum softmax score and the maximum logit. Here, we see that there is a decent amount of separation between \ac{id} and \ac{ood} data points, even with the simple baseline methods introduced by \cite{oodbaseline} and \cite{mls}. Separating the distributions using \ac{msp}, we get an \ac{auroc} score of 0.834 for Near-\ac{ood} and 0.915 for Far-\ac{ood}. Using \ac{mls}, we get an \ac{auroc} score of 0.833 for Near-\ac{ood} and 0.903 for Far-\ac{ood}.
+The ImageNet200 benchmark is a suitable benchmark to begin with, given ImageNet's ubiquity in \ac{ai} research. Figure \ref{fig:imagenet200logits} shows the distribution of the maximum softmax score and the maximum logit. Here, we see that there is a decent amount of separation between \ac{id} and \ac{ood} data points, even when simply using the maximum softmax score or the maximum logit, as introduced by \cite{oodbaseline} and \cite{mls}. Separating the distributions using the \ac{msp}, we get an \ac{auroc} score of 0.834 for Near-\ac{ood} and 0.915 for Far-\ac{ood}. Using the \ac{mls}, we get an \ac{auroc} score of 0.833 for Near-\ac{ood} and 0.903 for Far-\ac{ood}.
 
 \begin{figure}[H]
     \begin{center}
@@ -2119,7 +2131,7 @@ With the baselines reported, we turn our attention to the first \ac{xai} salienc
     \label{fig:imagenet200limemeangini}
 \end{figure}
 
-From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. Using the vector norm to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.814 on Near-\ac{ood}, which is slightly lower than the baseline methods, and 0.925 on Far-\ac{ood}, which is actually higher than the baselines. These results far more discriminatory power than those reported by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on benchmark which did not just contain small toy datasets, which is for all practical purposes equivalent to guessing. This large increase in separability suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) could be highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
+From the figure we can see that for \ac{lime} on ImageNet200, it is indeed the case that saliencies are higher for \ac{id} data points than for \ac{ood} data points. Using the vector norm to distinguish \ac{id} and \ac{ood}, we get an \ac{auroc} of 0.814 on Near-\ac{ood}, which is slightly lower than the baseline metrics, and 0.925 on Far-\ac{ood}, which is actually higher than the baselines. These results show far more discriminatory power than those reported by \cite{martinez}, the only other related work which has attempted to use saliency maps to separate \ac{id} and \ac{ood} data. This work achieved an \ac{auroc} score of only 0.52 when used on benchmarks which did not just contain small toy datasets, which is for all practical purposes equivalent to guessing. This large increase in separability suggests that the usage of raw saliency values, rather than normalized heatmaps (as was used by \cite{martinez}) could be highly consequential for the performance of \ac{xai} \ac{ood} detection algorithms.
 
 Measuring the statistical spread using \ac{rmd}, we find that there is indeed also a higher spread in \ac{id} data when compared to \ac{ood} data. However, in this case the overlap is substantial, which is reflected in the \ac{auroc} scores attained when discriminating using \ac{rmd}: The Near-\ac{ood} \ac{auroc} score was 0.594, and the Far-\ac{ood} score was 0.695. In both cases, the degree of separability is far lower than both of the baselines.
 
@@ -2152,9 +2164,9 @@ Table \ref{table:imagenet200_lime_metrics} shows the \ac{auroc} scores for all f
 \end{table}
 
 
-From this table, we can note several interesting observations. Firstly, we see that the magnitude based aggregations are all able to separate \ac{id} and \ac{ood} quite well, with vector norm in this case being the most discriminatory. In contrast, the methods based on statistical dispersion perform poorly, putting into question the idea that the saliency maps of \ac{id} data could be more concentrated and less evenly spread out than those on \ac{ood} data. Indeed, we see that while the \ac{rmd} is higher on average for \ac{id} data, the \ac{qcd} and \ac{cv} is lower on average when generating saliencies using \ac{lime}. This further puts doubt on the idea that the spread of saliency maps is a reliable indicator of \ac{ood}-ness.
+From this table, we can note several interesting observations. Firstly, we see that the magnitude based aggregations are all able to separate \ac{id} and \ac{ood} quite well, with vector norm in this case being the most discriminatory. In contrast, the methods based on statistical dispersion separate \ac{id} and \ac{ood} poorly, putting into question the idea that the saliency maps of \ac{id} data could be more concentrated and less evenly spread out than those on \ac{ood} data. Indeed, we see that while the \ac{rmd} is higher on average for \ac{id} data, the \ac{qcd} and \ac{cv} is lower on average when generating saliencies using \ac{lime}. This further puts doubt on the idea that the spread of saliency maps is a reliable indicator of \ac{ood}-ness.
 
-Secondly, the aggregates which capture information about the magnitude of the saliencies are highly correlated with both the maximum logit and the maximum softmax score of the predicted class. This is not unexpected, as \ac{lime} generates saliencies using differences in prediction values as different parts of the image is masked. If the predicted value is higher on average for \ac{id} data, then it is likely that the drop in predicted value when masking parts of the image is larger as well, leading to higher saliencies. Regardless, it seems clear that it is not only the correlation to the model output which explains the discriminative power of these aggregates, as we see that vector norm aggregation has lower correlation with \ac{mls} and equal correlation with \ac{msp} when compared to the mean, but has higher scores.
+Secondly, the aggregates which capture information about the magnitude of the saliencies are highly correlated with both the maximum logit and the maximum softmax score of the predicted class. This is not unexpected, as \ac{lime} generates saliencies using differences in prediction values as different parts of the image are masked. If the predicted value is higher on average for \ac{id} data, then it is likely that the drop in predicted value when masking parts of the image is larger as well, leading to higher saliencies. Regardless, it seems clear that it is not only the correlation to the model output which explains the discriminative power of these aggregates, as we see that vector norm aggregation has lower correlation with \ac{mls} and equal correlation with \ac{msp}, when compared to the mean, but achieves higher degrees of separation.
 
 In general, the results from these aggregations are promising, and show that there is definite potential for \ac{ood} detection algorithms based on \ac{xai} outputs. However, the reader should note that these results are done on the validation set, and that no statistical tests have been done at this point. The statistical significance of using \ac{xai} saliency maps for \ac{ood} detection will be revealed in section \ref{section:results}, when methods under the frameworks introduced in chapter \ref{chapter:methodology} are developed based on the results reported here.
 
@@ -2170,7 +2182,7 @@ Now, we turn our attention to occlusion saliency mapping. Looking at figure \ref
     \label{fig:imagenet200_occlusion_mean_rmd}
 \end{figure}
 
-From table \ref{table:cifar10_occlusion_metrics} we see that this trend is apparent over all of the different forms of aggregation, not just the vector norm and \ac{rmd}. Regardless, there is still a clear trend \ac{id} saliency magnitudes being higher than \ac{ood} magnitudes, as all \ac{auroc} scores are above 0.50 without negation. With this saliency method, aggregating using range performs the best, with max relatively close behind. Interestingly, we see that for occlusion, all the statistical dispersion aggregates are higher for \ac{id} data, as was the original hypothesis. Regardless, the \ac{auroc} scores are very poor, and thus these metrics do not seem suitable to discriminate between \ac{id} and \ac{ood}.
+From table \ref{table:cifar10_occlusion_metrics} we see that this trend is apparent over all of the different forms of aggregation, not just the vector norm and \ac{rmd}. Regardless, there is still a clear trend \ac{id} saliency magnitudes being higher than \ac{ood} magnitudes, as all \ac{auroc} scores are above 0.50 without negation. With this saliency method, aggregating using range achieves the highest separability the best, with max relatively close behind. Interestingly, we see that for occlusion, all the statistical dispersion aggregates are higher for \ac{id} data, as was the original hypothesis. Regardless, the \ac{auroc} scores are very low, and thus these metrics do not seem suitable to discriminate between \ac{id} and \ac{ood}.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2200,7 +2212,7 @@ From table \ref{table:cifar10_occlusion_metrics} we see that this trend is appar
 
 \subsubsection{\ac{gradcam}}
 
-After having inspected two completely model independent \ac{xai} methods, we turn our attention to the first of the three gradient based methods, \ac{gradcam}. As we have seen density plots for both \ac{lime} and occlusion, I will omit these here, as the table contains the necessary information. From table \ref{table:cifar10_gradcam_metrics}, we see that vector norm aggregation of \ac{gradcam} saliencies actually beats the baselines on both Near- and Far-\ac{ood} detection. The increase on Far-\ac{ood} is particularly impressive, with an increase of 1.4 percentage points. However, we should keep in mind that these results are done on the validation set and that the final results and their statistical significance will only be explored in section \ref{section:results}.
+After having inspected two completely model independent \ac{xai} methods, we turn our attention to the first of the three gradient based methods, \ac{gradcam}. As we have seen density plots for both \ac{lime} and occlusion, I will omit these here, as the table contains the necessary information. From table \ref{table:cifar10_gradcam_metrics}, we see that vector norm aggregation of \ac{gradcam} saliencies actually achieves higher separation than the baseline metrics on both Near- and Far-\ac{ood} detection. The increase on Far-\ac{ood} is particularly substantial, at 1.4 percentage points. However, we should keep in mind that these results are done on the validation set and that the final results and their statistical significance will only be explored in section \ref{section:results}.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2228,11 +2240,11 @@ After having inspected two completely model independent \ac{xai} methods, we tur
 \setlength\tabcolsep{6pt}
 \end{table}
 
-As was expected, the mean value of the \ac{gradcam} saliencies is completely correlated with the maximum logit. As proven in section \ref{section:relation}, performing mean aggregation on \ac{gradcam} saliency maps performed on the final convolutional layer of a ResNet network is indeed equivalent to \ac{mls} \ac{ood} detection, hence the total correlation. In general, the correlations with the baseline scores are far higher here than with the previous two \ac{xai} methods.
+As was expected, the mean value of the \ac{gradcam} saliencies is completely correlated with the maximum logit. As proven in section \ref{section:relation}, performing mean aggregation on \ac{gradcam} saliency maps created from the final convolutional layer of a ResNet network are equal to the maximum logit divided by the spatial size of the feature map, hence the total correlation. In general, the correlations with the baseline scores are far higher here than with the previous two \ac{xai} methods.
 
 \subsubsection{Integrated Gradients}
 
-Looking at table \ref{table:imagenet200_integratedgradients_metrics}, we see that the trend of larger saliency magnitudes on \ac{id} data continues to hold for integrated gradients as well. With integrated gradients the mean and the vector norm seem to be the most discriminative, with the mean saliency having scores which are around 1 percentage point below the baselines.
+Looking at table \ref{table:imagenet200_integratedgradients_metrics}, we see that the trend of larger saliency magnitudes on \ac{id} data continues to hold for integrated gradients as well. With integrated gradients the mean and the vector norm seem to be the most discriminative, with the mean saliency having scores which are around 1 percentage point below the baseline metrics.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2302,7 +2314,7 @@ Looking at figure \ref{fig:imagenet200_gbp_mean_full}, we see that the mean sali
 
 \subsubsection{Overall results on ImageNet200}
 
-Next, we consider the overall performance of the different aggregations and \ac{xai} saliency methods on ImageNet200. Figure \ref{fig:imagenet200_all_metrics_barplot} shows the average Near- and Far-\ac{auroc} for magnitude aggregations. From this, we see that the vector norm, range and maximum aggregations performed the best over all \ac{xai} saliency methods. All statistical dispersion methods performed poorly, and as such I do not plot them. In general, saliency aggregation methods seem to perform far above the heatmap clustering performed by \cite{martinez}, at least on these validation benchmarks.
+Next, we consider the overall discriminatory power of the different aggregations and \ac{xai} saliency methods on ImageNet200. Figure \ref{fig:imagenet200_all_metrics_barplot} shows the average Near- and Far-\ac{auroc} for magnitude aggregations. From this, we see that the vector norm, range and maximum aggregations performed the best over all \ac{xai} saliency methods. All statistical dispersion aggregations performed poorly, and as such I do not plot them. In general, saliency aggregation seem to enable far higher degrees of separability power than those reported by \cite{martinez}.
 
 \begin{figure}[H]
     \begin{center}
@@ -2313,7 +2325,7 @@ Next, we consider the overall performance of the different aggregations and \ac{
 \end{figure}
 
 
-Table \ref{table:imagenet200_all_metrics} shows the underlying data for the figure above, as well as the mean \ac{auroc} for both Near and Far. Here, we can see that the mean performed the best on Near-\ac{ood} while the range performed the best on Far-\ac{ood}. However, as we know, the mean was lower for \ac{gbp} and lower scores had to be considered \ac{id}, which makes it less desirable than the other methods, which were consistently larger for \ac{id} data. The vector norm was only slightly worse than the mean on Near-\ac{ood} and only slightly worse than the range on Far-\ac{ood}, making it the best aggregation overall. As we can see, all the statistical dispersion methods performed poorly.
+Table \ref{table:imagenet200_all_metrics} shows the underlying data for the figure above, as well as the mean \ac{auroc} for both Near and Far. Here, we can see that the mean performed the best on Near-\ac{ood} while the range performed the best on Far-\ac{ood}. However, as we know, the mean was lower for \ac{gbp} and lower scores had to be considered \ac{id}, which makes it less desirable than the other aggregations, which were consistently larger for \ac{id} data. The vector norm was only slightly worse at separating \ac{id} and \ac{ood} than the mean on Near-\ac{ood} and only slightly worse than the range on Far-\ac{ood}, making it the best aggregation overall. As we can see, all the statistical dispersion aggregations showed poor discriminatory power.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2339,7 +2351,7 @@ Table \ref{table:imagenet200_all_metrics} shows the underlying data for the figu
 \setlength\tabcolsep{6pt}
 \end{table}
 
-If we instead look at the best aggregation for each \ac{xai} saliency method (figure \ref{fig:imagenet200_all_generators_barplot}), and compare these to the baselines, we find that \ac{lime}, \ac{gradcam} and \ac{gbp} achieve higher degrees of separation than the baselines on Far-\ac{ood}, while \ac{gradcam} is the only method who has a higher degree of separation than the baselines on Near-\ac{ood}. Except for occlusion, all \ac{xai} saliency methods are able to discriminate between \ac{id} and \ac{ood} reasonably well, given a correct choice of aggregation.
+If we instead look at the most discriminatory aggregation for each \ac{xai} saliency method (figure \ref{fig:imagenet200_all_generators_barplot}), and compare these to the baseline metrics, we find that \ac{lime}, \ac{gradcam} and \ac{gbp} achieve higher degrees of separation than the baselines on Far-\ac{ood}, while \ac{gradcam} is the only method who has a higher degree of separation than the baselines on Near-\ac{ood}. Except for occlusion, all \ac{xai} saliency maps contains information which enable us to discriminate between \ac{id} and \ac{ood} reasonably well, given a correct choice of aggregation. Despite having lower scores overall, aggregating occlusion saliencies still gives \ac{auroc} values which show some discriminatory power, and could still be valuable when used in frameworks which combine saliency aggregation with other information from the network.
 
 \begin{figure}[H]
     \begin{center}
@@ -2365,7 +2377,7 @@ The results above demonstrate that saliency maps themselves, without any other i
 
 \subsection{CIFAR10}
 
-CIFAR10 differs from ImageNet200 in some important respects, making it an ideal second benchmark to investigate. While ImageNet200 has 200 classes, CIFAR10 has only 10. This means that ImageNet200 is a much broader classification task, with networks that are trained to recognize a wide variety of different objects. With a more narrow \ac{id} dataset of only 10 classes, we may see different behaviour when a network is exposed to \ac{ood} data. Another important change is the size of the images. ImageNet200 images are $224 \times 224$ pixels, while CIFAR10 images are only $32 \times 32$. This reduction in resolution may also affect how saliency maps are generated, as each pixel now covers a much larger area of the total image and is thus more important compared to each pixel in ImageNet200 images. First, let us inspect the baseline performances.
+CIFAR10 differs from ImageNet200 in some important respects, making it an ideal second benchmark to investigate. While ImageNet200 has 200 classes, CIFAR10 has only 10. This means that ImageNet200 is a much broader classification task, with networks that are trained to recognize a wide variety of different objects. With a more narrow \ac{id} dataset of only 10 classes, we may see different behaviour when a network is exposed to \ac{ood} data. Another important change is the size of the images. ImageNet200 images are $224 \times 224$ pixels, while CIFAR10 images are only $32 \times 32$. This reduction in resolution may also affect how saliency maps are generated, as each pixel now covers a much larger area of the total image and is thus more important compared to each pixel in ImageNet200 images. First, let us inspect the baseline metrics.
 
 From figure \ref{fig:cifar10_logits_distribution}, we can see that there is a decent degree of separation when using the maximum logit and the maximum softmax score. The maximum softmax score is highly concentrated around 0.95-1.00 for \ac{id} data, to a much higher degree than with ImageNet200. This is not surprising, given the much smaller number of classes in CIFAR10. With fewer and more easily separated classes, it is much easier for the network to saturate the maximum softmax score.
 
@@ -2381,7 +2393,7 @@ Separating the distributions using \ac{msp}, we get an \ac{auroc} score of 0.877
 
 \subsubsection{\ac{lime}}
 
-Table \ref{table:cifar10_lime_metrics} shows the results for the aggregations on the saliency maps generated by \ac{lime}. From this table, we see a similar trend as when we applied \ac{lime} to ImageNet200: the magnitude of saliency methods all show a clear trend of higher values on \ac{id} data, while the statistical dispersion methods are poor and uninformative. However, the degree of separation compared to the baselines is worse on CIFAR10, with over 5 percentage points lower scores on both Near- and Far-\ac{ood}. This is far worse when considering that \ac{lime} actually achieved a better \ac{auroc} than the baselines on ImageNet200 when using vector norm aggregation. It may be that because of the lower resolution of the images, each occluded region used to generate \ac{lime} explanations carries less information, which introduces some instability in when generating explanations.
+Table \ref{table:cifar10_lime_metrics} shows the results for the aggregations on the saliency maps generated by \ac{lime}. From this table, we see a similar trend as when we applied \ac{lime} to ImageNet200: the magnitude of saliency methods all show a clear trend of higher values on \ac{id} data, while the statistical dispersion methods are poor and uninformative. However, the degree of separation compared to the baselines is worse on CIFAR10, with over 5 percentage points lower scores on both Near- and Far-\ac{ood}. This is far worse when considering that \ac{lime} actually achieved a better \ac{auroc} than the baseline metrics on ImageNet200 when using vector norm aggregation. It may be that because of the lower resolution of the images, each occluded region used to generate \ac{lime} explanations carries less information, which introduces some instability in when generating explanations.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2526,7 +2538,7 @@ This implies that \ac{id} data has higher positive saliencies on average than \a
 
 \subsubsection{\ac*{gbp}}
 
-\ac{gbp} saliency maps separate \ac{id} and \ac{ood} data decently, with the best saliency aggregation method (vector norm) achieving scores which are a few percentage points below the baselines. The only surprise here is that the mean is lower on average for \ac{id} data, which it also was when applying \ac{gbp} to ImageNet200.
+\ac{gbp} saliency maps separate \ac{id} and \ac{ood} data decently, with the best saliency aggregation (vector norm) achieving separability scores which are a few percentage points below the baseline metrics. The only surprise here is that the mean is lower on average for \ac{id} data, which it also was when applying \ac{gbp} to ImageNet200.
 
 \begin{table}[H]
 \setlength\tabcolsep{3pt}
@@ -2592,7 +2604,7 @@ Table \ref{table:cifar10_all_metrics} shows the results in more detail. Here, we
 \setlength\tabcolsep{6pt}
 \end{table}
 
-Figure \ref{fig:cifar10_all_generators_barplot} shows the results when we instead look at the best aggregation for each \ac{xai} saliency method. Here we see that, as with ImageNet200, \ac{gradcam}, integrated gradients and \ac{gbp} separate \ac{id} and \ac{ood} reasonably well, while occlusion does not. Unlike ImageNet200, \ac{lime} does not achieve high degrees of separation on CIFAR10, and lags behind the gradient based methods.
+Figure \ref{fig:cifar10_all_generators_barplot} shows the results when we instead look at the most discriminative aggregation for each \ac{xai} saliency method. Here we see that, as with ImageNet200, \ac{gradcam}, integrated gradients and \ac{gbp} separate \ac{id} and \ac{ood} reasonably well, while occlusion does not. Unlike ImageNet200, \ac{lime} does not achieve high degrees of separation on CIFAR10, and lags behind the gradient based methods.
 
 \begin{figure}[H]
     \begin{center}
@@ -2612,10 +2624,11 @@ Finally, we can look at all combinations of aggregation and \ac{xai} method when
     \label{fig:cifar10_heatmap}
 \end{figure}
 
+\subsection{Overall analysis of results}
 
-\subsection{Overall results on both validation benchmarks}
+From the results reported in this section, we have seen clearly that saliency maps carry discriminative information across a wide range of \ac{xai} methods. This information can be captured by using simple aggregations, with several aggregations based on magnitude achieving high degrees of separability. Aggregations which are based on calculating (magnitude-invariant) statistical dispersion, however, do not capture this information well, and it seems unlikely that \ac{id} and \ac{ood} saliency maps are distributed differently when we do not consider the magnitude.
 
-Finally, let us consider both validation benchmarks together. Figure \ref{fig:both_heatmap} shows the average degree of separation over both Near-\ac{ood} and Far-\ac{ood} for both ImageNet200 and CIFAR10. Using this heatmap, we can select the most promising combinations to use for the final \ac{ood} detectors on the testing benchmarks.
+As described previously, the frameworks introduced in chapter \ref{chapter:methodology} could be used with any of the combinations of \ac{xai} saliency mapping method and aggregation. To limit the number of methods, we choose the aggregation which achieves the highest degree of separability between \ac{id} and \ac{ood} data points for each \ac{xai} method. Figure \ref{fig:both_heatmap} shows the average degree of separation over both Near-\ac{ood} and Far-\ac{ood} for both ImageNet200 and CIFAR10 for all combinations of \ac{xai} method and magnitude aggregation. As stated previously, the statistical dispersion methods are omitted due to their low degree of separability.
 
 \begin{figure}[H]
     \begin{center}
@@ -2625,11 +2638,12 @@ Finally, let us consider both validation benchmarks together. Figure \ref{fig:bo
     \label{fig:both_heatmap}
 \end{figure}
 
-As we can see, occlusion has consistently underperformed when using saliency aggregation on both benchmarks, and as such I will not use this \ac{xai} method in the Saliency Aggregation or Saliency Aggregation plus Logit frameworks. For the remaining four \ac{xai} methods, I select the most discriminative aggregation on both of the validation benchmarks for use on the testing benchmarks. From the heatmap, we can see that this results in using vector norm for \ac{lime}, \ac{gradcam} and \ac{gbp}, and mean for integrated gradients. In the next section, I will denote these combinations as \ac{lime}Norm, \ac{gradcam}Norm, IGMean and \ac{gbp}Norm.
+
+From this figure, we can see that the most discriminative aggregation is using vector norm for \ac{lime}, \ac{gradcam} and \ac{gbp}, range for occlusion, and mean for integrated gradients. In the next section, I will denote these combinations as \ac{lime}Norm, OcclusionRange, \ac{gradcam}Norm, IGMean and \ac{gbp}Norm.
 
 \section{Evaluation of XAI OOD detectors} \label{section:results}
 
-This section contains the final tests conducted on the testing benchmarks. This section will be divided into three parts, corresponding to the three proposed \ac{ood} detection frameworks introduced in the methodology: Saliency Aggregation, Saliency Aggregation plus Logit and SaliencyVIM. Each of these sections will detail the performance of the corresponding framework on the four testing benchmarks, and statistically compare the results to the baseline methods. For Saliency Aggregation and Saliency Aggregation plus Logit, the tests are conducted using the combinations of \ac{xai} methods and aggregations that performed the best on the validation benchmarks, as described in the preceding section. The statistical analysis is based on ten bootstraps of each benchmarks, which has been performed on each method, as well as the baselines. As mentioned in section \ref{section:ttest_methodology}, the Bonferroni-corrected threshold for statistical significance is set at $0.05 / n$, where $n$ is the number of experiments conducted on each method.
+This section contains the final tests conducted on the testing benchmarks. This section will be divided into three parts, corresponding to the three proposed \ac{ood} detection frameworks introduced in the methodology: Saliency Aggregation, Saliency Aggregation plus Logit and SaliencyVIM. Each of these sections will detail the performance of the corresponding framework on the four testing benchmarks, and statistically compare the results to the baseline methods. For Saliency Aggregation and Saliency Aggregation plus Logit, the tests are conducted using the combinations of \ac{xai} methods and aggregations that performed the best on the validation benchmarks, as described in the preceding section. The statistical analysis is based on ten bootstraps of each benchmarks, which has been performed on each method, as well as the baselines. As mentioned in section \ref{section:ttest_methodology}, the Bonferroni-corrected threshold for statistical significance is set at $0.05 / n$, where $n$ is the number of experiments conducted on each method (5 for Saliency Aggregation and Saliency Aggregation plus Logit, 3 for SaliencyVIM).
 
 When reporting the p-values, I follow the \texttt{R}-standard for appending "significance stars", which give a quick visual indication of the statistical significance of a result. In \texttt{R}, any p-value lower than 0.05 has an asterisk appended, any p-value lower than 0.01 has two asterisks appended, and any p-value lower than 0.001 has three asterisks appended. I also append these asterisks, but use Bonferroni corrected p-values when determining if a value should have an asterisk appended. This means that whenever a p-value has at least one asterisk appended, the reader knows that the corresponding Wilcoxon signed-rank test showed statistical significance according to a Bonferroni corrected level of significance of $0.05 / n$. It should be noted that due to the discrete nature of the Wilcoxon signed-rank test, there is a minimal p-value that can be attained, based on the number of experiments. With ten bootstraps, the minimal p-value is 0.001, which is achieved when all baseline \ac{auroc} scores are lower than the method tested.
 
@@ -2676,6 +2690,14 @@ To get a more precise understanding of the performance of the different models, 
     Far-OOD & 92.39 & +1.113 & 0.001 ** & +2.195 & 0.001 ** \\
     \hline
     \hline
+    \multicolumn{6}{|c|}{OcclusionRange} \\
+    \hline
+    \rowcolor{near!50}
+    Near-OOD & 69.38 & -13.361 & 1.000 & -13.898 & 1.000 \\
+    \rowcolor{far!50}
+    Far-OOD & 85.23 & -6.051 & 1.000 & -4.969 & 1.000 \\
+    \hline
+    \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
@@ -2700,7 +2722,7 @@ To get a more precise understanding of the performance of the different models, 
     Far-OOD & 91.98 & +0.706 & 0.001 ** & +1.788 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for salagg on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet200_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2737,6 +2759,14 @@ From this plot, we do not expect to see many statistically significant improveme
     Far-OOD & 83.74 & -8.078 & 1.000 & -7.490 & 1.000 \\
     \hline
     \hline
+    \multicolumn{6}{|c|}{OcclusionRange} \\
+    \hline
+    \rowcolor{near!50}
+    Near-OOD & 73.75 & -13.221 & 1.000 & -13.935 & 1.000 \\
+    \rowcolor{far!50}
+    Far-OOD & 71.13 & -20.690 & 1.000 & -20.102 & 1.000 \\
+    \hline
+    \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
@@ -2761,7 +2791,7 @@ From this plot, we do not expect to see many statistically significant improveme
     Far-OOD & 89.92 & -1.898 & 1.000 & -1.310 & 1.000 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for salagg on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar10_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2860,6 +2890,14 @@ From table \ref{table:cifar100_salagg_ttest}, we see that both \ac{gradcam}Norm 
     Far-OOD & 77.58 & -2.285 & 1.000 & -0.344 & 0.998 \\
     \hline
     \hline
+    \multicolumn{6}{|c|}{OcclusionRange} \\
+    \hline
+    \rowcolor{near!50}
+    Near-OOD & 67.46 & -13.774 & 1.000 & -13.221 & 1.000 \\
+    \rowcolor{far!50}
+    Far-OOD & 74.57 & -5.294 & 1.000 & -3.353 & 1.000 \\
+    \hline
+    \hline
     \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
@@ -2884,7 +2922,7 @@ From table \ref{table:cifar100_salagg_ttest}, we see that both \ac{gradcam}Norm 
     Far-OOD & 71.35 & -8.509 & 1.000 & -6.568 & 1.000 \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for Saliency Aggregation methods on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for salagg on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar100_salagg_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2931,7 +2969,7 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we see far more
     Dataset & \ac{auroc} & $\Delta$\ac{auroc} \ac{mls} & P-value \ac{mls} & $\Delta$\ac{auroc} \ac{msp} & P-value \ac{msp} \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{LIMENorm+Logit} \\
+    \multicolumn{6}{|c|}{LIMENorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 83.46 & +0.715 & 0.001 ** & +0.178 & 0.007 * \\
@@ -2939,7 +2977,15 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we see far more
     Far-OOD & 93.12 & +1.845 & 0.001 ** & +2.927 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{GradCAMNorm+Logit} \\
+    \multicolumn{6}{|c|}{OcclusionRange} \\
+    \hline
+    \rowcolor{near!50}
+    Near-OOD & 80.21 & -2.536 & 1.000 & -3.073 & 1.000 \\
+    \rowcolor{far!50}
+    Far-OOD & 92.20 & +0.923 & 0.001 ** & +2.005 & 0.001 ** \\
+    \hline
+    \hline
+    \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 83.15 & +0.407 & 0.001 ** & -0.130 & 0.968 \\
@@ -2947,7 +2993,7 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we see far more
     Far-OOD & 92.09 & +0.808 & 0.001 ** & +1.890 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{IGMean+Logit} \\
+    \multicolumn{6}{|c|}{IGMean} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 82.36 & -0.384 & 1.000 & -0.922 & 1.000 \\
@@ -2955,7 +3001,7 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we see far more
     Far-OOD & 91.04 & -0.233 & 1.000 & +0.848 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{GBPNorm+Logit} \\
+    \multicolumn{6}{|c|}{GBPNorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 82.96 & +0.217 & 0.010 * & -0.320 & 0.990 \\
@@ -2963,7 +3009,7 @@ As we see from table \ref{table:imagenet200_salpluslogit_ttest}, we see far more
     Far-OOD & 93.95 & +2.677 & 0.001 ** & +3.759 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for Saliency Aggregation plus Logit methods on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for salpluslogit on ImageNet200]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on ImageNet200, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:imagenet200_salpluslogit_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
@@ -2999,7 +3045,7 @@ Like in the previous sections, let look at the results of the Wilcoxon signed-ra
     Dataset & \ac{auroc} & $\Delta$\ac{auroc} \ac{mls} & P-value \ac{mls} & $\Delta$\ac{auroc} \ac{msp} & P-value \ac{msp} \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{LIMENorm+Logit} \\
+    \multicolumn{6}{|c|}{LIMENorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 87.80 & +0.831 & 0.001 ** & +0.116 & 0.053 \\
@@ -3007,7 +3053,15 @@ Like in the previous sections, let look at the results of the Wilcoxon signed-ra
     Far-OOD & 93.35 & +1.532 & 0.001 ** & +2.120 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{GradCAMNorm+Logit} \\
+    \multicolumn{6}{|c|}{OcclusionRange} \\
+    \hline
+    \rowcolor{near!50}
+    Near-OOD & 88.00 & +1.036 & 0.001 ** & +0.321 & 0.001 ** \\
+    \rowcolor{far!50}
+    Far-OOD & 90.54 & -1.277 & 1.000 & -0.689 & 1.000 \\
+    \hline
+    \hline
+    \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 86.92 & -0.046 & 1.000 & -0.760 & 1.000 \\
@@ -3015,7 +3069,7 @@ Like in the previous sections, let look at the results of the Wilcoxon signed-ra
     Far-OOD & 91.81 & -0.013 & 1.000 & +0.575 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{IGMean+Logit} \\
+    \multicolumn{6}{|c|}{IGMean} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 87.21 & +0.240 & 0.001 ** & -0.475 & 1.000 \\
@@ -3023,7 +3077,7 @@ Like in the previous sections, let look at the results of the Wilcoxon signed-ra
     Far-OOD & 92.47 & +0.647 & 0.001 ** & +1.236 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{GBPNorm+Logit} \\
+    \multicolumn{6}{|c|}{GBPNorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 89.91 & +2.940 & 0.001 ** & +2.225 & 0.001 ** \\
@@ -3031,19 +3085,11 @@ Like in the previous sections, let look at the results of the Wilcoxon signed-ra
     Far-OOD & 94.68 & +2.858 & 0.001 ** & +3.446 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[T-test for Saliency Aggregation plus Logit on CIFAR10]{Results of performing a t-test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for salpluslogit on CIFAR10]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR10, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar10_salpluslogit_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
 \end{table}
-
-% Let us again consider each method in turn. \ac{lime}Norm+Logit sees very impressive performance gains, far surpassing both \ac{mls} and \ac{lime}Norm on their own.
-%
-% Next, we consider the t-tests on \ac{gradcam}Norm+Logit. As in the previous section, the high correlation between the \ac{mls} and \ac{gradcam} saliencies means that this method does not perform any better than either \ac{mls} or \ac{gradcam}Norm.
-%
-% Next; IGMean+Logit. Here, we see significant improvements over IGMean, as with ImageNet200. In addition, the method is statistically significantly better than both baselines on Far-\ac{ood}.
-%
-% Finally, we inspect the results of the t-tests for \ac{gbp}Norm+Logit, which are very impressive. Here, we see substantial improvements over both baselines of several percentage points on both Near- and Far-\ac{ood}. Furthermore, these results are pretty close to the \ac{sota} amongst methods which do not require retraining of the network, with \texttt{COMBOOD} being the leader at 91.13/94.65 Near-\ac{ood}/Far-\ac{ood} performance.
 
 \subsubsection{ImageNet1K}
 
@@ -3129,7 +3175,7 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     Dataset & \ac{auroc} & $\Delta$\ac{auroc} \ac{mls} & P-value \ac{mls} & $\Delta$\ac{auroc} \ac{msp} & P-value \ac{msp} \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{LIMENorm+Logit} \\
+    \multicolumn{6}{|c|}{LIMENorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 78.92 & -2.316 & 1.000 & -1.763 & 1.000 \\
@@ -3137,7 +3183,15 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     Far-OOD & 82.13 & +2.273 & 0.001 ** & +4.214 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{GradCAMNorm+Logit} \\
+    \multicolumn{6}{|c|}{OcclusionRange} \\
+    \hline
+    \rowcolor{near!50}
+    Near-OOD & 78.56 & -2.678 & 1.000 & -2.125 & 1.000 \\
+    \rowcolor{far!50}
+    Far-OOD & 81.39 & +1.531 & 0.001 ** & +3.472 & 0.001 ** \\
+    \hline
+    \hline
+    \multicolumn{6}{|c|}{GradCAMNorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 81.24 & +0.006 & 0.116 & +0.559 & 0.001 ** \\
@@ -3145,7 +3199,7 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     Far-OOD & 79.93 & +0.066 & 0.001 ** & +2.007 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{IGMean+Logit} \\
+    \multicolumn{6}{|c|}{IGMean} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 80.58 & -0.662 & 1.000 & -0.108 & 0.981 \\
@@ -3153,7 +3207,7 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     Far-OOD & 81.95 & +2.089 & 0.001 ** & +4.030 & 0.001 ** \\
     \hline
     \hline
-    \multicolumn{6}{|c|}{GBPNorm+Logit} \\
+    \multicolumn{6}{|c|}{GBPNorm} \\
     \hline
     \rowcolor{near!50}
     Near-OOD & 77.70 & -3.542 & 1.000 & -2.989 & 1.000 \\
@@ -3161,7 +3215,7 @@ Looking at table \ref{table:cifar100_salpluslogit_ttest}, we see that all method
     Far-OOD & 80.46 & +0.599 & 0.001 ** & +2.540 & 0.001 ** \\
     \hline
     \end{tabular}
-    \caption[Wilcoxon signed-rank test for Saliency Aggregation plus Logit methods on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
+    \caption[Wilcoxon signed-rank test for salpluslogit on CIFAR100]{Results of performing a Wilcoxon signed-rank test on the \ac{auroc} means of against \ac{mls} and \ac{msp}, showing the mean \ac{auroc} over 10 runs on CIFAR100, the difference in means compared to the baselines, and the corresponding p-values. Each p-value is appended a significance code which follows the \texttt{R}-standard.}
     \label{table:cifar100_salpluslogit_ttest}
 \end{center}
 \setlength\tabcolsep{6pt}
