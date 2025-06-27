@@ -80,6 +80,7 @@ while True:
     ood_images = ood_batch['data'].to(device)
 
     id_saliencies = generator_func(id_images)
+    breakpoint()
     ood_saliencies = generator_func(ood_images)
 
     id_preds, id_labels = torch.max(

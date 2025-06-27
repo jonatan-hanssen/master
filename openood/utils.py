@@ -262,7 +262,7 @@ class GradCAMWrapper(torch.nn.Module):
     def act_hook(self, module, input, output):
         self.acts = output
 
-    def forward(self, x, return_feature=False):
+    def forward(self, x, return_feature=False, class_to_backprog=None):
         batch_size = x.shape[0]
 
         if return_feature:
@@ -275,7 +275,10 @@ class GradCAMWrapper(torch.nn.Module):
 
         self.model.zero_grad(set_to_none=True)
 
-        idxs = torch.argmax(preds, dim=1)
+        if class_to_backprog is None:
+            idxs = torch.argmax(preds, dim=1)
+        else:
+            idxs = torch.ones(batch_size, dtype=int) * class_to_backprog
 
         # backward pass, this gets gradients for each prediction
         torch.sum(preds[torch.arange(batch_size), idxs]).backward()
@@ -489,7 +492,7 @@ def get_saliency_generator(
     elif name == 'grad':
         generator_func = InputGradientWrapper(model=net)
 
-    elif name == 'occlusion':
+    elif name == 'occlusionnored':
         # generator_func = lambda data: occlusion(
         #     net, data, repeats=repeats, do_relu=do_relu
         # )
@@ -507,7 +510,7 @@ def get_saliency_generator(
                 strides=(3, block_size, block_size),
             )
 
-            attributions = attributions.sum(dim=1)
+            # attributions = attributions.sum(dim=1)
             attributions = (
                 torch.nn.MaxPool2d(1, block_size)(attributions).detach().cpu()
             )
@@ -577,7 +580,7 @@ def get_saliency_generator(
 
             return dim_reducer(attributions)
 
-    elif name == 'gbp9':
+    elif name == 'gbpnored':
 
         def generator_func(data):
             targets = torch.argmax(net(data), dim=-1)
@@ -585,7 +588,7 @@ def get_saliency_generator(
 
             attributions = gbp.attribute(data, target=targets)
 
-            attributions = attributions.sum(dim=1).detach().cpu()
+            attributions = attributions.detach().cpu()
 
             return dim_reducer(attributions)
 

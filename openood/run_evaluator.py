@@ -13,6 +13,9 @@ from openood.postprocessors.saliency_aggregate_postprocessor import (
 from openood.postprocessors.saliency_plus_logit_postprocessor import (
     SaliencyPlusLogitPostprocessor,
 )
+from openood.postprocessors.saliency_plus_softmax_postprocessor import (
+    SaliencyPlusSoftmaxPostprocessor,
+)
 from openood.postprocessors.saliencyvim_postprocessor import (
     SaliencyVIMPostprocessor,
 )
@@ -86,6 +89,14 @@ if postprocessor_name == 'salpluslogit':
     )
     postprocessor_name = None
 
+if postprocessor_name == 'salplussoft':
+    generator = get_saliency_generator(args.generator, net)
+    aggregator = get_aggregate_function(args.aggregator)
+    postprocessor = SaliencyPlusSoftmaxPostprocessor(
+        None, saliency_generator=generator, aggregator=aggregator
+    )
+    postprocessor_name = None
+
 if postprocessor_name == 'salvim':
     generator = get_saliency_generator(args.generator, net)
     postprocessor = SaliencyVIMPostprocessor(None, saliency_generator=generator)
@@ -121,9 +132,13 @@ metrics = evaluator.eval_ood(fsood=False)
 # with open(f'saved_metrics/{postprocessor_name}.pkl', 'wb') as file:
 #     pickle.dump(evaluator.scores, file)
 
-if args.postprocessor == 'salagg':
+if (
+    args.postprocessor == 'salagg'
+    or args.postprocessor == 'salpluslogit'
+    or args.postprocessor == 'salplussoft'
+):
     with open(
-        f'saved_metrics/{postprocessor_name}_{args.generator}_{args.aggregator}.pkl',
+        f'saved_metrics/{args.dataset}_{args.postprocessor}_{args.generator}_{args.aggregator}.pkl',
         'wb',
     ) as file:
-        pickle.dump(evaluator.scores, file)
+        pickle.dump([metrics, evaluator.scores], file)
